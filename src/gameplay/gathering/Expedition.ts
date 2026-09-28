@@ -29,6 +29,7 @@ export class Expedition {
   /** Why the trip cannot start right now, or null if it can. */
   blocker(region: RegionDef): string | null {
     const s = this.ctx.state;
+    if (!s.tutorialDone) return t('trip.tutorial');
     if (region.minDay && s.day < region.minDay) return t('trip.lockedDay', { d: region.minDay });
     if (region.minReputation && s.reputation < region.minReputation) return t('trip.lockedRep', { n: region.minReputation });
     if (this.ctx.interaction.grab) return t('trip.holding');
@@ -64,7 +65,7 @@ export class Expedition {
 
     let missed = 0;
     for (const v of this.customers.pendingVisits) {
-      if (v.hour >= from && v.hour < to) {
+      if (v.hour >= from && v.hour < to && !v.tutorial) {
         v.spawned = true;
         // Quest visitors simply come back another day (the quest schedule
         // re-offers them); ordinary customers are lost.

@@ -81,6 +81,7 @@ export const STRINGS = {
   'trip.hazards': { en: 'Beware', tr: 'Dikkat' },
   'trip.go': { en: 'Set out', tr: 'Yola çık' },
   'trip.watch': { en: 'Master Mortimer keeps an eye on the cauldron and the fire while you are away. Customers who come by find the door locked.', tr: 'Sen yokken Usta Mortimer kazana ve ateşe göz kulak olur. Gelen müşteriler kapıyı kilitli bulur.' },
+  'trip.tutorial': { en: 'Finish your first lesson with Master Mortimer first.', tr: 'Önce Usta Mortimer ile ilk dersini bitir.' },
   'trip.lockedDay': { en: 'The road opens on day {d}.', tr: 'Yol {d}. günde açılır.' },
   'trip.lockedRep': { en: 'Only known alchemists may pass (reputation {n}).', tr: 'Yalnızca tanınmış simyacılar geçebilir (itibar {n}).' },
   'trip.customers': { en: 'Serve the customers in the shop first.', tr: 'Önce dükkândaki müşterilerle ilgilen.' },

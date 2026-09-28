@@ -38,6 +38,8 @@ html, body {
 #viewport { position: absolute; inset: 0; cursor: var(--cursor-default, default); }
 #game-canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
 #ui-root { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+/* Pixelify Sans closes up its 'c' at large bold sizes; headings stay regular. */
+#ui-root h1, #ui-root h2, #ui-root h3, #ui-root h4 { font-weight: 400; }
 #ui-root > * { pointer-events: none; }
 .wb-interactive, .wb-interactive * { pointer-events: auto; }
 
@@ -151,7 +153,7 @@ img, .wb-icon { image-rendering: pixelated; }
   position: absolute;
   left: 0;
   top: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   text-shadow: 2px 2px 0 #181425, -1px -1px 0 #181425, 1px -1px 0 #181425, -1px 1px 0 #181425;
   white-space: nowrap;
@@ -296,7 +298,7 @@ img, .wb-icon { image-rendering: pixelated; }
   scrollbar-width: thin;
   scrollbar-color: #b86f50 #ead4aa;
 }
-.wb-page h2 { margin: 0 0 8px; font-size: 22px; color: #68386c; font-weight: 700; }
+.wb-page h2 { margin: 0 0 8px; font-size: 22px; color: #68386c; }
 .wb-page h3 { margin: 10px 0 4px; font-size: 17px; color: #733e39; }
 .wb-page p { margin: 4px 0; font-size: 14px; line-height: 1.35; }
 .wb-page .muted { color: #8a6a4a; }
