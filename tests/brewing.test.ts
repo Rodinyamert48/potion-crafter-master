@@ -151,6 +151,22 @@ describe('recipes are reachable', () => {
     expectRecipe(sim, 'blood_tonic');
   });
 
+  it('Farsight Draught: a whole bog toad eye, warm and calm', () => {
+    const sim = new BrewSim().water(2).fire(0.5).heatTo(50).add('bog_toad_eye', 'whole').stirAt(1.4).run(60);
+    expectRecipe(sim, 'farsight_draught', 2);
+  });
+
+  it('mashing the toad eye sets its madness free (Polymorph Brew)', () => {
+    const sim = new BrewSim().water(2).fire(0.5).heatTo(50).add('bog_toad_eye', 'mashed').stirAt(1.4).run(60);
+    expectRecipe(sim, 'frog_brew');
+  });
+
+  it('a toad eye turns Night Vision into a masterwork', () => {
+    const sim = new BrewSim().water(2).fire(0.5).heatTo(55);
+    sim.add('bog_toad_eye', 'whole').add('bat_wing', 'dried').addPieces('glowing_mushroom', 'sliced', 1, 3).stirAt(1.4).run(70);
+    expectRecipe(sim, 'night_vision', 3);
+  });
+
   it('Plain water is just water', () => {
     const sim = new BrewSim().water(2).fire(0.5).run(20);
     expectRecipe(sim, 'plain_water');

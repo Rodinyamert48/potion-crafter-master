@@ -24,17 +24,20 @@ import { boilLoop, rumbleLoop } from '../../audio/Sfx';
 
 const tmp = new THREE.Vector3();
 const tmp2 = new THREE.Vector3();
+const IDENTITY = new THREE.Quaternion();
 
 const ZONE_COLORS = { cold: '#0099db', warm: '#63c74d', hot: '#feae34', boiling: '#f77622', danger: '#e43b44' } as const;
 
 export class Cauldron extends Entity {
   readonly kind = 'cauldron';
   readonly chem = new BrewChemistry();
+  /** Current centre of the cauldron's base (moves when the hoist lifts it). */
   readonly center: THREE.Vector3;
-  readonly baseY: number;
-  readonly bottomY: number;
-  readonly topLevelY: number;
-  readonly rimY: number;
+  /** Resting position on the hearth. */
+  private readonly restCenter: THREE.Vector3;
+  /** Height the hoist has raised the cauldron off the fire (m). */
+  lift = 0;
+  static readonly MAX_LIFT = 0.48;
   capacity = 6;
   /** Angular speed of the ladle (rad/s), written by the Ladle each frame. */
   stirSpeed = 0;
@@ -65,10 +68,7 @@ export class Cauldron extends Entity {
   ) {
     super();
     this.center = center.clone();
-    this.baseY = center.y;
-    this.bottomY = this.baseY + 0.075;
-    this.topLevelY = this.baseY + 0.7;
-    this.rimY = this.baseY + 0.79;
+    this.restCenter = center.clone();
     this.object.position.copy(center);
     this.object.add(this.shell);
     this.parts = cauldronModel('iron');
@@ -113,13 +113,43 @@ export class Cauldron extends Entity {
         rotation: { x: q.x, y: q.y, z: q.z, w: q.w },
       });
     }
-    this.body = ctx.physics.createBody({ shape: { type: 'compound', children }, motion: 'static', position: center, friction: 0.4, group: CG.STATIC });
+    // Kinematic so the hoist can raise it; floating pieces ride along.
+    this.body = ctx.physics.createBody({ shape: { type: 'compound', children }, motion: 'kinematic', position: center, friction: 0.4, group: CG.STATIC });
     ctx.world.addSurface(this.opening, { tag: 'cauldron', hover: 0.16 });
   }
 
   // -------------------------------------------------------------------------
   // Geometry queries
   // -------------------------------------------------------------------------
+
+  get baseY(): number {
+    return this.center.y;
+  }
+
+  get bottomY(): number {
+    return this.center.y + 0.075;
+  }
+
+  get topLevelY(): number {
+    return this.center.y + 0.7;
+  }
+
+  get rimY(): number {
+    return this.center.y + 0.79;
+  }
+
+  /** Share of the fire's heat reaching the pot: 1 on the fire … 0.12 fully raised. */
+  get heatFactor(): number {
+    return 1 - 0.88 * smoothstep(0, Cauldron.MAX_LIFT, this.lift);
+  }
+
+  setLift(v: number): void {
+    this.lift = clamp(v, 0, Cauldron.MAX_LIFT);
+  }
+
+  get liftRatio(): number {
+    return this.lift / Cauldron.MAX_LIFT;
+  }
 
   get level(): number {
     const f = clamp(this.chem.water / this.capacity, 0, 1.08);
@@ -203,6 +233,11 @@ export class Cauldron extends Entity {
   // -------------------------------------------------------------------------
 
   override fixedUpdate(ctx: GameContext, dt: number): void {
+    // Hoist: move the pot (and its collider) to the winch height.
+    this.center.set(this.restCenter.x, this.restCenter.y + this.lift, this.restCenter.z);
+    this.object.position.y = this.center.y;
+    this.body?.setKinematicTarget(this.center, IDENTITY);
+    this.hearth.heatScale = this.heatFactor;
     const effects = ctx.state.effects;
     let stir = Math.abs(this.stirSpeed);
     if (effects.autoStir > 0 && stir < effects.autoStir && this.chem.water > 0.2) stir = effects.autoStir;

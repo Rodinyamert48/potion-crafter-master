@@ -95,6 +95,7 @@ img, .wb-icon { image-rendering: pixelated; }
   font-size: 14px;
   line-height: 1.25;
   z-index: 40;
+  transform-origin: 0 0;
 }
 .wb-tip-title { color: var(--gold-hi); font-size: 16px; font-weight: 600; }
 .wb-tip-sub { color: #c0cbdc; font-size: 12px; margin-top: 2px; }
@@ -131,7 +132,9 @@ img, .wb-icon { image-rendering: pixelated; }
   font-size: 14px;
   line-height: 1.25;
   box-shadow: 0 0 0 2px #181425, 4px 4px 0 2px #18142555;
-  z-index: 20;
+  /* Above the HUD notes: what people say matters more than the order card. */
+  z-index: 33;
+  transform-origin: 0 0;
 }
 .wb-bubble-name { font-size: 11px; color: #733e39; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
 .wb-bubble-tail { position: absolute; left: 50%; bottom: -9px; width: 10px; height: 10px; background: #f4e6c8; transform: translateX(-50%) rotate(45deg); box-shadow: 2px 2px 0 0 #181425; }
@@ -153,14 +156,16 @@ img, .wb-icon { image-rendering: pixelated; }
   text-shadow: 2px 2px 0 #181425, -1px -1px 0 #181425, 1px -1px 0 #181425, -1px 1px 0 #181425;
   white-space: nowrap;
   z-index: 25;
+  transform-origin: 0 0;
 }
 
 /* ---------------------------------------------------------------- toasts */
 .wb-toasts {
   position: absolute;
-  top: 74px;
+  top: calc(74px * var(--ui-scale, 1));
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--ui-scale, 1));
+  transform-origin: top center;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -191,27 +196,27 @@ img, .wb-icon { image-rendering: pixelated; }
 
 /* ------------------------------------------------------------------- HUD */
 .wb-hud { position: absolute; inset: 0; z-index: 30; }
-.wb-hud-left { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; align-items: flex-start; }
+.wb-hud-left { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; align-items: flex-start; transform: scale(var(--ui-scale, 1)); transform-origin: top left; }
 .wb-plank { display: flex; align-items: center; gap: 8px; padding: 0 6px; min-height: 22px; font-size: 18px; }
 .wb-plank .wb-icon { width: 24px; height: 24px; background-size: contain; background-repeat: no-repeat; }
 .wb-money { color: var(--gold-hi); min-width: 70px; }
 .wb-stars { display: flex; gap: 1px; }
 .wb-star { width: 18px; height: 18px; background-size: contain; background-repeat: no-repeat; }
-.wb-hud-center { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); }
+.wb-hud-center { position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(var(--ui-scale, 1)); transform-origin: top center; }
 .wb-clock { display: flex; align-items: center; gap: 10px; font-size: 16px; padding: 0 8px; min-width: 190px; justify-content: center; }
 .wb-clock-dial { position: relative; width: 44px; height: 24px; overflow: hidden; }
 .wb-clock-dial .arc { position: absolute; left: 2px; top: 4px; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 2px #5a6988; }
 .wb-clock-dial .sunmoon { position: absolute; width: 16px; height: 16px; background-size: contain; image-rendering: pixelated; }
 .wb-clock-time { color: var(--gold-hi); min-width: 46px; }
 .wb-clock-phase { color: #c0cbdc; font-size: 13px; }
-.wb-hud-right { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; max-width: 320px; }
+.wb-hud-right { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; max-width: 320px; transform: scale(var(--ui-scale, 1)); transform-origin: top right; }
 .wb-note { padding: 0 4px; font-size: 14px; line-height: 1.25; min-width: 200px; max-width: 300px; }
 .wb-note-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #733e39; margin-bottom: 2px; }
 .wb-note-body { color: #3e2731; }
 .wb-note-sub { color: #733e39; font-size: 12px; margin-top: 2px; }
 .wb-patience { margin-top: 4px; height: 5px; background: #c28569; }
 .wb-patience > span { display: block; height: 100%; background: #3e8948; }
-.wb-hud-bottom { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px; }
+.wb-hud-bottom { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px; transform: scale(var(--ui-scale, 1)); transform-origin: bottom left; }
 .wb-btn-icon {
   width: 48px;
   height: 48px;
@@ -227,10 +232,10 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-btn-icon:hover { filter: brightness(1.25); }
 .wb-btn-icon:active { transform: translateY(2px); }
 .wb-btn-icon kbd { position: absolute; right: -2px; bottom: -4px; font-family: var(--font); font-size: 10px; color: var(--muted); }
-.wb-hud-stations { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
+.wb-hud-stations { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; transform: scale(var(--ui-scale, 1)); transform-origin: bottom right; }
 .wb-station-btn { font-family: var(--font); font-size: 12px; padding: 4px 8px; background: #262b44cc; color: var(--muted); border: none; box-shadow: 0 0 0 2px #181425; cursor: var(--cursor-point, pointer); }
 .wb-station-btn:hover { color: var(--gold-hi); }
-.wb-mentor-card { position: absolute; left: 10px; top: 64px; max-width: 360px; padding: 2px 6px; font-size: 14px; line-height: 1.3; z-index: 31; }
+.wb-mentor-card { position: absolute; left: 10px; top: calc(64px * var(--ui-scale, 1)); max-width: 360px; padding: 2px 6px; font-size: 14px; line-height: 1.3; z-index: 31; transform: scale(var(--ui-scale, 1)); transform-origin: top left; }
 .wb-mentor-card .who { color: #b55088; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
 .wb-mentor-card .step { color: var(--text); }
 .wb-mentor-card .skip { margin-top: 6px; font-size: 11px; color: var(--muted); cursor: var(--cursor-point, pointer); text-decoration: underline; }
@@ -368,4 +373,48 @@ img, .wb-icon { image-rendering: pixelated; }
   .wb-book::after { display: none; }
   .wb-hud-stations { display: none; }
   .wb-mentor-card { max-width: 60vw; font-size: 12px; }
+}
+
+/* ---------------------------------------------------------------- expedition map */
+.wb-map { width: min(900px, 94vw); max-height: calc(100vh - 40px); overflow-y: auto; padding: 14px 18px 16px; color: #3e2731; }
+.wb-map h2 { margin: 0 0 8px; font-size: 22px; color: #68386c; }
+.wb-map-body { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; align-items: start; }
+.wb-map-art { position: relative; aspect-ratio: 200 / 130; background-size: 100% 100%; image-rendering: pixelated; box-shadow: 0 0 0 2px #733e39, 4px 4px 0 2px #3e273155; }
+.wb-map-pin { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); border: none; background: #a22633; box-shadow: 0 0 0 2px #181425, inset 0 -3px 0 #733e39; cursor: var(--cursor-point, pointer); }
+.wb-map-pin::after { content: ''; position: absolute; left: 7px; top: 7px; width: 8px; height: 8px; background: #fee761; }
+.wb-map-pin.selected { background: #3e8948; animation: pinPulse 1s steps(2) infinite; }
+.wb-map-pin.locked { background: #5a6988; }
+.wb-map-pin .label { position: absolute; left: 50%; top: 24px; transform: translateX(-50%); white-space: nowrap; font-family: var(--font); font-size: 12px; color: #3e2731; background: #ead4aacc; padding: 0 3px; }
+@keyframes pinPulse { 50% { transform: translate(-50%, -60%); } }
+.wb-map-info h3 { margin: 0 0 4px; font-size: 19px; color: #733e39; }
+.wb-map-info .desc { margin: 0 0 6px; font-size: 14px; line-height: 1.3; }
+.wb-map-info .meta { margin: 0 0 6px; font-size: 13px; color: #8a6a4a; }
+.wb-map-info .sub { margin-top: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #68386c; }
+.wb-map-finds { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.wb-map-finds .chip, .wb-trip-basket .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 2px; background: #f4e6c8; box-shadow: 0 0 0 1px #c28569; font-size: 13px; }
+.wb-map-finds .chip.rare { box-shadow: 0 0 0 1px #b55088, inset 0 0 0 1px #fee761; }
+.wb-map-finds img, .wb-trip-basket img, .wb-trip-result img { width: 20px; height: 20px; image-rendering: pixelated; }
+.wb-map-info .hazards { margin: 2px 0 6px; font-size: 13px; color: #a22633; }
+.wb-map-info .note { margin: 8px 0; font-size: 12px; color: #8a6a4a; line-height: 1.3; }
+.wb-map-info .blocked { margin: 6px 0; font-size: 13px; color: #a22633; }
+.wb-btn-go { background: #3e8948; box-shadow: 0 0 0 2px #181425, inset 0 -3px 0 #265c42, inset 0 2px 0 #63c74d; margin-top: 4px; }
+.wb-btn-go:hover { background: #63c74d; color: #181425; }
+.wb-btn-go:disabled { background: #8b9bb4; color: #3a4466; box-shadow: 0 0 0 2px #181425; cursor: default; }
+.wb-map.trip { width: min(1000px, 96vw); }
+.wb-trip-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.wb-trip-help { font-size: 13px; color: #8a6a4a; }
+.wb-trip-time { height: 6px; margin: 4px 0 8px; background: #c28569; box-shadow: 0 0 0 2px #733e39; }
+.wb-trip-time > span { display: block; height: 100%; width: 100%; background: #feae34; }
+.wb-trip-frame { position: relative; box-shadow: 0 0 0 3px #181425, 0 0 0 6px #733e39; line-height: 0; }
+.wb-gather-canvas { width: 100%; height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; cursor: var(--cursor-point, pointer); touch-action: none; display: block; }
+.wb-trip-flash { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); padding: 3px 10px; background: #181425dd; color: #fee761; font-size: 14px; line-height: 1.3; opacity: 0; pointer-events: none; white-space: nowrap; }
+.wb-trip-flash.show { animation: tripFlash 1.6s steps(8) forwards; }
+@keyframes tripFlash { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+.wb-trip-basket { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 10px; min-height: 26px; font-size: 14px; }
+.wb-trip-basket .label { color: #68386c; margin-right: 4px; }
+.wb-trip-result { margin: 6px 0 10px; }
+.wb-trip-result .row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px dashed #c28569; font-size: 16px; }
+.wb-trip-result .row .name { flex: 1; }
+@media (max-width: 760px) {
+  .wb-map-body { grid-template-columns: 1fr; }
 }

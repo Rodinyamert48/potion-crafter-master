@@ -642,6 +642,14 @@ export const INGREDIENT_ICONS: Record<string, IconDrawer> = {
     );
     p.line(ox + 8, oy + 2, ox + 8, oy + 14, '#e8fbff');
   },
+  bog_toad_eye: (p, ox, oy) => {
+    p.disc(ox + 8, oy + 8, 6, '#e8f0c8');
+    p.disc(ox + 9, oy + 8, 3.6, '#b4c83a');
+    p.rect(ox + 9, oy + 5, 1, 7, '#181425');
+    p.px(ox + 7, oy + 6, '#ffffff');
+    p.line(ox + 3, oy + 10, ox + 5, oy + 9, '#e43b44');
+    p.line(ox + 4, oy + 5, ox + 6, oy + 6, '#e43b44');
+  },
   phoenix_feather: (p, ox, oy) => {
     p.line(ox + 3, oy + 14, ox + 12, oy + 2, '#733e39');
     for (let i = 0; i < 6; i++) {
@@ -719,5 +727,32 @@ export function leafSprite(color = '#3e8948'): THREE.Texture {
     }
     p.outline('#181425');
     return p.texture({ mipmaps: false });
+  });
+}
+
+/** Iron chain links for hoist chains (tiles vertically, transparent gaps). */
+export function chainLinks(): THREE.Texture {
+  return cached('chainLinks', () => {
+    const p = new Painter(8, 16, 131);
+    const hi = '#c0cbdc';
+    const mid = '#8b9bb4';
+    const lo = '#3a4466';
+    // Link seen face-on (an oval ring)
+    for (let y = 1; y < 8; y++) {
+      p.px(2, y, y < 4 ? hi : mid);
+      p.px(5, y, lo);
+    }
+    p.px(3, 0, hi);
+    p.px(4, 0, mid);
+    p.px(3, 8, mid);
+    p.px(4, 8, lo);
+    // Next link seen edge-on (a bar)
+    for (let y = 7; y < 16; y++) {
+      p.px(3, y, y < 11 ? hi : mid);
+      p.px(4, y, lo);
+    }
+    const t = p.texture({ mipmaps: false });
+    t.wrapT = THREE.RepeatWrapping;
+    return t;
   });
 }

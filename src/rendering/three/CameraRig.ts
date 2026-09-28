@@ -37,9 +37,30 @@ export class CameraRig {
   private readonly right = new THREE.Vector3();
   private readonly up = new THREE.Vector3();
 
+  /** Extra pull-back on portrait screens (see setAspect). */
+  private distanceScale = 1;
+
   constructor(aspect: number) {
     this.camera = new THREE.PerspectiveCamera(30, aspect, 0.3, 60);
+    this.setAspect(aspect);
     this.update(0);
+  }
+
+  /** Narrow and portrait screens keep the horizontal view of a 16:9 screen:
+   *  first by widening the vertical FOV (up to 48°), then by pulling back. */
+  setAspect(aspect: number): void {
+    const cam = this.camera;
+    const halfH = Math.tan(THREE.MathUtils.degToRad(15)) * (16 / 9);
+    let fov = 30;
+    this.distanceScale = 1;
+    if (aspect < 16 / 9) {
+      const needed = halfH / aspect;
+      fov = Math.min(48, THREE.MathUtils.radToDeg(2 * Math.atan(needed)));
+      this.distanceScale = Math.max(1, needed / Math.tan(THREE.MathUtils.degToRad(fov / 2)));
+    }
+    cam.aspect = aspect;
+    cam.fov = fov;
+    cam.updateProjectionMatrix();
   }
 
   get pitch(): number {
@@ -102,10 +123,11 @@ export class CameraRig {
     const pitch = this.pitch;
     const cp = Math.cos(pitch);
     const cam = this.camera;
+    const dist = this.distance * this.distanceScale;
     cam.position.set(
-      this.focus.x + Math.sin(this.yaw) * cp * this.distance,
-      this.focus.y + Math.sin(pitch) * this.distance,
-      this.focus.z + Math.cos(this.yaw) * cp * this.distance,
+      this.focus.x + Math.sin(this.yaw) * cp * dist,
+      this.focus.y + Math.sin(pitch) * dist,
+      this.focus.z + Math.cos(this.yaw) * cp * dist,
     );
 
     // Parallax: nudge the eye (not the look-at point) so near objects move more.

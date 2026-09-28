@@ -289,6 +289,37 @@ export function buildIngredientVisual(def: IngredientDef, state: PrepState, mass
     halfHeight = 0.015;
     radius = 0.13;
     shape = { type: 'box', size: [0.08, 0.03, model === 'strip' ? 0.12 : 0.26] };
+  } else if (def.model === 'eye') {
+    if (model === 'crumb') {
+      // Mashed: a squashed, glistening blob.
+      const m = mat(def, genericIngredientTex(def.colorAlt, def.color), state, { glow: 0.25 });
+      materials.push(m);
+      const blob = mesh(new THREE.SphereGeometry(0.05, 8, 5), m);
+      blob.scale.set(1.25, 0.42, 1.1);
+      group.add(blob);
+      halfHeight = 0.022;
+      radius = 0.06;
+      shape = { type: 'cylinder', radius: 0.055, height: 0.044 };
+    } else {
+      const white = mat(def, genericIngredientTex(def.color, '#d8b8a0'), state);
+      const iris = mat(def, genericIngredientTex(def.colorAlt, def.glow ?? def.colorAlt), state, { glow: 0.35 });
+      const pupil = toonUnique({ color: '#181425' });
+      materials.push(white, iris);
+      const ball = mesh(new THREE.SphereGeometry(0.042, 10, 7), white);
+      // A big iris on a cap of the ball so it reads from most angles.
+      const disc = mesh(new THREE.SphereGeometry(0.0425, 10, 4, 0, Math.PI * 2, 0, 0.75), iris);
+      disc.rotation.x = Math.PI / 2;
+      const slit = mesh(new THREE.BoxGeometry(0.007, 0.034, 0.004), pupil);
+      slit.position.z = 0.0415;
+      // Look up and a little sideways, so it stares at the room from the table.
+      const eye = new THREE.Group();
+      eye.add(ball, disc, slit);
+      eye.rotation.x = -0.9;
+      group.add(eye);
+      halfHeight = 0.042;
+      radius = 0.045;
+      shape = { type: 'sphere', radius: 0.042 };
+    }
   } else {
     const m = mat(def, genericIngredientTex(def.color, def.colorAlt), state);
     materials.push(m);

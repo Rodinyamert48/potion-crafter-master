@@ -20,7 +20,7 @@ interface SaveFile {
   savedAt: number;
   state: Record<string, unknown>;
   cauldron: BrewSave;
-  hearth: { fuel: number; damper: number };
+  hearth: { fuel: number; damper: number; lift?: number };
   bucket: number;
   entities: SavedEntity[];
   visits: Visit[];
@@ -84,7 +84,7 @@ export class SaveSystem {
       savedAt: Date.now(),
       state: ctx.state.toJSON(),
       cauldron: ctx.shop.cauldron.chem.serialize(),
-      hearth: ctx.shop.hearth.serializeState(),
+      hearth: { ...ctx.shop.hearth.serializeState(), lift: ctx.shop.cauldron.lift },
       bucket: ctx.shop.bucket.water,
       entities,
       visits: this.customers.serialize().visits,
@@ -120,6 +120,7 @@ export class SaveSystem {
     if (file.hearth) {
       ctx.shop.hearth.fuel = file.hearth.fuel;
       ctx.shop.hearth.damper = file.hearth.damper;
+      if (typeof file.hearth.lift === 'number') ctx.shop.cauldron.setLift(file.hearth.lift);
     }
     if (typeof file.bucket === 'number') ctx.shop.bucket.water = file.bucket;
     for (const s of file.entities ?? []) {

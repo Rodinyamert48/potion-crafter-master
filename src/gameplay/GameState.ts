@@ -72,7 +72,7 @@ export class GameState {
   tutorialStep = 0;
   tutorialDone = false;
   shopOpen = true;
-  stats = { sold: 0, happy: 0, frogs: 0, explosions: 0, brewed: 0, earned: 0 };
+  stats = { sold: 0, happy: 0, frogs: 0, explosions: 0, brewed: 0, earned: 0, trips: 0 };
   dayStats: DayStats = newDayStats();
   /** Customers already scheduled/served today (ids). */
   servedToday: string[] = [];

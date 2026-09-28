@@ -105,7 +105,7 @@ export class CatalogPanel implements Panel {
   private renderSupplies(): void {
     const s = this.ctx.state;
     for (const def of Object.values(INGREDIENTS)) {
-      if (!s.isUnlocked(def.id)) continue;
+      if (!s.isUnlocked(def.id) || def.sold === false) continue;
       const check = this.shop.canBuyIngredient(def.id);
       const price = this.shop.ingredientPrice(def.id);
       this.body.appendChild(

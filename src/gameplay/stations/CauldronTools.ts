@@ -7,6 +7,8 @@ import type { Grab } from '../../world/Interaction';
 import type { GameContext } from '../../core/GameContext';
 import type { Cauldron } from '../potion/Cauldron';
 import { ladleModel } from '../../rendering/three/models/toolModels';
+import { hoistModel } from '../../rendering/three/models/stationModels';
+import { chainLinks } from '../../rendering/three/textures/PixelTextures';
 import { toon } from '../../rendering/three/materials';
 import { brass, iron } from '../../rendering/three/textures/PixelTextures';
 import { CG, type BodyHandle } from '../../physics/PhysicsTypes';
@@ -137,6 +139,7 @@ export class Ladle extends Entity {
     this.object.quaternion.copy(this.tmpQ);
     this.bowlBody.setKinematicTarget(bowl, this.tmpQ);
 
+    this.ring.position.set(this.cauldron.center.x, this.cauldron.rimY + 0.02, this.cauldron.center.z);
     const z = stirZone(this.cauldron.stirSpeed);
     const active = this.grabbing || Math.abs(this.angularSpeed) > 0.5;
     this.ringAlpha = damp(this.ringAlpha, active && z !== 'none' ? 0.55 : 0, 6, dt);
@@ -201,16 +204,155 @@ export class DrainTap extends Entity {
   }
 
   override update(ctx: GameContext, dt: number): void {
+    this.object.position.set(this.spout.x, this.spout.y + this.cauldron.lift, this.spout.z);
     if (!this.opening) this.open = Math.max(0, this.open - dt * 4);
     this.handle.rotation.z = -this.open * 1.2;
     const flowing = this.open > 0.05 && this.cauldron.chem.water > 0.02;
     if (flowing) {
       const amount = this.cauldron.drain(ctx, 0.9 * this.open * dt);
       if (amount > 0) {
-        const p = new THREE.Vector3(this.spout.x + 0.1, this.spout.y - 0.05, this.spout.z);
+        const sp = this.object.position;
+        const p = new THREE.Vector3(sp.x + 0.1, sp.y - 0.05, sp.z);
         ctx.vfx.rate('drain', 40 * this.open, dt, () => ctx.vfx.drip(p, this.cauldron.color, { x: 0.2, y: 0, z: 0 }));
       }
     }
     ctx.audio.loop('drain', pourLoop)?.set(flowing ? this.open * 0.7 : 0);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Hoist: a jib crane with a crank wheel that lifts the cauldron off the fire
+// ---------------------------------------------------------------------------
+
+/** Wheel radians per metre of lift (about 0.36 m per turn). */
+const RAD_PER_M = 17;
+
+export class CauldronHoist extends Entity {
+  readonly kind = 'hoist';
+  private readonly parts: ReturnType<typeof hoistModel>;
+  private readonly chainMat: THREE.MeshToonMaterial;
+  private readonly mainChain: THREE.Mesh;
+  private readonly bridle = new THREE.Group();
+  private readonly pulleyWorld = new THREE.Vector3();
+  private readonly wheelWorld = new THREE.Vector3();
+  private lastAngle = 0;
+  private clickAcc = 0;
+  private readonly proj = { x: 0, y: 0, visible: false };
+
+  constructor(
+    ctx: GameContext,
+    private readonly cauldron: Cauldron,
+    base: THREE.Vector3,
+  ) {
+    super();
+    const toTip = new THREE.Vector3(cauldron.center.x - base.x, 0, cauldron.center.z - base.z);
+    this.parts = hoistModel(toTip);
+    this.object.add(this.parts.group);
+    this.object.position.copy(base);
+    this.pulleyWorld.copy(this.parts.pulley).add(base);
+    this.wheelWorld.copy(this.parts.wheelCenter).add(base);
+
+    this.chainMat = new THREE.MeshToonMaterial({ map: chainLinks().clone(), alphaTest: 0.5, side: THREE.DoubleSide });
+    this.chainMat.map!.wrapT = THREE.RepeatWrapping;
+    this.chainMat.map!.needsUpdate = true;
+    // Vertical chain from the pulley down to the bridle ring (length varies).
+    this.mainChain = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 1), this.chainMat);
+    this.mainChain.geometry.translate(0, -0.5, 0);
+    this.mainChain.userData.noPick = true;
+    this.mainChain.raycast = () => {};
+    ctx.scene.add(this.mainChain);
+    // Bridle: two chains from the cauldron lugs to a ring, riding with the pot.
+    const ringY = 1.36;
+    for (const sx of [-1, 1]) {
+      const from = new THREE.Vector3(sx * 0.66, 0.6, 0);
+      const to = new THREE.Vector3(0, ringY, 0);
+      const len = from.distanceTo(to);
+      const mat = this.chainMat.clone();
+      mat.map = chainLinks().clone();
+      mat.map.wrapT = THREE.RepeatWrapping;
+      mat.map.repeat.set(1, len / 0.1);
+      mat.map.needsUpdate = true;
+      const c = new THREE.Mesh(new THREE.PlaneGeometry(0.05, len), mat);
+      c.position.copy(from).add(to).multiplyScalar(0.5);
+      c.rotation.z = Math.atan2(to.x - from.x, from.y - to.y) * -1;
+      c.raycast = () => {};
+      this.bridle.add(c);
+    }
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 4, 10), toon({ map: iron() }));
+    ring.position.y = ringY;
+    ring.raycast = () => {};
+    this.bridle.add(ring);
+    cauldron.object.add(this.bridle);
+
+    ctx.physics.createBody({ shape: { type: 'box', size: [0.16, 2.4, 0.16] }, motion: 'static', position: { x: base.x, y: base.y + 1.2, z: base.z }, group: CG.STATIC });
+  }
+
+  override cursor(): CursorKind {
+    return 'grab';
+  }
+
+  override hover(): HoverInfo {
+    const c = this.cauldron;
+    return {
+      title: t('obj.hoist'),
+      hint: t('hint.hoist'),
+      lines: [
+        { text: t('hoist.height', { cm: Math.round(c.lift * 100) }), color: '#c0cbdc', bar: c.liftRatio },
+        { text: t('hoist.heat', { p: Math.round(c.heatFactor * 100) }), color: '#f77622', bar: c.heatFactor },
+      ],
+    };
+  }
+
+  private pointerAngle(ctx: GameContext): number {
+    ctx.renderer.project(this.wheelWorld, this.proj);
+    const p = ctx.input.pointer;
+    return Math.atan2(p.y - this.proj.y, p.x - this.proj.x);
+  }
+
+  override press(ctx: GameContext): Grab {
+    this.lastAngle = this.pointerAngle(ctx);
+    const self = this;
+    ctx.audio.play('ratchet', { x: this.wheelWorld.x });
+    return {
+      entity: this,
+      cursor: 'stir',
+      hint: () => `${t('hoist.height', { cm: Math.round(self.cauldron.lift * 100) })} · ${t('hoist.heat', { p: Math.round(self.cauldron.heatFactor * 100) })}`,
+      update(c: GameContext) {
+        const a = self.pointerAngle(c);
+        // Clockwise on screen raises the pot (atan2 grows clockwise with y down).
+        const d = clamp(angleDelta(self.lastAngle, a), -0.6, 0.6);
+        self.lastAngle = a;
+        const before = self.cauldron.lift;
+        self.cauldron.setLift(before + d / RAD_PER_M);
+        const moved = self.cauldron.lift - before;
+        if (Math.abs(moved) > 0) {
+          self.clickAcc += Math.abs(moved) * RAD_PER_M;
+          if (self.clickAcc > 0.45) {
+            self.clickAcc = 0;
+            c.audio.play('ratchet', { x: self.wheelWorld.x, pitch: moved > 0 ? 1.1 : 0.9 });
+            if (Math.random() < 0.5) c.audio.play('chain', { x: self.cauldron.center.x, volume: 0.6 });
+          }
+        } else if (Math.abs(d) > 0.05 && self.clickAcc > -1) {
+          // At an end stop.
+          self.clickAcc = -1;
+          c.audio.play('woodKnock', { x: self.wheelWorld.x, volume: 0.5, pitch: 0.8 });
+        }
+      },
+      release() {
+        self.clickAcc = 0;
+      },
+    };
+  }
+
+  override update(): void {
+    const c = this.cauldron;
+    this.parts.wheel.rotation.z = -c.lift * RAD_PER_M;
+    // Main chain spans pulley → bridle ring.
+    const ringY = c.center.y + 1.36;
+    const len = Math.max(0.05, this.pulleyWorld.y - ringY);
+    this.mainChain.position.set(c.center.x, this.pulleyWorld.y, c.center.z);
+    this.mainChain.scale.set(1, len, 1);
+    this.chainMat.map!.repeat.set(1, len / 0.1);
+    this.chainMat.map!.offset.y = (c.lift * 10) % 1;
   }
 }

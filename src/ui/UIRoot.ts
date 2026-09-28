@@ -7,7 +7,7 @@ import type { GameContext, UIHooks } from '../core/GameContext';
 import type { CursorKind, HoverInfo } from '../world/Entity';
 import { cursorCSS } from './pixelArt';
 
-type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary';
+type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map';
 
 export interface Panel {
   readonly el: HTMLElement;
@@ -59,9 +59,20 @@ export class UIRoot implements UIHooks {
   private readonly proj = { x: 0, y: 0, visible: false };
   private readonly tmp = new THREE.Vector3();
 
+  /** HUD scale for small screens (1 on a typical laptop and up). */
+  uiScale = 1;
+
   constructor(root: HTMLElement, viewport: HTMLElement) {
     this.root = root;
     this.viewport = viewport;
+    const rescale = () => {
+      const w = viewport.clientWidth || window.innerWidth;
+      const hgt = viewport.clientHeight || window.innerHeight;
+      this.uiScale = Math.round(Math.max(0.62, Math.min(1, w / 1100, hgt / 680)) * 100) / 100;
+      root.style.setProperty('--ui-scale', String(this.uiScale));
+    };
+    rescale();
+    window.addEventListener('resize', rescale);
     this.tip = h('div', 'wb-tooltip wb-frame-dark');
     this.tip.style.display = 'none';
     root.appendChild(this.tip);
@@ -171,7 +182,7 @@ export class UIRoot implements UIHooks {
     let py = y + 18;
     if (px + r.width > vw - 8) px = x - r.width - 14;
     if (py + r.height > vh - 8) py = vh - r.height - 8;
-    this.tip.style.transform = `translate(${Math.max(4, px)}px, ${Math.max(4, py)}px)`;
+    this.tip.style.transform = `translate(${Math.max(4, px)}px, ${Math.max(4, py)}px) scale(${this.uiScale})`;
   }
 
   setHint(text: string | null): void {
@@ -240,7 +251,7 @@ export class UIRoot implements UIHooks {
       this.tmp.y += b.offsetY;
       ctx.renderer.project(this.tmp, this.proj);
       b.el.style.display = this.proj.visible ? 'block' : 'none';
-      b.el.style.transform = `translate(${Math.round(this.proj.x)}px, ${Math.round(this.proj.y)}px) translate(-50%, -100%)`;
+      b.el.style.transform = `translate(${Math.round(this.proj.x)}px, ${Math.round(this.proj.y)}px) scale(${this.uiScale}) translate(-50%, -100%)`;
       b.el.style.opacity = b.life < 0.4 ? String(b.life / 0.4) : '1';
     }
     for (let i = this.floaters.length - 1; i >= 0; i--) {
@@ -248,7 +259,7 @@ export class UIRoot implements UIHooks {
       f.life -= dt;
       f.world.y += dt * 0.45;
       ctx.renderer.project(f.world, this.proj);
-      f.el.style.transform = `translate(${Math.round(this.proj.x)}px, ${Math.round(this.proj.y)}px) translate(-50%, -50%)`;
+      f.el.style.transform = `translate(${Math.round(this.proj.x)}px, ${Math.round(this.proj.y)}px) scale(${this.uiScale}) translate(-50%, -50%)`;
       f.el.style.opacity = String(Math.min(1, f.life / 0.5));
       if (f.life <= 0) {
         f.el.remove();

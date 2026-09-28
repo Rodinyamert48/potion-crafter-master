@@ -98,6 +98,7 @@ export class HUD {
     mk('book', t('hud.book'), 'B', () => ui.togglePanel('book'));
     mk('bag', t('hud.inventory'), 'I', () => ui.togglePanel('inventory'));
     mk('scroll', t('hud.catalog'), 'C', () => ui.togglePanel('catalog'));
+    mk('map', t('hud.map'), 'M', () => ui.togglePanel('map'));
     mk('gear', t('hud.menu'), 'Esc', () => ui.togglePanel('menu'));
     this.el.appendChild(this.buttons);
 

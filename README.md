@@ -36,7 +36,8 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 | `WASD` / oklar, sağ/orta tık sürükle | Kamerayı kaydır |
 | Tekerlek · `Q`/`E` | Yakınlaştır · kamerayı döndür |
 | `1`–`5` | Kamera: dükkân, kazan, masa, raflar, tezgâh |
-| `B` · `C` · `I` · `H` · `Esc` | İksir kitabı · katalog · envanter · yardım · menü |
+| Vincin krank kolunu daire çizerek çevir | Kazanı ateşten kaldır / indir |
+| `B` · `C` · `I` · `M` · `H` · `Esc` | İksir kitabı · katalog · envanter · keşif haritası · yardım · menü |
 
 Dokunmatik ekranda tek parmak sürükler, iki parmak yakınlaştırır/kaydırır.
 
@@ -48,7 +49,9 @@ Dokunmatik ekranda tek parmak sürükler, iki parmak yakınlaştırır/kaydırı
 - **Kazan:** gerçek zamanlı sıcaklık (Soğuk 0–30 · Ilık 30–70 · Sıcak 70–100 ·
   Kaynıyor 100–130 · Tehlike 130+), su seviyesi, çözünen malzeme parçaları
   (yüzen/batan fizik cisimleri), köpük, renk, buhar, ışık ve ses. Ateş odun
-  ve körükle, hava kapağıyla ayarlanır; su dökmek soğutur, musluk boşaltır.
+  ve körükle, hava kapağıyla ayarlanır; ocağın arkasındaki vinçle kazan
+  zincirle ateşten kaldırılır (yükseldikçe ısı azalır), su dökmek soğutur,
+  musluk boşaltır.
 - **Karıştırma:** yavaş = kararlı, hızlı = güçlü, çok hızlı = kararsız.
 - **Tepkimeler veriye dayalıdır:** malzeme, miktar, sıra, sıcaklık, karıştırma,
   hazırlık yöntemi ve süre sonucu belirler. Örn. *Ejderha pulu + mantar + yüksek
@@ -60,6 +63,14 @@ Dokunmatik ekranda tek parmak sürükler, iki parmak yakınlaştırır/kaydırı
   Grumbold, Vampir Vlador ve köylüler; her birinin kişiliği, sabrı, bütçesi,
   isteği, repliği ve sesi var. Kapıdan girer, sıraya geçer, sipariş verir,
   bekler, içer, tepki verir, öder (paralar tezgâha düşer) ve gider.
+- **Toplama bölgeleri:** duvardaki keşif haritasından Fısıldayan Orman,
+  Yankı Mağarası, Bulanık Bataklık veya Ejderha Vadisi'ne gidilir. Her bölgenin
+  kendi piksel sahnesi, malzemeleri ve tuzakları var: yürürken beliren
+  malzemelere tıkla, zehirli mantar, kurt gözü, sülük, kor gibi tehlikelere
+  dokunma (dokunursan sepetten bir şey düşer). Gezi saatler sürer; bu sırada
+  dükkân kapalıdır, gelen müşteriler kaçar. Ay Çiçeği gece ormanda, Buz
+  Kristali mağarada, Bataklık Kurbağası Gözü yalnızca bataklıkta, Anka Tüyü
+  nadiren vadide bulunur. Bölgeler gün ve itibarla açılır.
 - **Gün döngüsü:** sabah/öğle/akşam/gece; Ay Çiçeği yalnızca geceleri açar.
   Gece tabelayla dükkânı kapat, gün özetini gör.
 - **Keşif:** bilinmeyen iksirler kitapta `???` olarak durur; ilk kez
@@ -129,7 +140,7 @@ geometri/materyaller, kademeli gölge haritası güncellemesi ve düşük
 çözünürlüklü render. Ayarlardan kalite (düşük/orta/yüksek), piksel boyutu
 ve retro palet seçilebilir.
 
-## Henüz yapılmayanlar
+## Genişletme fikirleri
 
-- Dükkân dışındaki toplama bölgeleri (orman, mağara, ejderha vadisi, bataklık)
-- Kazanı kaldırma vinci
+- Toplama bölgelerine yeni malzemeler ve bölgeye özel görevler
+- Sepet / fener gibi toplama ekipmanı geliştirmeleri

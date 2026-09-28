@@ -30,7 +30,7 @@ export interface UIHooks {
   removeBubble(id: number): void;
   /** Floating text (e.g. +12 gold) at a world position. */
   floatText(world: THREE.Vector3, text: string, color?: string): void;
-  openPanel(panel: 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | null): void;
+  openPanel(panel: 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | null): void;
   readonly panelOpen: boolean;
 }
 

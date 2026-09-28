@@ -133,8 +133,8 @@ export class Tutorial implements GameSystem {
       {
         id: 'heat',
         text: {
-          en: "Keep it warm – the thermometer shows the heat. She wants it STRONG: once the brew is hot, some alchemists add a Dragon Scale… but never let the mushroom boil above 95°C without it!",
-          tr: 'Sıcak tut – termometre ısıyı gösterir. GÜÇLÜ istiyor: iksir ısınınca bazı simyacılar bir Ejderha Pulu ekler… ama mantarı onsuz asla 95°C üstünde kaynatma!',
+          en: "Keep it warm – the thermometer shows the heat. She wants it STRONG: once the brew is hot, some alchemists add a Dragon Scale… but never let the mushroom boil above 95°C without it! Too hot? Turn the winch to lift the pot off the fire.",
+          tr: 'Sıcak tut – termometre ısıyı gösterir. GÜÇLÜ istiyor: iksir ısınınca bazı simyacılar bir Ejderha Pulu ekler… ama mantarı onsuz asla 95°C üstünde kaynatma! Çok mu ısındı? Vinci çevirip kazanı ateşten kaldır.',
         },
         target: () => shop.cauldron.surfacePoint().add(new THREE.Vector3(0.55, 0.7, 0.35)),
         done: (c) => c.shop.cauldron.chem.temperature >= 45 && c.shop.cauldron.chem.essences.healing > 0.8,

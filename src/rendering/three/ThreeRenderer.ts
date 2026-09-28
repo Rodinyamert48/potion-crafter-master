@@ -94,8 +94,7 @@ export class ThreeRenderer {
     this.canvas.style.width = `${w}px`;
     this.canvas.style.height = `${h}px`;
     this.pipeline.setSize(this.lowWidth, this.lowHeight);
-    this.rig.camera.aspect = w / h;
-    this.rig.camera.updateProjectionMatrix();
+    this.rig.setAspect(w / h);
   }
 
   /** Project a world position to CSS pixel coordinates of the viewport. */

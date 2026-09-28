@@ -58,7 +58,7 @@ import { createSkyMaterial } from '../rendering/three/shaders/SkyMaterial';
 import { CG } from '../physics/PhysicsTypes';
 import { Hearth } from '../gameplay/potion/Hearth';
 import { Cauldron } from '../gameplay/potion/Cauldron';
-import { DrainTap, Ladle } from '../gameplay/stations/CauldronTools';
+import { DrainTap, Ladle, CauldronHoist } from '../gameplay/stations/CauldronTools';
 import { Bellows, Damper } from '../gameplay/stations/FireControls';
 import { CuttingBoard, DryingRack, Hammer, Knife, Mortar } from '../gameplay/stations/PrepStations';
 import { Bucket, WaterBarrel } from '../gameplay/stations/Water';
@@ -259,6 +259,7 @@ export function buildShop(ctx: GameContext): Shop {
   const cauldron = world.add(new Cauldron(ctx, V(0, 0.28, -0.9), hearth), ctx);
   const ladle = world.add(new Ladle(ctx, cauldron), ctx);
   const tap = world.add(new DrainTap(ctx, cauldron, V(0.66, 0.5, -0.9)), ctx);
+  const hoist = world.add(new CauldronHoist(ctx, cauldron, V(0.95, 0, -1.72)), ctx);
   const bellows = world.add(new Bellows(ctx, V(-1.12, 0.14, -0.72), Math.PI, hearth), ctx);
   staticBox(V(-1.3, 0.07, -0.72), [0.5, 0.14, 0.3]);
   add(mesh(new THREE.BoxGeometry(0.5, 0.14, 0.3), toon({ map: woodPlank('dark') })), -1.3, 0.07, -0.72);
@@ -328,8 +329,9 @@ export function buildShop(ctx: GameContext): Shop {
     world.addSurface(b, { tag: 'shelf' });
   }
   const lockedJars: Array<[string, number]> = [
-    ['moon_flower', -4.3],
-    ['frost_crystal', -3.55],
+    ['moon_flower', -4.35],
+    ['bog_toad_eye', -3.93],
+    ['frost_crystal', -3.5],
     ['phoenix_feather', -2.8],
   ];
   for (const [id, x] of lockedJars) {
@@ -551,10 +553,22 @@ export function buildShop(ctx: GameContext): Shop {
   const broom = broomModel();
   add(broom, -4.85, 0, 0.1);
   broom.rotation.z = -0.22;
+  // The expedition map: click it to plan a gathering trip.
   const map = wallMap();
-  map.position.set(leftX + 0.17, 1.9, -1.3);
   map.rotation.y = Math.PI / 2;
-  scene.add(map);
+  world.add(
+    new ClickFixture(
+      'map',
+      map,
+      V(leftX + 0.17, 1.9, -1.3),
+      () => ({ title: t('obj.map'), hint: t('hint.map') }),
+      (c) => {
+        c.audio.play('pageFlip', {});
+        c.ui.openPanel('map');
+      },
+    ),
+    ctx,
+  );
   const plant1 = pottedPlant('#3e8948');
   add(plant1, -1.95, win.y0, wallZ + 0.22);
   const plant2 = pottedPlant('#63c74d', '#733e39');
@@ -634,6 +648,7 @@ export function buildShop(ctx: GameContext): Shop {
     cauldron,
     hearth,
     ladle,
+    hoist,
     tap,
     bellows,
     damper,
@@ -653,7 +668,7 @@ export function buildShop(ctx: GameContext): Shop {
       cauldron: { focus: [-0.45, 0.85, -0.75], distance: 6.6, yaw: 0.05 },
       table: { focus: [-3.1, 0.9, 0.55], distance: 4.8, yaw: 0.12 },
       counter: { focus: [3.3, 1.0, 0.2], distance: 5.4, yaw: -0.1 },
-      shelves: { focus: [-3.2, 1.1, -2.7], distance: 5.4, yaw: 0.1 },
+      shelves: { focus: [-3.3, 1.35, -2.8], distance: 5.9, yaw: 0.1 },
     },
     upgradeProps,
     sky,

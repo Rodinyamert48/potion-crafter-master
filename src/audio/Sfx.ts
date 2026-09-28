@@ -393,6 +393,15 @@ export const SFX = {
     a.noiseBurst('white', t, 0.02, out, 0.15 * v, { type: 'bandpass', freq: 3000 * p, q: 4 });
     a.osc('triangle', 520 * p, t, 0.05, out, 0.08 * v, 0.001, 300);
   },
+  ratchet: (a, o) => {
+    const { t, out, v, p } = start(a, o, 0.15);
+    a.noiseBurst('white', t, 0.012, out, 0.13 * v, { type: 'highpass', freq: 2600 * p, q: 1 });
+    a.osc('square', 1500 * p, t, 0.018, out, 0.035 * v, 0.001, 900 * p);
+  },
+  chain: (a, o) => {
+    const { t, out, v, p } = start(a, o, 0.25);
+    for (let i = 0; i < 4; i++) a.noiseBurst('white', t + i * r(0.025, 0.05), 0.014, out, 0.06 * v, { type: 'bandpass', freq: r(2600, 4300) * p, q: 3 });
+  },
   squeak: (a, o) => {
     const { t, out, v, p } = start(a, o, 0.1);
     a.osc('sine', 1200 * p, t, 0.1, out, 0.05 * v, 0.01, 1800 * p);

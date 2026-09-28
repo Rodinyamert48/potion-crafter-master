@@ -11,6 +11,8 @@ import { Tutorial } from './gameplay/tutorial/Tutorial';
 import { Atmosphere } from './gameplay/Atmosphere';
 import { ShopSystem } from './gameplay/shop/ShopSystem';
 import { Discovery } from './gameplay/potion/Discovery';
+import { Expedition } from './gameplay/gathering/Expedition';
+import { MapPanel } from './ui/MapPanel';
 import { SaveSystem } from './save/SaveSystem';
 import { HUD } from './ui/HUD';
 import { BookPanel } from './ui/BookPanel';
@@ -31,6 +33,7 @@ export class App {
   readonly shopSystem: ShopSystem;
   readonly save: SaveSystem;
   readonly mentor: Mentor;
+  readonly expedition: Expedition;
   readonly hud: HUD;
   readonly title: TitleScreen;
   private readonly menu: MenuPanel;
@@ -44,6 +47,7 @@ export class App {
     this.day = new DayCycle(ctx);
     this.quests = new QuestSystem(ctx, this.customers);
     this.shopSystem = new ShopSystem(ctx);
+    this.expedition = new Expedition(ctx, this.customers);
     new Discovery(ctx);
     this.save = new SaveSystem(ctx, this.customers);
     this.mentor = ctx.world.add(new Mentor(ctx, ctx.shop.anchors.mentorSeat), ctx);
@@ -60,6 +64,7 @@ export class App {
     ui.registerPanel('book', new BookPanel(ctx));
     ui.registerPanel('catalog', new CatalogPanel(ctx, this.shopSystem));
     ui.registerPanel('inventory', new InventoryPanel(ctx));
+    ui.registerPanel('map', new MapPanel(ctx, this.expedition));
     this.menu = new MenuPanel(ctx, {
       save: () => this.save.save(),
       quit: () => this.quitToTitle(),
@@ -183,6 +188,7 @@ export class App {
     if (code === 'KeyB') ui.togglePanel('book');
     if (code === 'KeyC') ui.togglePanel('catalog');
     if (code === 'KeyI') ui.togglePanel('inventory');
+    if (code === 'KeyM') ui.togglePanel('map');
     if (code === 'KeyH') {
       this.menu.fromTitle = false;
       ui.openPanel('menu');

@@ -4,7 +4,7 @@
 import type * as THREE from 'three';
 import type { Cauldron } from '../gameplay/potion/Cauldron';
 import type { Hearth } from '../gameplay/potion/Hearth';
-import type { Ladle, DrainTap } from '../gameplay/stations/CauldronTools';
+import type { Ladle, DrainTap, CauldronHoist } from '../gameplay/stations/CauldronTools';
 import type { Bellows, Damper } from '../gameplay/stations/FireControls';
 import type { CuttingBoard, DryingRack, Mortar, Knife, Hammer } from '../gameplay/stations/PrepStations';
 import type { Bucket, WaterBarrel } from '../gameplay/stations/Water';
@@ -28,6 +28,7 @@ export interface Shop {
   cauldron: Cauldron;
   hearth: Hearth;
   ladle: Ladle;
+  hoist: CauldronHoist;
   tap: DrainTap;
   bellows: Bellows;
   damper: Damper;

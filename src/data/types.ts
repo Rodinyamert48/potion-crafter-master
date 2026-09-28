@@ -126,6 +126,8 @@ export interface IngredientDef {
   dryRange: [number, number];
   availability?: { phases?: DayPhase[] };
   startUnlocked: boolean;
+  /** False for ingredients that can only be gathered, never bought. */
+  sold?: boolean;
 }
 
 // ---------------------------------------------------------------------------

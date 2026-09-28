@@ -412,7 +412,9 @@ export class CustomerSystem implements GameSystem {
     // Spawn scheduled visits (max 3 customers inside at once).
     const inside = this.customers.filter((c) => c.phase !== 'gone').length;
     const next = this.pendingVisits[0];
-    if (next && ctx.state.hour >= next.hour && inside < 3 && (ctx.state.shopOpen || next.quest)) {
+    // Quest givers squeeze in even when the shop is busy.
+    const limit = next?.quest ? 4 : 3;
+    if (next && ctx.state.hour >= next.hour && inside < limit && (ctx.state.shopOpen || next.quest)) {
       next.spawned = true;
       this.spawn(next);
     }

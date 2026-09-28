@@ -483,3 +483,88 @@ export function signModel(): { group: THREE.Group; board: THREE.Mesh } {
   }
   return { group: g, board };
 }
+
+export interface HoistParts {
+  group: THREE.Group;
+  /** Crank wheel (rotates around its local z axis, facing the viewer). */
+  wheel: THREE.Group;
+  /** Pulley position at the tip of the jib, relative to the group. */
+  pulley: THREE.Vector3;
+  /** Crank wheel centre relative to the group. */
+  wheelCenter: THREE.Vector3;
+}
+
+/**
+ * Jib crane for the cauldron: a timber post behind the hearth, an arm reaching
+ * over the cauldron with a pulley at its tip and a spoked crank wheel on the
+ * post. `toTip` is the horizontal offset from the post to the pulley.
+ */
+export function hoistModel(toTip: THREE.Vector3, height = 2.42): HoistParts {
+  const g = new THREE.Group();
+  const beam = toon({ map: woodBeam() });
+  const ironMat = toon({ map: iron() });
+  const post = mesh(box(0.15, height, 0.15), beam);
+  post.position.y = height / 2;
+  g.add(post);
+  const foot = mesh(box(0.34, 0.12, 0.34), toon({ map: hearthStone() }));
+  foot.position.y = 0.06;
+  g.add(foot);
+  // Arm
+  const len = Math.hypot(toTip.x, toTip.z) + 0.12;
+  const yaw = Math.atan2(toTip.x, toTip.z);
+  const arm = new THREE.Group();
+  arm.position.y = height - 0.1;
+  arm.rotation.y = yaw;
+  g.add(arm);
+  const armBeam = mesh(box(0.12, 0.12, len), beam);
+  armBeam.position.z = len / 2 - 0.06;
+  arm.add(armBeam);
+  const brace = mesh(box(0.08, 0.08, 0.78), beam);
+  brace.position.set(0, -0.28, 0.27);
+  brace.rotation.x = Math.PI / 4;
+  arm.add(brace);
+  for (const z of [0.05, len - 0.2]) {
+    const band = mesh(box(0.14, 0.03, 0.05), ironMat);
+    band.position.set(0, 0, z);
+    arm.add(band);
+  }
+  // Pulley at the tip
+  const pulley = new THREE.Vector3(toTip.x, height - 0.2, toTip.z);
+  const sheave = mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.04, 10), ironMat);
+  sheave.rotation.z = Math.PI / 2;
+  sheave.rotation.y = yaw;
+  sheave.position.copy(pulley);
+  g.add(sheave);
+  const hook = mesh(box(0.03, 0.12, 0.03), ironMat);
+  hook.position.set(pulley.x, pulley.y + 0.08, pulley.z);
+  g.add(hook);
+  // Crank wheel on the post, facing the room
+  const wheelCenter = new THREE.Vector3(0, 1.18, 0.13);
+  const wheel = new THREE.Group();
+  wheel.position.copy(wheelCenter);
+  g.add(wheel);
+  const rim = mesh(new THREE.TorusGeometry(0.2, 0.022, 4, 16), toon({ map: woodPlank('dark') }));
+  wheel.add(rim);
+  for (let i = 0; i < 4; i++) {
+    const spoke = mesh(box(0.028, 0.4, 0.02), toon({ map: woodPlank('dark') }));
+    spoke.rotation.z = (i / 4) * Math.PI;
+    wheel.add(spoke);
+  }
+  const hub = mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.06, 8), ironMat);
+  hub.rotation.x = Math.PI / 2;
+  wheel.add(hub);
+  const knob = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 6), toon({ color: '#a22633' }));
+  knob.rotation.x = Math.PI / 2;
+  knob.position.set(0.2, 0, 0.06);
+  wheel.add(knob);
+  // Drum + pawl behind the wheel
+  const drum = mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.12, 8), ironMat);
+  drum.rotation.x = Math.PI / 2;
+  drum.position.set(0, 1.18, 0.05);
+  g.add(drum);
+  const pawl = mesh(box(0.03, 0.1, 0.02), ironMat);
+  pawl.position.set(0.1, 1.42, 0.1);
+  pawl.rotation.z = 0.5;
+  g.add(pawl);
+  return { group: g, wheel, pulley, wheelCenter };
+}
