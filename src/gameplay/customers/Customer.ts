@@ -58,6 +58,7 @@ export class Customer extends Entity {
   private lastHit = -10;
   private readonly kin: BodyHandle;
   private readonly tmpQ = new THREE.Quaternion();
+  private readonly tmpP = new THREE.Vector3();
   impatientSaid = false;
   /** Tutorial customers wait forever. */
   infinitePatience = false;
@@ -196,8 +197,16 @@ export class Customer extends Entity {
 
     this.sprite.root.scale.setScalar(this.scaleMul);
     this.sprite.update(dt, ctx.renderer.rig.camera);
+  }
+
+  override fixedUpdate(): void {
+    // Kinematic targets are consumed by the very next physics step, so they
+    // must be set every step (not every frame) or the capsule overshoots
+    // and keeps sliding. Big jumps teleport instead of sweeping the room.
     this.tmpQ.identity();
-    this.kin.setKinematicTarget(this.object.position, this.tmpQ);
+    const b = this.kin.getPosition(this.tmpP);
+    if (b.distanceToSquared(this.object.position) > 0.5 * 0.5) this.kin.teleport(this.object.position, this.tmpQ);
+    else this.kin.setKinematicTarget(this.object.position, this.tmpQ);
   }
 
   override onImpact(ctx: GameContext, other: Entity | null, impulse: number): void {

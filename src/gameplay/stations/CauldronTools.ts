@@ -40,6 +40,7 @@ export class Ladle extends Entity {
   private readonly bowlBody: BodyHandle;
   private readonly tmpQ = new THREE.Quaternion();
   private readonly tmpP = new THREE.Vector3();
+  private readonly tmpBowl = new THREE.Vector3();
   private lastPointerAngle = 0;
   private ringAlpha = 0;
 
@@ -121,6 +122,11 @@ export class Ladle extends Entity {
     };
   }
 
+  override fixedUpdate(): void {
+    // The bowl collider follows the ladle every physics step.
+    this.bowlBody.setKinematicTarget(this.bowlPos(this.tmpBowl), this.object.quaternion);
+  }
+
   override update(ctx: GameContext, dt: number): void {
     if (!this.grabbing) {
       this.angularSpeed *= Math.exp(-2.2 * dt);
@@ -137,7 +143,6 @@ export class Ladle extends Entity {
     const tangent = new THREE.Vector3().crossVectors(UP, outward);
     this.tmpQ.setFromAxisAngle(tangent, -0.42);
     this.object.quaternion.copy(this.tmpQ);
-    this.bowlBody.setKinematicTarget(bowl, this.tmpQ);
 
     this.ring.position.set(this.cauldron.center.x, this.cauldron.rimY + 0.02, this.cauldron.center.z);
     const z = stirZone(this.cauldron.stirSpeed);
