@@ -1,0 +1,379 @@
+// Pointer interaction: hover picking with highlight + tooltip, press/drag
+// handlers ("grabs"), and the physics grab that carries items around by
+// steering their Havok bodies with velocities (so held items still collide,
+// push things and can be thrown).
+
+import * as THREE from 'three';
+import type { GameContext } from '../core/GameContext';
+import type { CursorKind, Entity } from './Entity';
+import type { SurfaceInfo } from './World';
+import { clamp } from '../core/math';
+
+export interface Grab {
+  readonly entity: Entity;
+  update(ctx: GameContext, dt: number): void;
+  fixedUpdate?(ctx: GameContext, dt: number): void;
+  release(ctx: GameContext): void;
+  cursor?: CursorKind;
+  hint?(ctx: GameContext): string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Hover highlight: screen-space extruded back-face hull
+// ---------------------------------------------------------------------------
+
+const HULL_VERT = /* glsl */ `
+  uniform float uWidth;
+  uniform vec2 uResolution;
+  void main() {
+    vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec3 n = normalize(normalMatrix * normal);
+    vec2 dir = length(n.xy) > 0.0001 ? normalize(n.xy) : vec2(0.0);
+    clip.xy += dir * uWidth * 2.0 * clip.w / uResolution;
+    gl_Position = clip;
+  }
+`;
+const HULL_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  void main() { gl_FragColor = vec4(uColor, 1.0); }
+`;
+
+export class Highlighter {
+  private readonly material: THREE.ShaderMaterial;
+  private hulls: THREE.Mesh[] = [];
+  private current: Entity | null = null;
+
+  constructor() {
+    this.material = new THREE.ShaderMaterial({
+      vertexShader: HULL_VERT,
+      fragmentShader: HULL_FRAG,
+      uniforms: {
+        uWidth: { value: 1.0 },
+        uResolution: { value: new THREE.Vector2(960, 540) },
+        uColor: { value: new THREE.Color('#fee761') },
+      },
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+  }
+
+  setResolution(w: number, h: number): void {
+    (this.material.uniforms.uResolution.value as THREE.Vector2).set(w, h);
+  }
+
+  set(e: Entity | null, color = '#fee761'): void {
+    (this.material.uniforms.uColor.value as THREE.Color).set(color);
+    if (e === this.current) return;
+    for (const h of this.hulls) h.removeFromParent();
+    this.hulls = [];
+    this.current = e;
+    if (!e) return;
+    e.object.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || !m.visible || m.userData.noHighlight || (m as unknown as THREE.Points).isPoints) return;
+      const hull = new THREE.Mesh(m.geometry, this.material);
+      hull.renderOrder = -1;
+      hull.userData.noHighlight = true;
+      hull.raycast = () => {};
+      m.add(hull);
+      this.hulls.push(hull);
+    });
+  }
+
+  get target(): Entity | null {
+    return this.current;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Physics grab
+// ---------------------------------------------------------------------------
+
+const tmpV = new THREE.Vector3();
+const tmpV2 = new THREE.Vector3();
+const tmpQ = new THREE.Quaternion();
+const tmpQ2 = new THREE.Quaternion();
+const UP = new THREE.Vector3(0, 1, 0);
+
+export class PhysicsGrab implements Grab {
+  readonly target = new THREE.Vector3();
+  readonly surfacePoint = new THREE.Vector3();
+  surfaceTag: string | null = null;
+  surfaceObject: THREE.Object3D | null = null;
+  /** 0 upright … 1 fully tilted (pouring). */
+  tilt = 0;
+  yaw = 0;
+  /** Entities may lower/raise their hold (dipping, tools). */
+  heightOffset = 0;
+  hoverHeight = 0.24;
+  /** Override: when set, the item flies to this point instead. */
+  overrideTarget: THREE.Vector3 | null = null;
+  /** Stiffness multiplier for tools that must track the cursor tightly. */
+  stiffness = 1;
+  cursor: CursorKind = 'grabbing';
+  private readonly vel = new THREE.Vector3();
+  private readonly ang = new THREE.Vector3();
+  private readonly lastTarget = new THREE.Vector3();
+  private released = false;
+
+  constructor(
+    readonly entity: Entity,
+    ctx: GameContext,
+  ) {
+    const b = entity.body!;
+    b.getPosition(this.target);
+    this.lastTarget.copy(this.target);
+    b.setGravityFactor(0);
+    b.setDamping(3, 5);
+    const q = b.getRotation(new THREE.Quaternion());
+    const e = new THREE.Euler().setFromQuaternion(q, 'YXZ');
+    this.yaw = e.y;
+    entity.held = true;
+    entity.onPicked(ctx);
+  }
+
+  hint(ctx: GameContext): string | null {
+    return ctx.interaction.heldHint(this.entity);
+  }
+
+  update(ctx: GameContext, dt: number): void {
+    const ia = ctx.interaction;
+    // Rotation with Q/E or wheel while holding.
+    if (ctx.input.isDown('KeyQ')) this.yaw += dt * 2.5;
+    if (ctx.input.isDown('KeyE')) this.yaw -= dt * 2.5;
+    if (ctx.input.wheel !== 0) this.yaw -= ctx.input.wheel * 0.004;
+
+    const hit = ia.surfaceUnderPointer(this.entity);
+    if (hit) {
+      const info = hit.object.userData.surface as SurfaceInfo;
+      this.surfaceTag = info.tag ?? null;
+      this.surfaceObject = hit.object;
+      this.surfacePoint.copy(hit.point);
+      const h = this.hoverHeight + (info.hover ?? 0) + this.entity.halfHeight + this.heightOffset;
+      this.target.set(hit.point.x, hit.point.y + h, hit.point.z);
+      this.lastTarget.copy(this.target);
+    } else {
+      this.surfaceTag = null;
+      this.surfaceObject = null;
+      // Keep the current height and follow the pointer on that plane.
+      const plane = new THREE.Plane(UP, -this.lastTarget.y);
+      if (ia.ray.intersectPlane(plane, tmpV)) this.target.copy(tmpV);
+    }
+    const b = ctx.shopBounds;
+    this.target.x = clamp(this.target.x, b.minX, b.maxX);
+    this.target.z = clamp(this.target.z, b.minZ, b.maxZ);
+    this.target.y = clamp(this.target.y, 0.1, 3.0);
+
+    const tiltTarget = this.entity.tiltable && ctx.input.actionHeld ? 1 : 0;
+    this.tilt += (tiltTarget - this.tilt) * Math.min(1, dt * 6);
+
+    this.entity.onHeld(ctx, dt);
+  }
+
+  fixedUpdate(ctx: GameContext, _dt: number): void {
+    const body = this.entity.body;
+    if (!body || !body.alive || this.released) return;
+    const goal = this.overrideTarget ?? this.target;
+    const pos = body.getPosition(tmpV);
+    const k = 14 * this.stiffness;
+    this.vel.subVectors(goal, pos).multiplyScalar(k);
+    // Rise before travelling and travel before descending, so carried things
+    // clear cauldron rims, barrel staves and table edges instead of snagging.
+    const dy = goal.y - pos.y;
+    const horiz = Math.hypot(goal.x - pos.x, goal.z - pos.z);
+    if (dy > 0.08) {
+      const s = clamp(1 - (dy - 0.08) / 0.35, 0.25, 1);
+      this.vel.x *= s;
+      this.vel.z *= s;
+    } else if (dy < -0.08 && horiz > 0.12) {
+      this.vel.y *= clamp(1 - (horiz - 0.12) / 0.3, 0.1, 1);
+    }
+    const max = 7 * Math.max(1, this.stiffness * 0.8);
+    if (this.vel.length() > max) this.vel.setLength(max);
+    body.getLinearVelocity(tmpV2);
+    tmpV2.lerp(this.vel, 0.65);
+    body.setLinearVelocity(tmpV2);
+
+    if (this.entity.upright) {
+      // Target orientation: yaw, then tilt around the camera's viewing axis so
+      // pouring reads clearly on screen.
+      tmpQ.setFromAxisAngle(UP, this.yaw);
+      if (this.tilt > 0.001) {
+        const fwd = ctx.interaction.viewAxis;
+        tmpQ2.setFromAxisAngle(fwd, -this.tilt * 1.95);
+        tmpQ.premultiply(tmpQ2);
+      }
+      const cur = body.getRotation(tmpQ2);
+      const err = tmpQ.clone().multiply(cur.clone().invert());
+      if (err.w < 0) err.set(-err.x, -err.y, -err.z, -err.w);
+      const angle = 2 * Math.acos(clamp(err.w, -1, 1));
+      const s = Math.sqrt(1 - err.w * err.w);
+      if (s > 1e-4) this.ang.set(err.x / s, err.y / s, err.z / s).multiplyScalar(angle * 12);
+      else this.ang.set(0, 0, 0);
+      if (this.ang.length() > 16) this.ang.setLength(16);
+      body.setAngularVelocity(this.ang);
+    }
+  }
+
+  release(ctx: GameContext): void {
+    if (this.released) return;
+    this.released = true;
+    const body = this.entity.body;
+    this.entity.held = false;
+    if (body && body.alive) {
+      body.setGravityFactor(1);
+      body.setDamping(0.05, 0.1);
+      body.getLinearVelocity(tmpV);
+      if (tmpV.length() > 5.5) {
+        tmpV.setLength(5.5);
+        body.setLinearVelocity(tmpV);
+      }
+    }
+    this.entity.onReleased(ctx);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Interaction manager
+// ---------------------------------------------------------------------------
+
+export class Interaction {
+  readonly raycaster = new THREE.Raycaster();
+  readonly ray = new THREE.Ray();
+  hovered: Entity | null = null;
+  hoverHit: THREE.Intersection | null = null;
+  grab: Grab | null = null;
+  readonly highlighter = new Highlighter();
+  /** Horizontal viewing axis (into the screen) for tilting held containers. */
+  readonly viewAxis = new THREE.Vector3(0, 0, -1);
+  /** Disable while menus are open. */
+  enabled = true;
+  private heldHints = new Map<string, (e: Entity, ctx: GameContext) => string | null>();
+
+  constructor(private readonly ctx: GameContext) {
+    ctx.input.onPointerDown((button) => this.pointerDown(button));
+    ctx.input.onPointerUp((button) => this.pointerUp(button));
+  }
+
+  registerHeldHint(kind: string, fn: (e: Entity, ctx: GameContext) => string | null): void {
+    this.heldHints.set(kind, fn);
+  }
+
+  heldHint(e: Entity): string | null {
+    return this.heldHints.get(e.kind)?.(e, this.ctx) ?? null;
+  }
+
+  startPhysicsGrab(e: Entity): PhysicsGrab {
+    return new PhysicsGrab(e, this.ctx);
+  }
+
+  /** Begin holding a freshly spawned entity (e.g. taken from a jar). */
+  beginHold(grab: Grab): void {
+    this.grab?.release(this.ctx);
+    this.grab = grab;
+    this.highlighter.set(null);
+  }
+
+  private updateRay(): void {
+    const p = this.ctx.input.pointer;
+    this.raycaster.setFromCamera(new THREE.Vector2(p.ndcX, p.ndcY), this.ctx.renderer.rig.camera);
+    this.ray.copy(this.raycaster.ray);
+    const cam = this.ctx.renderer.rig.camera;
+    cam.getWorldDirection(this.viewAxis);
+    this.viewAxis.y = 0;
+    if (this.viewAxis.lengthSq() < 1e-6) this.viewAxis.set(0, 0, -1);
+    this.viewAxis.normalize();
+  }
+
+  pick(): { entity: Entity; hit: THREE.Intersection } | null {
+    const hits = this.raycaster.intersectObjects(this.ctx.world.pickables, true);
+    for (const h of hits) {
+      if (h.object.userData.noPick) continue;
+      const e = this.ctx.world.entityFromObject(h.object);
+      if (!e || !e.interactive || !e.alive) continue;
+      if (this.grab && e === this.grab.entity) continue;
+      return { entity: e, hit: h };
+    }
+    return null;
+  }
+
+  surfaceUnderPointer(exclude: Entity | null): THREE.Intersection | null {
+    const hits = this.raycaster.intersectObjects(this.ctx.world.surfaces, false);
+    for (const h of hits) {
+      if (exclude && this.ctx.world.entityFromObject(h.object) === exclude) continue;
+      if (h.face && h.face.normal.y < -0.2 && h.object.userData.surface?.tag !== 'cauldron') continue;
+      return h;
+    }
+    return null;
+  }
+
+  private pointerDown(button: number): void {
+    if (!this.enabled || button !== 0) return;
+    this.updateRay();
+    if (this.grab) return;
+    const picked = this.pick();
+    if (!picked) return;
+    const grab = picked.entity.press(this.ctx, picked.hit);
+    if (grab) {
+      this.grab = grab;
+      this.highlighter.set(null);
+    }
+  }
+
+  private pointerUp(button: number): void {
+    if (button !== 0 || !this.grab) return;
+    const g = this.grab;
+    this.grab = null;
+    g.release(this.ctx);
+  }
+
+  cancelGrab(): void {
+    if (!this.grab) return;
+    const g = this.grab;
+    this.grab = null;
+    g.release(this.ctx);
+  }
+
+  update(dt: number): void {
+    const ctx = this.ctx;
+    this.updateRay();
+    this.highlighter.setResolution(ctx.renderer.lowWidth, ctx.renderer.lowHeight);
+    if (this.grab) {
+      if (!this.grab.entity.alive) {
+        this.cancelGrab();
+      } else {
+        this.grab.update(ctx, dt);
+        ctx.ui.setCursor(this.grab.cursor ?? 'grabbing');
+        ctx.ui.tooltip(null);
+        ctx.ui.setHint(this.grab.hint?.(ctx) ?? null);
+        return;
+      }
+    }
+    ctx.ui.setHint(null);
+    if (!this.enabled || !ctx.input.pointer.valid || !ctx.input.pointer.inside) {
+      this.setHover(null, null);
+      ctx.ui.tooltip(null);
+      ctx.ui.setCursor('default');
+      return;
+    }
+    const picked = this.pick();
+    this.setHover(picked?.entity ?? null, picked?.hit ?? null);
+    if (this.hovered) {
+      ctx.ui.setCursor(this.hovered.cursor());
+      ctx.ui.tooltip(this.hovered.hover(ctx), ctx.input.pointer.x, ctx.input.pointer.y);
+    } else {
+      ctx.ui.setCursor('default');
+      ctx.ui.tooltip(null);
+    }
+  }
+
+  fixedUpdate(dt: number): void {
+    if (this.grab?.fixedUpdate && this.grab.entity.alive) this.grab.fixedUpdate(this.ctx, dt);
+  }
+
+  private setHover(e: Entity | null, hit: THREE.Intersection | null): void {
+    this.hovered = e;
+    this.hoverHit = hit;
+    this.highlighter.set(e);
+  }
+}
