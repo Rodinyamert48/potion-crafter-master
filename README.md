@@ -137,8 +137,9 @@ Her şey `src/data` altında veri olarak tanımlıdır:
 
 Sabit zaman adımı, havuzlanmış parçacıklar (2 çizim çağrısı), paylaşılan
 geometri/materyaller, kademeli gölge haritası güncellemesi ve düşük
-çözünürlüklü render. Ayarlardan kalite (düşük/orta/yüksek), piksel boyutu
-ve retro palet seçilebilir.
+çözünürlüklü render. Varsayılan "Otomatik" kalite yüksek başlar ve kare hızı
+düşerse kendiliğinden orta/düşük seviyeye iner; ayarlardan kalite, piksel
+boyutu ve retro palet elle de seçilebilir.
 
 ## Genişletme fikirleri
 

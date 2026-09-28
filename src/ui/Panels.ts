@@ -203,7 +203,12 @@ export class MenuPanel extends BasePanel {
     slider(t('settings.music'), 'music');
     slider(t('settings.sfx'), 'sfx');
     seg(t('settings.pixel'), [['fine', t('settings.pixel.fine')], ['normal', t('settings.pixel.normal')], ['chunky', t('settings.pixel.chunky')]], s.pixel, (v) => this.actions.applySettings({ ...this.ctx.settings, pixel: v }));
-    seg(t('settings.quality'), [['low', t('settings.quality.low')], ['medium', t('settings.quality.medium')], ['high', t('settings.quality.high')]], s.quality, (v) => this.actions.applySettings({ ...this.ctx.settings, quality: v }));
+    seg<Settings['quality']>(
+      t('settings.quality'),
+      [['auto', t('settings.quality.auto')], ['low', t('settings.quality.low')], ['medium', t('settings.quality.medium')], ['high', t('settings.quality.high')]],
+      s.quality,
+      (v) => this.actions.applySettings({ ...this.ctx.settings, quality: v }),
+    );
     seg<Lang>(t('settings.language'), [['en', 'English'], ['tr', 'Türkçe']], getLang(), (v) => setLang(v));
     seg(t('settings.shake'), [['on', t('settings.on')], ['off', t('settings.off')]], s.shake ? 'on' : 'off', (v) => this.actions.applySettings({ ...this.ctx.settings, shake: v === 'on' }));
     seg(t('settings.retro'), [['on', t('settings.on')], ['off', t('settings.off')]], s.retro ? 'on' : 'off', (v) => this.actions.applySettings({ ...this.ctx.settings, retro: v === 'on' }));

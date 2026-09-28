@@ -187,6 +187,7 @@ export const STRINGS = {
   'toast.reputationUp': { en: 'Reputation +{n}', tr: 'İtibar +{n}' },
   'toast.reputationDown': { en: 'Reputation −{n}', tr: 'İtibar −{n}' },
   'toast.shopClosed': { en: 'The shop is closed for the night.', tr: 'Dükkân gece için kapandı.' },
+  'toast.quality': { en: 'Graphics lowered for smoother play:', tr: 'Daha akıcı oyun için grafik düşürüldü:' },
   'toast.newIngredient': { en: 'New ingredient available: {name}', tr: 'Yeni malzeme mevcut: {name}' },
   'toast.aspectLearned': { en: 'You learned the essence of {name}', tr: '{name} özünü öğrendin' },
 
@@ -265,6 +266,7 @@ export const STRINGS = {
   'settings.pixel.normal': { en: 'Normal', tr: 'Normal' },
   'settings.pixel.chunky': { en: 'Chunky', tr: 'Kaba' },
   'settings.quality': { en: 'Graphics', tr: 'Grafik' },
+  'settings.quality.auto': { en: 'Auto', tr: 'Otomatik' },
   'settings.quality.low': { en: 'Low', tr: 'Düşük' },
   'settings.quality.medium': { en: 'Medium', tr: 'Orta' },
   'settings.quality.high': { en: 'High', tr: 'Yüksek' },

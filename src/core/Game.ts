@@ -27,6 +27,8 @@ import { buildShop, ROOM } from '../world/ShopBuilder';
 import { updateSky } from '../rendering/three/shaders/SkyMaterial';
 import { clamp } from './math';
 import { Scheduler } from './Scheduler';
+import { t } from './i18n';
+import type { Quality } from '../rendering/three/ThreeRenderer';
 
 export interface GameSystem {
   fixed?(dt: number): void;
@@ -45,6 +47,11 @@ export class Game {
   readonly scheduler = new Scheduler();
   /** False while the title screen is up. */
   playing = false;
+  /** Level chosen by the automatic quality governor ('auto' setting). */
+  private autoQuality: Quality = 'high';
+  private readonly fpsSamples: number[] = [];
+  private fpsSampleT = 0;
+  private qualityCooldown = 12;
 
   private constructor(
     readonly core: BabylonCore,
@@ -138,14 +145,40 @@ export class Game {
   applySettings(s: Settings): void {
     const ctx = this.ctx;
     ctx.settings = s;
+    const q = s.quality === 'auto' ? this.autoQuality : s.quality;
     this.renderer.setPixelPreset(s.pixel);
-    this.renderer.setQuality(s.quality);
+    this.renderer.setQuality(q);
     this.renderer.pipeline.retro = s.retro ? 1 : 0;
-    this.particles.density = s.quality === 'low' ? 0.5 : s.quality === 'medium' ? 0.8 : 1;
+    this.particles.density = q === 'low' ? 0.5 : q === 'medium' ? 0.8 : 1;
     this.babylonSim.density = this.particles.density;
     this.renderer.rig.shakeEnabled = s.shake;
     ctx.audio.setVolumes(s.master, s.music, s.sfx);
     saveSettings(s);
+  }
+
+  /** 'auto' quality: step down (high → medium → low) when the frame rate
+   *  stays low while playing in a visible tab. */
+  private governQuality(dt: number): void {
+    const ctx = this.ctx;
+    if (ctx.settings.quality !== 'auto' || !this.playing || document.visibilityState !== 'visible') {
+      this.fpsSamples.length = 0;
+      return;
+    }
+    this.qualityCooldown -= dt;
+    this.fpsSampleT += dt;
+    if (this.fpsSampleT < 1) return;
+    this.fpsSampleT = 0;
+    this.fpsSamples.push(this.loop.fps);
+    if (this.fpsSamples.length > 6) this.fpsSamples.shift();
+    if (this.qualityCooldown > 0 || this.fpsSamples.length < 6 || this.autoQuality === 'low') return;
+    const avg = this.fpsSamples.reduce((a, b) => a + b, 0) / this.fpsSamples.length;
+    if (avg < 42) {
+      this.autoQuality = this.autoQuality === 'high' ? 'medium' : 'low';
+      this.fpsSamples.length = 0;
+      this.qualityCooldown = 10;
+      this.applySettings(ctx.settings);
+      ctx.bus.emit('toast', { text: `${t('toast.quality')} ${t(`settings.quality.${this.autoQuality}`)}`, kind: 'info' });
+    }
   }
 
   private bindCameraInput(): void {
@@ -255,6 +288,7 @@ export class Game {
     const g = this.renderer.pipeline.grade;
     g.flash = Math.max(0, g.flash - dt * 2.2);
 
+    this.governQuality(dt);
     this.babylonSim.update(dt);
     this.particles.setViewport(this.renderer.lowHeight, this.renderer.rig.camera.fov);
     this.particles.update(dt);

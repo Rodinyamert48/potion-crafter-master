@@ -8,16 +8,17 @@ export interface Settings {
   music: number;
   sfx: number;
   pixel: PixelPreset;
-  quality: Quality;
+  /** 'auto' starts high and steps down if the frame rate suffers. */
+  quality: Quality | 'auto';
   shake: boolean;
   retro: boolean;
 }
 
 const KEY = 'witchs-brew:settings';
 
-function defaultQuality(): Quality {
+function defaultQuality(): Quality | 'auto' {
   const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-  return mobile ? 'low' : 'high';
+  return mobile ? 'low' : 'auto';
 }
 
 export function loadSettings(): Settings {
