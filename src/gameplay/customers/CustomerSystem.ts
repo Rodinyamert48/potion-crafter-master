@@ -125,12 +125,17 @@ export class CustomerSystem implements GameSystem {
       const slots: number[] = [];
       for (let i = 0; i < count; i++) slots.push(7.8 + ((21.3 - 7.8) * (i + this.rng.range(0.1, 0.9))) / count);
       let lastId = '';
+      const used = new Set<string>();
       for (const hour of slots) {
         const phase = phaseOf(hour);
-        const pool = eligible.filter((c) => c.phases.includes(phase) && c.id !== lastId);
+        const inPhase = eligible.filter((c) => c.phases.includes(phase) && c.id !== lastId);
+        // Prefer someone who has not been in today.
+        const fresh = inPhase.filter((c) => !used.has(c.id));
+        const pool = fresh.length > 0 ? fresh : inPhase;
         const c = this.rng.weighted(pool, (d) => (d.id === 'giant_grumbold' || d.id === 'vampire_vlador' ? 0.6 : 1));
         if (!c) continue;
         lastId = c.id;
+        used.add(c.id);
         const req = this.pickRequest(c, day, phase);
         if (req) visits.push({ hour, customerId: c.id, requestId: req.id });
       }

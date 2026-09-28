@@ -13,7 +13,7 @@ import {
   PhysicsShapeCylinder,
   PhysicsShapeSphere,
 } from '@babylonjs/core/Physics/v2/physicsShape.js';
-import { PhysicsMotionType } from '@babylonjs/core/Physics/v2/IPhysicsEnginePlugin.js';
+import { PhysicsMotionType, PhysicsPrestepType } from '@babylonjs/core/Physics/v2/IPhysicsEnginePlugin.js';
 import { BallAndSocketConstraint } from '@babylonjs/core/Physics/v2/physicsConstraint.js';
 import { PhysicsHelper } from '@babylonjs/core/Physics/physicsHelper.js';
 import { PhysicsRaycastResult } from '@babylonjs/core/Physics/physicsRaycastResult.js';
@@ -155,7 +155,11 @@ class BabylonBody implements BodyHandle {
   teleport(position: Vec3Like, rotation?: QuatLike): void {
     this.node.position.set(position.x, position.y, position.z);
     if (rotation) this.node.rotationQuaternion!.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    // Havok only accepts a direct transform while the prestep is TELEPORT;
+    // switch it on for this one write so steps never copy node transforms.
+    this.body.setPrestepType(PhysicsPrestepType.TELEPORT);
     this.plugin.setPhysicsBodyTransformation(this.body, this.node);
+    this.body.setPrestepType(PhysicsPrestepType.DISABLED);
     tmpV.set(0, 0, 0);
     if (this.motion === 'dynamic') {
       this.body.setLinearVelocity(tmpV);

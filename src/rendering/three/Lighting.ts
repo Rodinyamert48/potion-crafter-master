@@ -167,8 +167,10 @@ export class Lighting {
 
     // Hearth fire flicker
     const f = noise1(this.time * 7, 1) * 0.6 + noise1(this.time * 17, 2) * 0.4;
-    const fire = this.hearthLevel;
-    this.hearth.intensity = fire * (7 + 5 * f) * (this.chaos > 0.2 ? 0.7 + 0.6 * noise1(this.time * 25, 3) : 1);
+    // Soft knee: a roaring, over-stoked fire gets brighter but never floods the room.
+    const lvl = this.hearthLevel;
+    const fire = Math.min(lvl, 0.9) + Math.max(0, lvl - 0.9) * 0.35;
+    this.hearth.intensity = fire * (6.5 + 4.5 * f) * (this.chaos > 0.2 ? 0.7 + 0.6 * noise1(this.time * 25, 3) : 1);
     this.hearth.color.setRGB(1, 0.5 + 0.12 * f, 0.22);
 
     // Potion glow breathes softly.

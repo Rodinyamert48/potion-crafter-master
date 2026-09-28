@@ -489,15 +489,15 @@ export class DryingRack extends Entity {
         this.occupied[i] = null;
         continue;
       }
+      // Items stay on their hook until taken down – left too long next to a
+      // roaring fire, a dried wing still chars.
       const res = item.dryStep(ctx, temp, dt);
       if (res === 'dried') {
         ctx.bus.emit('toast', { text: t('toast.dried', { name: tr(item.def.name) }), kind: 'good' });
         ctx.audio.play('sparkle', { x: item.object.position.x });
-        this.occupied[i] = null;
       } else if (res === 'charred') {
         ctx.bus.emit('toast', { text: t('toast.charred', { name: tr(item.def.name) }), kind: 'bad' });
         ctx.vfx.smoke(item.object.position, '#262b44', 6, 0.8);
-        this.occupied[i] = null;
       }
     }
   }

@@ -19,6 +19,7 @@ interface SimEntry {
   sizeScale: number;
   /** One-shot systems are disposed when finished. */
   oneShot: boolean;
+  age: number;
 }
 
 function linear(hex: string, a = 1): Color4 {
@@ -43,7 +44,7 @@ export class BabylonParticleSim implements ParticleSource {
     ps.updateSpeed = 1 / 60;
     ps.emitter = new Vector3(0, 0, 0);
     ps.isLocal = false;
-    this.entries.push({ ps, shape, additive, sizeScale, oneShot });
+    this.entries.push({ ps, shape, additive, sizeScale, oneShot, age: 0 });
     return ps;
   }
 
@@ -131,7 +132,7 @@ export class BabylonParticleSim implements ParticleSource {
   explosion(x: number, y: number, z: number, power = 1, tint = '#feae34'): void {
     const origin = new Vector3(x, y, z);
     const count = Math.round(170 * power * this.density);
-    const fire = this.make('explosionFire', count + 10, Shape.SQUARE, true, true);
+    const fire = this.make('explosionFire', count + 10, Shape.CIRCLE, true, true);
     fire.emitter = origin;
     fire.createSphereEmitter(0.25 * power, 1);
     fire.minEmitPower = 1.5 * power;
@@ -149,7 +150,6 @@ export class BabylonParticleSim implements ParticleSource {
     fire.addSizeGradient(1, 0.08 * power);
     fire.addDragGradient(0, 0.85);
     fire.manualEmitCount = count;
-    fire.targetStopDuration = 0.1;
     fire.start();
 
     const smoke = this.make('explosionSmoke', 90, Shape.SOFT, false, true);
@@ -167,7 +167,6 @@ export class BabylonParticleSim implements ParticleSource {
     smoke.addSizeGradient(1, 0.75 * power);
     smoke.addDragGradient(0, 0.7);
     smoke.manualEmitCount = Math.round(60 * power * this.density);
-    smoke.targetStopDuration = 0.1;
     smoke.start();
   }
 
@@ -188,7 +187,6 @@ export class BabylonParticleSim implements ParticleSource {
     ps.addSizeGradient(0, 0.03);
     ps.addSizeGradient(1, 0.012);
     ps.manualEmitCount = Math.round(count * this.density);
-    ps.targetStopDuration = 0.05;
     ps.start();
   }
 
@@ -208,7 +206,6 @@ export class BabylonParticleSim implements ParticleSource {
     ps.addSizeGradient(0, 0.1 * power);
     ps.addSizeGradient(1, 0.03);
     ps.manualEmitCount = Math.round(80 * power * this.density);
-    ps.targetStopDuration = 0.05;
     ps.start();
   }
 
@@ -217,7 +214,10 @@ export class BabylonParticleSim implements ParticleSource {
       const e = this.entries[i];
       e.ps.updateSpeed = dt;
       e.ps.animate(true);
-      if (e.oneShot && !e.ps.isAlive() && e.ps.particles.length === 0) {
+      e.age += dt;
+      // One-shot bursts emit once (manualEmitCount) and are never "stopped";
+      // they are disposed as soon as their last particle has died.
+      if (e.oneShot && e.age > 0.05 && e.ps.particles.length === 0) {
         e.ps.dispose();
         this.entries.splice(i, 1);
       }

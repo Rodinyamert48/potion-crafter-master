@@ -172,7 +172,8 @@ export class IngredientItem extends Entity {
       else rate = 1 / 14;
       this.dryness = Math.min(1, this.dryness + rate * dt);
     }
-    if (temp > hi + 5) this.burn += ((temp - hi) / 30) * this.def.burnability * dt * 0.35;
+    // Too hot scorches – slowly enough to notice the smoke and take it down.
+    if (temp > hi + 5) this.burn += ((temp - hi) / 40) * this.def.burnability * dt * 0.18;
     this.applyTint();
     if (this.burn >= 1 && this.canProcess('burn')) {
       this.tryProcess(ctx, 'burn');
