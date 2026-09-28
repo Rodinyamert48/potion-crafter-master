@@ -756,3 +756,109 @@ export function catSheet(): SpriteSheet {
 
 /** Pixel height in metres (40 px per metre, the world's character scale). */
 export const PX_PER_M = 40;
+
+// ---------------------------------------------------------------------------
+// Shelf critters: a jar slime and a little spider
+// ---------------------------------------------------------------------------
+
+export function slimeSheet(): SpriteSheet {
+  const key = 'slime';
+  const c = sheetCache.get(key);
+  if (c) return c;
+  const fw = 18;
+  const fh = 16;
+  const frames = 6;
+  const p = new Painter(fw * frames, fh, 11);
+  const body = '#63c74d';
+  const dark = '#3e8948';
+  const hi = '#b6f59a';
+  // (squash: wider/flatter, stretch: taller/narrower)
+  const draw = (i: number, w: number, h: number, lift: number, eyes: 'open' | 'shut' | 'wide') => {
+    const ox = i * fw;
+    const base = fh - 1 - lift;
+    p.ellipse(ox + 9, base - h / 2, w / 2, h / 2, body);
+    p.rect(ox + 9 - w / 2 + 1, base - 2, w - 2, 2, body);
+    p.ellipse(ox + 11, base - h / 2 + 2, w / 3, h / 3, dark, 0.35);
+    p.px(ox + 6, base - h + 3, hi);
+    p.px(ox + 7, base - h + 2, hi);
+    const ey = base - h / 2 - 1;
+    if (eyes === 'shut') {
+      p.hline(ox + 6, ox + 7, ey, '#181425');
+      p.hline(ox + 10, ox + 11, ey, '#181425');
+    } else {
+      const r = eyes === 'wide' ? 2 : 1;
+      p.rect(ox + 6, ey - r + 1, 2, r + 1, '#181425');
+      p.rect(ox + 10, ey - r + 1, 2, r + 1, '#181425');
+      p.px(ox + 6, ey - r + 1, '#ffffff');
+      p.px(ox + 10, ey - r + 1, '#ffffff');
+    }
+  };
+  draw(0, 12, 9, 0, 'open');
+  draw(1, 14, 7, 0, 'open');
+  draw(2, 10, 11, 1, 'open');
+  draw(3, 10, 12, 4, 'wide');
+  draw(4, 16, 5, 0, 'shut');
+  draw(5, 12, 9, 0, 'shut');
+  p.outline(OUTLINE);
+  p.commit();
+  const sheet: SpriteSheet = {
+    canvas: p.canvas,
+    frameW: fw,
+    frameH: fh,
+    cols: frames,
+    rows: 1,
+    anims: {
+      idle: { frames: [0, 1, 0, 5, 0, 1], fps: 3, loop: true },
+      hop: { frames: [1, 2, 3, 3, 2, 1], fps: 12, loop: false },
+      hide: { frames: [4], fps: 1, loop: true },
+    },
+    pivotY: fh - 1,
+  };
+  sheetCache.set(key, sheet);
+  return sheet;
+}
+
+export function spiderSheet(): SpriteSheet {
+  const key = 'spider';
+  const c = sheetCache.get(key);
+  if (c) return c;
+  const fw = 14;
+  const fh = 12;
+  const frames = 3;
+  const p = new Painter(fw * frames, fh, 13);
+  const body = '#3e2731';
+  const leg = '#262b44';
+  const draw = (i: number, spread: number) => {
+    const ox = i * fw;
+    for (const s of [-1, 1]) {
+      for (let k = 0; k < 3; k++) {
+        const y = 4 + k * 2;
+        p.line(ox + 7, y, ox + 7 + s * (4 + spread + (k === 1 ? 1 : 0)), y + (k - 1) * 2 + 1, leg);
+      }
+    }
+    p.ellipse(ox + 7, 6, 3, 3, body);
+    p.ellipse(ox + 7, 3, 2, 1.5, body);
+    p.px(ox + 6, 3, '#e43b44');
+    p.px(ox + 8, 3, '#e43b44');
+    p.px(ox + 6, 6, '#733e39');
+  };
+  draw(0, 0);
+  draw(1, 1);
+  draw(2, -1);
+  p.outline(OUTLINE);
+  p.commit();
+  const sheet: SpriteSheet = {
+    canvas: p.canvas,
+    frameW: fw,
+    frameH: fh,
+    cols: frames,
+    rows: 1,
+    anims: {
+      idle: { frames: [0, 1, 0, 2], fps: 2, loop: true },
+      climb: { frames: [1, 2], fps: 10, loop: true },
+    },
+    pivotY: fh - 1,
+  };
+  sheetCache.set(key, sheet);
+  return sheet;
+}

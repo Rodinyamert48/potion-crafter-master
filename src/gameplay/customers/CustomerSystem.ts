@@ -92,6 +92,36 @@ export class CustomerSystem implements GameSystem {
     ctx.bus.on('bell:rung', () => this.ringBell());
     ctx.bus.on('frog:cured', ({ uid }) => this.cureFrog(uid));
     ctx.bus.on('frog:escaped', ({ uid }) => this.frogEscaped(uid));
+    ctx.bus.on('cauldron:exploded', () => this.panic(1));
+    ctx.bus.on('cauldron:event', ({ type }) => {
+      if (type === 'vortex') this.panic(0.4);
+    });
+  }
+
+  /** Explosions and other scares: everyone jumps, the faint-hearted flee. */
+  private panic(strength: number): void {
+    const ctx = this.ctx;
+    const pot = ctx.shop.cauldron.center;
+    let fled = 0;
+    for (const c of this.customers) {
+      if (!c.alive || c.phase === 'gone' || c.phase === 'leaving' || c.phase === 'transformed' || c.phase === 'drinking' || c.phase === 'reacting') continue;
+      c.sprite.play('surprised');
+      const d = Math.hypot(c.object.position.x - pot.x, c.object.position.z - pot.z);
+      const brave = c.def.personality === 'proud' || c.def.archetype === 'giant' || c.def.archetype === 'knight' || !!c.quest || c.infinitePatience;
+      const flee = !brave && strength >= 1 && (d < 2.5 || c.patience < c.patienceMax * 0.4 || this.rng.chance(0.3));
+      if (flee) {
+        c.say(ctx, t('customer.fleeing'), 'worried', 2);
+        ctx.later(0.5, () => c.alive && this.leave(c, 'fled'));
+        fled++;
+      } else {
+        c.say(ctx, '!!!', 'worried', 1.5);
+        c.patience -= 15 * strength;
+      }
+    }
+    if (fled > 0) {
+      ctx.state.addReputation(-fled);
+      ctx.bus.emit('toast', { text: t('toast.customersFled', { n: fled }), kind: 'bad' });
+    }
   }
 
   get queue(): Customer[] {

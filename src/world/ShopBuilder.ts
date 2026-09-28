@@ -65,6 +65,7 @@ import { Bucket, WaterBarrel } from '../gameplay/stations/Water';
 import { ClickFixture, Door, PotionShelf, SupplySource, sparkleAbove } from '../gameplay/stations/ShopFixtures';
 import { INGREDIENTS } from '../data/ingredients';
 import { t } from '../core/i18n';
+import { JarSlime, ShelfSpider } from '../gameplay/ShelfCritters';
 import { rng } from '../core/Random';
 import { mesh } from '../rendering/three/models/common';
 
@@ -374,6 +375,11 @@ export function buildShop(ctx: GameContext): Shop {
     ctx,
     slimeJar,
   );
+
+  // Free-roaming critters: a slime that lives on the counter and greets
+  // customers, and a spider dangling under the ingredient shelf.
+  world.add(new JarSlime(ctx, V(4.3, 1.06, 1.14), [4.12, 4.5]), ctx);
+  world.add(new ShelfSpider(ctx, V(-2.58, 1.52, -3.5)), ctx);
 
   // Wood pile & flasks
   const pile = woodPileModel(9);
