@@ -42,13 +42,18 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 | Havan tokmağını, kepçeyi daire çizerek çevir | Öğüt / karıştır |
 | Körüğü aşağı yukarı pompala | Ateşi harla |
 | Tutarken `Q`/`E` veya fare tekerleği | Nesneyi döndür |
-| `WASD` / oklar, sağ/orta tık sürükle | Kamerayı kaydır |
-| Tekerlek · `Q`/`E` | Yakınlaştır · kamerayı döndür (önünde kalan duvar alçalır) |
+| `WASD` / oklar, sağ/orta tık ya da boş zemini sürükle | Kamerayı kaydır |
+| Tekerlek / `+` `-` · `Q`/`E` | Yakınlaştır · kamerayı döndür (önünde kalan duvar alçalır) |
 | `1`–`5` | Kamera: dükkân, kazan, masa, raflar, tezgâh |
 | Vincin krank kolunu daire çizerek çevir | Kazanı ateşten kaldır / indir |
-| `B` · `C` · `I` · `M` · `H` · `Esc` | İksir kitabı · katalog · envanter · keşif haritası · yardım · menü |
+| Kediye sol tık · sağ tık | Sev · özelleştirme paneli |
+| `B` · `C` · `I` · `M` · `K` · `H` · `Esc` | İksir kitabı · pazar · envanter · keşif haritası · başarımlar · yardım · menü |
 
-Dokunmatik ekranda tek parmak sürükler, iki parmak yakınlaştırır/kaydırır.
+**Dokunmatik (telefon, tablet, akıllı tahta):** tek parmakla eşyaları sürükle,
+boş zemini sürükleyerek kamerayı kaydır, iki parmakla yakınlaştır ve çevirerek
+döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran düğmeleri
+çıkar: ✋ eylem (SPACE gibi döker/eğer/vurur), ⟲ ⟳ döndür, − + yakınlaştır,
+⛶ tam ekran. Dikey tutulan telefonlarda arayüz üst üste dizilir.
 
 ## Oynanış
 
@@ -91,15 +96,45 @@ Dokunmatik ekranda tek parmak sürükler, iki parmak yakınlaştırır/kaydırı
   büyülü kazan, fırın, öğütücü, depo, dekorlar… Otomasyon temel mekanikleri
   ortadan kaldırmaz.
 - **Dükkân kedisi Duman:** pencere pervazında uyuyan tombul, gri bir British
-  Shorthair. Üstüne tıklayınca özelleştirme paneli açılır: adını değiştir,
-  5 tüy rengi (mavi-gri, siyah, beyaz, krem, tarçın) ve 5 göz rengi (bakır,
-  altın, zümrüt, safir, ayrı renkli) arasından seç, sev. Seçimler kayda girer.
+  Shorthair. Sol tıkla sevilir; sağ tık (dokunmatikte basılı tut) özelleştirme
+  panelini açar: adını değiştir, 5 tüy rengi (mavi-gri, siyah, beyaz, krem,
+  tarçın) ve 5 göz rengi (bakır, altın, zümrüt, safir, ayrı renkli) arasından
+  seç. Seçimler kayda girer.
+- **Pazar ve Gezgin Tüccar:** malzeme, şişe, odun ve geliştirmeler duvardaki
+  pazar panosundan (C) alınır. Her üç günde bir Gezgin Tüccar Baha dükkâna
+  tezgâh kurar (sabahtan akşamüstüne kadar): nadir malzemeler, günün fırsatı,
+  gizemli keseler; üstelik raftaki iksirleri %25 fazlasına satın alır. Ondan
+  alınan nadir malzemeler raftaki kavanozlarda da açılır.
+- **Ünlü konuklar:** internetin sevilen yüzleri dükkâna uğrar ve her biri
+  kendine özel bir iksir ister; tarifin ipucu söylediklerinde gizli:
+  IShowSpeed → *Lâ Peace İksiri* (kurutulmuş Ay Çiçeği + mantar, kıpırtısız
+  karıştırma), Salt Bae → *Tuz Serpme İksiri* (önce cızırdayan ejderha pulu,
+  sonra üstüne öğütülmüş buz kristali), MrBeast → *Altın Yağmuru İksiri*
+  (öğütülmüş ejderha pulu + kurutulmuş mantar), The Rock → *Kaş Kaldırma
+  İksiri* (ejderha pulu + ezilmemiş kurbağa gözü, sıcak), Keanu Reeves →
+  *Nefes Kesici İksir* (Ay Çiçeği + buz kristali, 50°C altında). Her birinin
+  girişi, bekleme şakaları ve iksiri içince kendi gösterisi var; iksirini
+  alana kadar başka günlerde yeniden gelirler. (Bu karakterler sevgi dolu
+  parodi/cameo niteliğindedir; kişilerle bir bağlantı ya da onay yoktur.)
+- **Başarımlar:** 27 başarım (bazıları gizli) ilerleme çubuklarıyla; açılınca
+  fanfar ve bildirim çıkar, kupa panelinden (K) izlenir.
+- **Kolay taşıma:** taşınan eşya diğer eşyalara ve insanlara takılmaz, altında
+  bir iniş işareti görünür. Doğru yere yaklaşınca mıknatıs gibi yerine çekilir,
+  parlayan bir halka ve ipucu çıkar: malzemeler kazana, tahtaya ya da havana,
+  odun ateşe, iksir tezgâha ya da rafa. Boş şişeyi kazana yaklaştırınca
+  kendiliğinden daldırılıp doldurulur ve geri çıkar; kova kazanın üstünde
+  sabit tutulunca kendiliğinden döker.
 - **Kesit duvarlar:** oda dört duvarlı bir oyuncak ev gibidir. Kamera hangi
   yöne bakıyorsa o yöndeki duvarlar tam boy görünür; kamerayla oda arasında
   kalan duvarlar alçak bir taş sıraya iner. `Q`/`E` ile döndükçe yan
   duvarlar yer değiştirir.
 - **Kayıt Kristali:** dükkânın arka köşesinde, parlayan bir rün çemberinin
   üstünde dönen kristal. Dokununca ilerleme kaydedilir.
+- **PS1 Korku grafik modu:** Ayarlar → Grafik: Otomatik / PS1 Korku / Yüksek.
+  PS1 modu 240 satırlık çözünürlük, titreyen köşeler (vertex snapping),
+  perspektifsiz kayan dokular, 15-bit renk ve dither, karanlık sis, gren,
+  tarama çizgileri, titreyen lambalar ve tekinsiz bir ortam sesiyle oynar;
+  aynı zamanda en hafif grafik modudur.
 - **Retro mod:** Ayarlar → Retro palet açıkken sahne 16-bit fantastik RPG
   paletine (indigo gölgeler, titreşimli/dither renk geçişleri) geçer; arayüz
   mavi gradyanlı, beyaz çerçeveli pencerelere ve beyaz eldiven imlecine
@@ -161,8 +196,9 @@ Her şey `src/data` altında veri olarak tanımlıdır:
 Sabit zaman adımı, havuzlanmış parçacıklar (2 çizim çağrısı), paylaşılan
 geometri/materyaller, kademeli gölge haritası güncellemesi ve düşük
 çözünürlüklü render. Varsayılan "Otomatik" kalite yüksek başlar ve kare hızı
-düşerse kendiliğinden orta/düşük seviyeye iner; ayarlardan kalite, piksel
-boyutu ve retro mod elle de seçilebilir.
+düşerse kendiliğinden orta/düşük seviyeye iner (telefonlarda orta
+başlar); ayarlardan Otomatik, PS1 Korku ya da Yüksek, piksel boyutu ve retro
+mod elle de seçilebilir.
 
 ## Genişletme fikirleri
 

@@ -564,3 +564,10 @@ html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap
   .wb-portrait-hint { top: 34%; }
   .wb-mentor-card { top: calc(200px * var(--ui-scale, 1)); max-width: 86vw; }
 }
+
+/* ------------------------------------------------------ PS1 horror mode */
+.psx #viewport::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(0deg, #0000 0 2px, #00000026 2px 3px);
+  mix-blend-mode: multiply;
+}

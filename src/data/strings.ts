@@ -351,6 +351,7 @@ export const STRINGS = {
   'settings.quality.low': { en: 'Low', tr: 'Düşük' },
   'settings.quality.medium': { en: 'Medium', tr: 'Orta' },
   'settings.quality.high': { en: 'High', tr: 'Yüksek' },
+  'settings.quality.ps1': { en: 'PS1 Horror', tr: 'PS1 Korku' },
   'settings.language': { en: 'Language', tr: 'Dil' },
   'settings.shake': { en: 'Screen shake', tr: 'Ekran sarsıntısı' },
   'settings.on': { en: 'On', tr: 'Açık' },

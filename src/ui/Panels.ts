@@ -205,7 +205,7 @@ export class MenuPanel extends BasePanel {
     seg(t('settings.pixel'), [['fine', t('settings.pixel.fine')], ['normal', t('settings.pixel.normal')], ['chunky', t('settings.pixel.chunky')]], s.pixel, (v) => this.actions.applySettings({ ...this.ctx.settings, pixel: v }));
     seg<Settings['quality']>(
       t('settings.quality'),
-      [['auto', t('settings.quality.auto')], ['low', t('settings.quality.low')], ['medium', t('settings.quality.medium')], ['high', t('settings.quality.high')]],
+      [['auto', t('settings.quality.auto')], ['ps1', t('settings.quality.ps1')], ['high', t('settings.quality.high')]],
       s.quality,
       (v) => this.actions.applySettings({ ...this.ctx.settings, quality: v }),
     );

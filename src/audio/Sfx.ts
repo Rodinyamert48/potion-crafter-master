@@ -602,6 +602,55 @@ export function rumbleLoop(a: AudioSystem): LoopHandle {
 }
 
 /** Ambience: room tone + day birds / night crickets. */
+/** PS1 horror mode: a low detuned drone, wind in the rafters and the odd
+ *  creak, knock or far-off chime. */
+export function horrorLoop(a: AudioSystem): LoopHandle {
+  const ctx = a.ctx!;
+  const { src, g } = noiseLoop(a, 'brown', 'bandpass', 180, 0.7, a.ambienceBus);
+  const droneGain = ctx.createGain();
+  droneGain.gain.value = 0;
+  droneGain.connect(a.ambienceBus);
+  const oscs = [55, 58.3, 82.4].map((f) => {
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = f;
+    o.connect(droneGain);
+    o.start();
+    return o;
+  });
+  let level = 0;
+  let stopped = false;
+  const tick = () => {
+    if (stopped) return;
+    if (level > 0.05) {
+      const t = a.now;
+      const out = a.output(Math.random() * 1.6 - 0.8, 0.6, a.ambienceBus);
+      const r = Math.random();
+      if (r < 0.3) a.noiseBurst('brown', t, 0.6, out, 0.05 * level, { type: 'bandpass', freq: 300 + Math.random() * 200, q: 6, freqEnd: 120 }, 0.2);
+      else if (r < 0.45) {
+        // a slow knock somewhere in the house
+        for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) a.osc('sine', 70, t + i * 0.42, 0.2, out, 0.12 * level, 0.002, 45);
+      } else if (r < 0.55) a.osc('sine', 1760 + Math.random() * 400, t, 2.2, out, 0.012 * level, 0.3);
+    }
+    setTimeout(tick, 2500 + Math.random() * 5000);
+  };
+  tick();
+  return {
+    set(v: number) {
+      level = v;
+      g.gain.setTargetAtTime(v * 0.05, a.now, 1);
+      droneGain.gain.setTargetAtTime(v * 0.035, a.now, 1.5);
+    },
+    stop() {
+      stopped = true;
+      g.gain.setTargetAtTime(0, a.now, 0.2);
+      droneGain.gain.setTargetAtTime(0, a.now, 0.2);
+      src.stop(a.now + 1);
+      for (const o of oscs) o.stop(a.now + 1);
+    },
+  };
+}
+
 export function ambienceLoop(a: AudioSystem): LoopHandle {
   const { src, g } = noiseLoop(a, 'brown', 'lowpass', 250, 0.5, a.ambienceBus);
   let night = 0;

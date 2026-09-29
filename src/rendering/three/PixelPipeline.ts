@@ -65,6 +65,8 @@ const COMPOSITE_FRAG = /* glsl */ `
   uniform float uBrightness;
   uniform float uLevels;
   uniform float uRetro;
+  uniform float uPsx;
+  uniform float uTime;
   uniform vec3 uPalette[32];
   varying vec2 vUv;
 
@@ -112,9 +114,25 @@ const COMPOSITE_FRAG = /* glsl */ `
     col = mix(col, uFlashColor, clamp(uFlash, 0.0, 1.0));
     col = clamp(col, 0.0, 1.0);
 
+    if (uPsx > 0.5) {
+      // PS1 horror grade: washed-out, cold-green and grimy, crushed blacks,
+      // a heavy vignette and film grain that crawls.
+      float lp = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(vec3(lp), col, 0.68);
+      col *= vec3(0.9, 1.0, 0.88);
+      col = pow(max(col, 0.0), vec3(1.06)) * 1.05;
+      vec2 qq = vUv - 0.5;
+      col *= 1.0 - dot(qq, qq) * 0.8;
+      float grain = fract(sin(dot(floor(gl_FragCoord.xy) + fract(uTime * 7.0) * 91.0, vec2(12.9898, 78.233))) * 43758.5453);
+      col += (grain - 0.5) * 0.03;
+      col = clamp(col, 0.0, 1.0);
+    }
+
     vec3 s = toSRGB(col);
     float b = bayer4(gl_FragCoord.xy) - 0.5;
-    s = clamp(floor(s * uLevels + 0.5 + b * 0.9) / uLevels, 0.0, 1.0);
+    // PS1: 15-bit colour with a strong ordered dither.
+    float levels = uPsx > 0.5 ? 31.0 : uLevels;
+    s = clamp(floor(s * levels + 0.5 + b * (uPsx > 0.5 ? 1.15 : 0.9)) / levels, 0.0, 1.0);
 
     if (uRetro > 0.5) {
       // 16-bit fantasy RPG look: shadows sink into indigo, colours get
@@ -210,6 +228,8 @@ export class PixelPipeline {
         uBrightness: { value: 0 },
         uLevels: { value: 40 },
         uRetro: { value: 0 },
+        uPsx: { value: 0 },
+        uTime: { value: 0 },
         uPalette: { value: palette.map((c) => new THREE.Vector3(c.r, c.g, c.b)) },
       },
       depthTest: false,
@@ -265,6 +285,10 @@ export class PixelPipeline {
     this.compositeMat.uniforms.uRetro.value = v;
   }
 
+  set psx(v: number) {
+    this.compositeMat.uniforms.uPsx.value = v;
+  }
+
   set outline(v: number) {
     this.compositeMat.uniforms.uOutline.value = v;
   }
@@ -316,6 +340,7 @@ export class PixelPipeline {
     u.uContrast.value = g.contrast;
     u.uBrightness.value = g.brightness;
     u.uVignette.value = g.vignette;
+    u.uTime.value = performance.now() / 1000;
     this.pass(this.compositeMat, null);
   }
 }

@@ -10,7 +10,7 @@ import { Entity, type HoverInfo } from '../world/Entity';
 import { catSheet } from '../rendering/three/sprites/CharacterPainter';
 import { catEyes, catFur, type CatLook } from '../data/cat';
 import { PixelSprite } from '../rendering/three/sprites/PixelSprite';
-import { ambienceLoop } from '../audio/Sfx';
+import { ambienceLoop, horrorLoop } from '../audio/Sfx';
 import { clamp, damp, smoothstep } from '../core/math';
 import { rng } from '../core/Random';
 import { t } from '../core/i18n';
@@ -148,6 +148,7 @@ export class Atmosphere implements GameSystem {
       music.setDanger(clamp(this.chaos, 0, 1));
     }
     ctx.audio.loop('ambience', ambienceLoop)?.set(1, lighting.nightness);
+    ctx.audio.loop('horror', horrorLoop)?.set(ctx.renderer.quality === 'ps1' ? 1 : 0);
 
     // Faint magic glimmers drifting up all over the shop
     if (ctx.state && !ctx.paused)

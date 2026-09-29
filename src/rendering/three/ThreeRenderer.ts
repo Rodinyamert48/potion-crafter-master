@@ -5,9 +5,11 @@ import * as THREE from 'three';
 import { CameraRig } from './CameraRig';
 import { Lighting } from './Lighting';
 import { PixelPipeline } from './PixelPipeline';
+import { setPsx } from './Psx';
 
 export type PixelPreset = 'fine' | 'normal' | 'chunky';
-export type Quality = 'low' | 'medium' | 'high';
+/** 'ps1' is the PS1 / PSX horror look (also the lightest mode). */
+export type Quality = 'low' | 'medium' | 'high' | 'ps1';
 
 const TARGET_HEIGHT: Record<PixelPreset, number> = { fine: 620, normal: 460, chunky: 340 };
 
@@ -65,11 +67,23 @@ export class ThreeRenderer {
 
   setQuality(q: Quality): void {
     this.quality = q;
-    const shadows = q !== 'low';
+    const psx = q === 'ps1';
+    const shadows = q !== 'low' && !psx;
     this.renderer.shadowMap.enabled = shadows;
     this.lighting.setShadows(q === 'high' ? 'all' : q === 'medium' ? 'sun' : 'off');
-    this.pipeline.bloomEnabled = q !== 'low';
-    this.pipeline.outline = 1;
+    this.pipeline.bloomEnabled = q !== 'low' && !psx;
+    // The PS1 had no outlines; it had fog and a short draw distance.
+    this.pipeline.outline = psx ? 0 : 1;
+    this.pipeline.psx = psx ? 1 : 0;
+    this.lighting.psx = psx;
+    const fog = this.scene.fog as THREE.Fog;
+    fog.color.set(psx ? '#0d0c11' : '#181425');
+    fog.near = psx ? 8.5 : 18;
+    fog.far = psx ? 19 : 40;
+    (this.scene.background as THREE.Color).set(psx ? '#08080b' : '#181425');
+    this.renderer.setClearColor(psx ? '#08080b' : '#181425', 1);
+    document.documentElement.classList.toggle('psx', psx);
+    setPsx(this.scene, psx);
     this.scene.traverse((o) => {
       const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
       if (!m) return;
@@ -86,6 +100,8 @@ export class ThreeRenderer {
     const physH = h * dpr;
     let target = TARGET_HEIGHT[this.pixelPreset];
     if (this.quality === 'low') target *= 0.8;
+    // Roughly the PS1's 240 lines.
+    if (this.quality === 'ps1') target = 250;
     const scale = Math.max(1, Math.round(physH / target));
     this.pixelScale = scale / dpr;
     this.lowWidth = Math.max(1, Math.ceil(physW / scale));

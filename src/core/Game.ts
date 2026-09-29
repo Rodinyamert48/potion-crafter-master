@@ -7,7 +7,7 @@ import { EventBus } from './EventBus';
 import type { GameEvents } from './events';
 import { Input } from './Input';
 import { Loop } from './Loop';
-import { loadSettings, saveSettings, type Settings } from './Settings';
+import { isMobileDevice, loadSettings, saveSettings, type Settings } from './Settings';
 import type { GameContext } from './GameContext';
 import { ThreeRenderer } from '../rendering/three/ThreeRenderer';
 import { BabylonCore } from '../rendering/babylon/BabylonCore';
@@ -49,7 +49,7 @@ export class Game {
   /** False while the title screen is up. */
   playing = false;
   /** Level chosen by the automatic quality governor ('auto' setting). */
-  private autoQuality: Quality = 'high';
+  private autoQuality: Quality = isMobileDevice() ? 'medium' : 'high';
   private readonly fpsSamples: number[] = [];
   private fpsSampleT = 0;
   private qualityCooldown = 12;
