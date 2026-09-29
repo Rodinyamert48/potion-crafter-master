@@ -150,8 +150,12 @@ export class CustomerSystem implements GameSystem {
       visits.push({ hour: 7.3, customerId: 'witch_hazel', requestId: 'hazel_heal', tutorial: true });
       visits.push({ hour: 12.5, customerId: 'knight_roland', requestId: 'roland_strength' });
       visits.push({ hour: 17.5, customerId: 'elf_elowen', requestId: 'elowen_vision' });
+      // An easy extra visitor so the first day is not too quiet.
+      visits.push({ hour: 14.8, customerId: 'bard_melo', requestId: 'melo_voice' });
     } else {
-      const count = Math.min(7, 3 + Math.floor(state.reputation / 25) + (day > 3 ? 1 : 0));
+      // Customers drop by often: about every 1–2 in-game hours, more as the
+      // shop's reputation grows.
+      const count = Math.min(12, 6 + Math.floor(state.reputation / 20) + (day > 3 ? 2 : 0));
       const eligible = Object.values(CUSTOMERS).filter((c) => !c.questOnly && !c.celebrity && c.minDay <= day && (c.minReputation ?? 0) <= state.reputation);
       const slots: number[] = [];
       for (let i = 0; i < count; i++) slots.push(7.8 + ((21.3 - 7.8) * (i + this.rng.range(0.1, 0.9))) / count);

@@ -113,19 +113,32 @@ export class Bucket extends Entity {
     };
   }
 
+  /** Close enough to the barrel to scoop it full. */
+  private atBarrel(): boolean {
+    return this.barrel.isAbove(this.object.position, 0.5) && this.object.position.y < this.barrel.top.y + 0.55;
+  }
+
+  /** One dunk in the barrel fills the bucket to the brim. */
+  private fill(ctx: GameContext): void {
+    if (this.water >= BUCKET_CAPACITY - 0.01) return;
+    this.water = BUCKET_CAPACITY;
+    const top = this.barrel.top;
+    ctx.audio.play('splash', { x: top.x, amount: 0.9 });
+    ctx.vfx.splash(top.clone().add(new THREE.Vector3(0, 0.02, 0)), '#6fa8d6', 12, 0.8);
+    for (let i = 0; i < 4; i++) ctx.vfx.bubble(top, 0.25, '#6fa8d6');
+    ctx.ui.floatText(top.clone().add(new THREE.Vector3(0, 0.45, 0)), t('misc.bucketFull'), '#6fa8d6');
+  }
+
   override onHeld(ctx: GameContext, dt: number): void {
     const grab = ctx.interaction.grab as PhysicsGrab | null;
     if (!grab) return;
-    // Dip into the barrel.
-    if (grab.surfaceTag === 'barrel') {
-      // Lower it below the waterline once it is over the opening.
-      grab.heightOffset = this.barrel.isAbove(this.object.position, 0.2) ? -0.5 : 0;
-      if (this.barrel.isAbove(this.object.position) && this.object.position.y < this.barrel.top.y + 0.02 && this.water < BUCKET_CAPACITY) {
-        if (!this.filling) ctx.audio.play('splash', { x: this.object.position.x, amount: 0.8 });
+    // Bring it to the barrel and it fills right up (with a little dip).
+    if (this.atBarrel()) {
+      if (this.water < BUCKET_CAPACITY - 0.01) {
+        this.fill(ctx);
         this.filling = true;
-        this.water = Math.min(BUCKET_CAPACITY, this.water + dt * 2.5);
-        if (rng.chance(dt * 12)) ctx.vfx.bubble(this.barrel.top, 0.25, '#6fa8d6');
       }
+      grab.heightOffset = this.filling ? -0.25 : 0;
     } else {
       grab.heightOffset = 0;
       this.filling = false;
@@ -180,7 +193,9 @@ export class Bucket extends Entity {
     if (impulse > 1.5) ctx.audio.play('woodKnock', { x: point.x, volume: Math.min(1, impulse / 6), pitch: 1.2 });
   }
 
-  override update(): void {
+  override update(ctx: GameContext): void {
+    // Dropped into (or onto) the barrel: filled too.
+    if (!this.held && this.water < BUCKET_CAPACITY - 0.01 && this.atBarrel()) this.fill(ctx);
     const f = this.water / BUCKET_CAPACITY;
     this.parts.water.visible = f > 0.02;
     this.parts.water.position.y = -0.1 + f * 0.19;

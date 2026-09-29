@@ -68,7 +68,8 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   (yüzen/batan fizik cisimleri), köpük, renk, buhar, ışık ve ses. Ateş odun
   ve körükle, hava kapağıyla ayarlanır; ocağın arkasındaki vinçle kazan
   zincirle ateşten kaldırılır (yükseldikçe ısı azalır), su dökmek soğutur,
-  musluk boşaltır.
+  musluk boşaltır. Kovayı fıçıya götürmen (ya da üstüne bırakman) yeter:
+  anında ağzına kadar dolar.
 - **Karıştırma:** yavaş = kararlı, hızlı = güçlü, çok hızlı = kararsız.
 - **Tepkimeler veriye dayalıdır:** malzeme, miktar, sıra, sıcaklık, karıştırma,
   hazırlık yöntemi ve süre sonucu belirler. Örn. *Ejderha pulu + mantar + yüksek
@@ -77,8 +78,9 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   itmesi), kara iksir, büyü girdabı; yanlış iksiri içen müşteri kurbağaya
   dönüşebilir – kurbağayı yakalayıp ustaya götürmek gerekir.
 - **Müşteriler:** Cadı Hazel, Şövalye Roland, Elf Elowen, Goblin Snik, Dev
-  Grumbold, Vampir Vlador ve köylüler; her birinin kişiliği, sabrı, bütçesi,
-  isteği, repliği ve sesi var. Kapıdan girer, sıraya geçer, sipariş verir,
+  Grumbold, Vampir Vlador, Ozan Melo, Madenci Dorin (cüce), Kaptan Tuzluca ve
+  köylüler; her birinin kişiliği, sabrı, bütçesi, isteği, repliği ve sesi
+  var. Günde 6–12 müşteri gelir (itibar arttıkça daha çok). Kapıdan girer, sıraya geçer, sipariş verir,
   bekler, içer, tepki verir, öder (paralar tezgâha düşer) ve gider.
 - **Toplama bölgeleri:** duvardaki keşif haritasından Fısıldayan Orman,
   Yankı Mağarası, Bulanık Bataklık veya Ejderha Vadisi'ne gidilir. Her bölgenin

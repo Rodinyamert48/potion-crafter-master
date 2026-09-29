@@ -50,6 +50,16 @@ export function defaultAssistTargets(): AssistTarget[] {
       hint: 'assist.pour',
     },
     {
+      // A bucket that is not full is pulled to the water barrel (it fills there).
+      id: 'barrel',
+      accepts: (_ctx, e) => e.kind === 'bucket' && (e as unknown as { water: number }).water < 1.95, // BUCKET_CAPACITY = 2
+      point: (ctx) => ctx.world.ofKind<Entity & { top: THREE.Vector3 }>('barrel')[0]?.top.clone() ?? null,
+      radius: 0.75,
+      hover: 0.2,
+      hint: 'assist.fill',
+      drop: dropStraight,
+    },
+    {
       id: 'hearth',
       accepts: (_ctx, e) => e.kind === 'log',
       point: (ctx) => ctx.shop.hearth.center.clone().add(new THREE.Vector3(0, 0.12, 0.7)),
