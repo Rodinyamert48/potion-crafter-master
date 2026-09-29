@@ -1,4 +1,4 @@
-import{E as e}from"./index-CoJDNJU8.js";import{t}from"./logDepthDeclaration-DqIz__76.js";import{a as n,i as r,n as i,r as a,t as o}from"./logDepthVertex-DJUMBoAy.js";var s=`gpuRenderParticlesVertexShader`,c=`uniform view: mat4x4f;uniform projection: mat4x4f;uniform translationPivot: vec2f;uniform worldOffset: vec3f;
+import{E as e}from"./index-Brj7FdhB.js";import{t}from"./logDepthDeclaration-DJ3jDKla.js";import{a as n,i as r,n as i,r as a,t as o}from"./logDepthVertex-DoBgnhGE.js";var s=`gpuRenderParticlesVertexShader`,c=`uniform view: mat4x4f;uniform projection: mat4x4f;uniform translationPivot: vec2f;uniform worldOffset: vec3f;
 #ifdef LOCAL
 uniform emitterWM: mat4x4f;
 #endif

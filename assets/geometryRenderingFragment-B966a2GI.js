@@ -1,4 +1,4 @@
-import{E as e}from"./index-CoJDNJU8.js";var t=`objectIdFunctions`,n=`fn encodeObjectId(objectId: f32)->vec4f {
+import{E as e}from"./index-Brj7FdhB.js";var t=`objectIdFunctions`,n=`fn encodeObjectId(objectId: f32)->vec4f {
 #ifdef PREPASS_OBJECT_ID_R8
 return vec4f(objectId/255.0,0.0,0.0,1.0);
 #else
