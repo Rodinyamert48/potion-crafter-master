@@ -1,4 +1,4 @@
-import{E as e}from"./index-D0qBVvJ8.js";import{t}from"./logDepthDeclaration-C-HAwG-B.js";import{a as n,i as r,n as i,r as a,t as o}from"./logDepthVertex-CyT3BX8s.js";var s=`particlesVertexShader`,c=`attribute position: vec3f;attribute color: vec4f;attribute angle: f32;attribute size: vec2f;
+import{E as e}from"./index-h4WIaeEO.js";import{t}from"./logDepthDeclaration-BJuR_qVM.js";import{a as n,i as r,n as i,r as a,t as o}from"./logDepthVertex-BBPq53aG.js";var s=`particlesVertexShader`,c=`attribute position: vec3f;attribute color: vec4f;attribute angle: f32;attribute size: vec2f;
 #ifdef ANIMATESHEET
 attribute cellIndex: f32;
 #endif
