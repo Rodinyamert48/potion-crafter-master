@@ -7,7 +7,7 @@ import type { GameContext, UIHooks } from '../core/GameContext';
 import type { CursorKind, HoverInfo } from '../world/Entity';
 import { cursorCSS } from './pixelArt';
 
-type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map';
+type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat';
 
 export interface Panel {
   readonly el: HTMLElement;
@@ -95,6 +95,10 @@ export class UIRoot implements UIHooks {
 
   getPanel<T extends Panel>(name: PanelName): T | undefined {
     return this.panels.get(name) as T | undefined;
+  }
+
+  isPanelOpen(name: PanelName): boolean {
+    return !!this.panels.get(name)?.isOpen;
   }
 
   get panelOpen(): boolean {

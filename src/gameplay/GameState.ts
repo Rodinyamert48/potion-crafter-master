@@ -8,6 +8,7 @@ import type { DayPhase, UpgradeEffects } from '../data/types';
 import { UPGRADE_MAP } from '../data/upgrades';
 import { INGREDIENTS } from '../data/ingredients';
 import { clamp } from '../core/math';
+import { defaultCat, type CatLook } from '../data/cat';
 
 export interface DiscoveryEntry {
   day: number;
@@ -76,6 +77,8 @@ export class GameState {
   dayStats: DayStats = newDayStats();
   /** Customers already scheduled/served today (ids). */
   servedToday: string[] = [];
+  /** The shop cat's name and look. */
+  cat: CatLook = defaultCat();
 
   constructor(private readonly bus: EventBus<GameEvents>) {}
 
@@ -243,6 +246,7 @@ export class GameState {
       stats: this.stats,
       dayStats: this.dayStats,
       servedToday: this.servedToday,
+      cat: this.cat,
     };
   }
 
@@ -268,6 +272,7 @@ export class GameState {
     this.stats = { ...this.stats, ...(g.stats ?? {}) };
     this.dayStats = { ...newDayStats(), ...(g.dayStats ?? {}) };
     this.servedToday = g.servedToday ?? [];
+    this.cat = { ...defaultCat(), ...(g.cat ?? {}) };
   }
 }
 

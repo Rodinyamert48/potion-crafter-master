@@ -9,6 +9,7 @@ import { DayCycle } from './gameplay/day/DayCycle';
 import { QuestSystem } from './gameplay/quests/QuestSystem';
 import { Tutorial } from './gameplay/tutorial/Tutorial';
 import { Atmosphere } from './gameplay/Atmosphere';
+import { CatPanel } from './ui/CatPanel';
 import { ShopSystem } from './gameplay/shop/ShopSystem';
 import { Discovery } from './gameplay/potion/Discovery';
 import { Expedition } from './gameplay/gathering/Expedition';
@@ -80,6 +81,7 @@ export class App {
     ui.registerPanel('catalog', new CatalogPanel(ctx, this.shopSystem));
     ui.registerPanel('inventory', new InventoryPanel(ctx));
     ui.registerPanel('map', new MapPanel(ctx, this.expedition));
+    ui.registerPanel('cat', new CatPanel(ctx, this.atmosphere.cat));
     this.menu = new MenuPanel(ctx, {
       save: () => this.save.save(),
       quit: () => this.quitToTitle(),

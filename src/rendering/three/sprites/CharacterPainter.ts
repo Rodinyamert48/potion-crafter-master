@@ -685,56 +685,146 @@ export function frogSheet(): SpriteSheet {
   return sheet;
 }
 
-export function catSheet(): SpriteSheet {
-  const key = 'cat';
+export interface CatSheetLook {
+  fur: string;
+  nose: string;
+  eyeL: string;
+  eyeR: string;
+}
+
+/** A chubby British Shorthair loafing on the window sill: round head, full
+ *  cheeks, small wide-set ears, big round eyes and a short thick tail. */
+export function catSheet(look: CatSheetLook): SpriteSheet {
+  const key = `cat:${look.fur}:${look.nose}:${look.eyeL}:${look.eyeR}`;
   const c = sheetCache.get(key);
   if (c) return c;
-  const fw = 30;
-  const fh = 20;
-  const frames = 6;
+  const fw = 36;
+  const fh = 24;
+  const frames = 8;
   const p = new Painter(fw * frames, fh, 5);
-  const fur = '#262b44';
-  const furL = '#3a4466';
-  const draw = (ox: number, tail: number, awake: boolean, hiss: boolean, breathe: number) => {
-    // body loaf
-    p.ellipse(ox + 14, 14 - breathe, 10, 5 + breathe * 0.5, fur);
-    p.ellipse(ox + 12, 12 - breathe, 6, 2, furL);
-    // tail
-    const tx = ox + 24;
-    p.thickLine(tx, 15, tx + 3, 15 - tail * 3, 2, fur);
-    // head
-    p.ellipse(ox + 5, 12, 5, 4.5, fur);
-    p.poly(
-      [
-        [ox + 1, 10],
-        [ox + 2, 5],
-        [ox + 5, 9],
-      ],
-      fur,
-    );
-    p.poly(
-      [
-        [ox + 6, 9],
-        [ox + 9, 5],
-        [ox + 10, 10],
-      ],
-      fur,
-    );
-    if (awake) {
-      p.px(ox + 3, 11, '#fee761');
-      p.px(ox + 7, 11, '#fee761');
-    } else {
-      p.hline(ox + 2, ox + 4, 12, '#5a6988');
-      p.hline(ox + 6, ox + 8, 12, '#5a6988');
+  const fur = look.fur;
+  const furL = shadeHex(fur, 0.22);
+  const furD = shadeHex(fur, -0.22);
+  const furDD = shadeHex(fur, -0.42);
+  const inner = mixHex(fur, '#d98b8b', 0.45);
+  type Mode = 'sleep' | 'awake' | 'blink' | 'hiss';
+  const draw = (i: number, mode: Mode, tail: number, breathe: number) => {
+    p.clip = [i * fw, 0, i * fw + fw, fh];
+    const ox = i * fw + 1;
+    const hiss = mode === 'hiss';
+    const by = 17.5 - breathe * 0.5;
+    // tail behind the body when awake (flicking) or puffed up when hissing
+    if (hiss) p.thickLine(ox + 29, 18, ox + 31, 7 + tail, 4, fur);
+    else if (mode !== 'sleep') {
+      p.thickLine(ox + 29, 19, ox + 32, 15 - tail * 2, 3, fur);
+      p.disc(ox + 32, 15 - tail * 2, 1.5, furD);
     }
-    if (hiss) p.rect(ox + 4, 14, 3, 2, '#f6757a');
+    // stocky loaf body with a flat bottom
+    p.ellipse(ox + 19, by, 12, 6 + breathe * 0.5, fur);
+    p.rect(ox + 8, 19, 23, 4, fur);
+    p.ellipse(ox + 19, by - 3.5, 8, 2, furL);
+    p.hline(ox + 9, ox + 30, 22, furD);
+    p.hline(ox + 13, ox + 28, 21, furD, 0.5);
+    // hissing: raised hackles along the back
+    if (hiss) for (let k = 0; k < 5; k++) p.px(ox + 14 + k * 3, by - 7, fur);
+    // tail wrapped around the front while asleep
+    if (mode === 'sleep') {
+      p.thickLine(ox + 30, 19, ox + 22, 22, 3, fur);
+      p.thickLine(ox + 23, 22, ox + 17, 22, 2, furD);
+      p.px(ox + 30, 18 - tail, furL);
+    }
+    // front paws peeking out under the chin
+    p.ellipse(ox + 6, 21.5, 2.2, 1.3, furL);
+    p.ellipse(ox + 11.5, 21.5, 2.2, 1.3, furL);
+    p.px(ox + 6, 22, furD);
+    p.px(ox + 11, 22, furD);
+    // big round head and full cheeks
+    const hy = hiss ? 12 : 13;
+    p.ellipse(ox + 9, hy, 7.5, 6.3, fur);
+    p.ellipse(ox + 9, hy + 2.5, 8.2, 4, fur);
+    p.ellipse(ox + 8, hy - 3, 4, 1.6, furL);
+    // small, rounded, wide-set ears (flattened when hissing)
+    const ears: Array<Array<[number, number]>> = hiss
+      ? [
+          [
+            [ox + 0, hy - 3],
+            [ox + 2, hy - 6],
+            [ox + 6, hy - 5],
+          ],
+          [
+            [ox + 12, hy - 5],
+            [ox + 16, hy - 6],
+            [ox + 18, hy - 3],
+          ],
+        ]
+      : [
+          [
+            [ox + 2, hy - 4],
+            [ox + 3, hy - 9],
+            [ox + 7, hy - 6],
+          ],
+          [
+            [ox + 11, hy - 6],
+            [ox + 15, hy - 9],
+            [ox + 16, hy - 4],
+          ],
+        ];
+    for (const e of ears) p.poly(e, fur);
+    if (!hiss) {
+      p.px(ox + 3, hy - 7, inner);
+      p.px(ox + 4, hy - 6, inner);
+      p.px(ox + 14, hy - 7, inner);
+      p.px(ox + 14, hy - 6, inner);
+    }
+    // whisker pads and chin
+    p.ellipse(ox + 9, hy + 3.6, 3.4, 1.6, furL);
+    // eyes
+    const ey = hy - 1;
+    const eyeAt = (x: number, col: string) => {
+      if (mode === 'sleep' || mode === 'blink') {
+        p.px(x, ey + 1, furDD);
+        p.px(x + 1, ey + 2, furDD);
+        p.px(x + 2, ey + 1, furDD);
+        return;
+      }
+      p.rect(x, ey, 3, 3, col);
+      p.px(x, ey, shadeHex(col, -0.25));
+      p.px(x + 2, ey, shadeHex(col, -0.25));
+      if (hiss) p.px(x + 1, ey + 1, '#181425');
+      else {
+        p.px(x + 1, ey + 1, '#181425');
+        p.px(x + 1, ey + 2, '#181425');
+        p.px(x + 2, ey + 1, shadeHex(col, 0.55));
+      }
+      p.hline(x, x + 2, ey - 1, furD);
+    };
+    eyeAt(ox + 4, look.eyeL);
+    eyeAt(ox + 11, look.eyeR);
+    // nose and mouth
+    p.hline(ox + 8, ox + 9, hy + 2, look.nose);
+    if (hiss) {
+      p.rect(ox + 7, hy + 4, 4, 2, '#e05a6a');
+      p.px(ox + 7, hy + 4, '#ffffff');
+      p.px(ox + 10, hy + 4, '#ffffff');
+    } else {
+      p.px(ox + 8, hy + 3, furDD);
+      p.px(ox + 9, hy + 3, furDD);
+      p.px(ox + 7, hy + 4, furD);
+      p.px(ox + 10, hy + 4, furD);
+    }
+    // whiskers
+    p.hline(ox + 1, ox + 4, hy + 3, furL, 0.7);
+    p.hline(ox + 14, ox + 17, hy + 3, furL, 0.7);
   };
-  draw(0, 0, false, false, 0);
-  draw(fw, 1, false, false, 1);
-  draw(fw * 2, 0, false, false, 0);
-  draw(fw * 3, 1, true, false, 0);
-  draw(fw * 4, 2, true, true, -1);
-  draw(fw * 5, 2, true, true, -2);
+  draw(0, 'sleep', 0, 0);
+  draw(1, 'sleep', 1, 1);
+  draw(2, 'sleep', 0, 0.5);
+  draw(3, 'awake', 1, 0);
+  draw(4, 'blink', 1, 0);
+  draw(5, 'hiss', 0, -1);
+  draw(6, 'hiss', 1, -1.5);
+  draw(7, 'awake', 2, 0);
+  p.clip = null;
   p.outline(OUTLINE);
   p.commit();
   const sheet: SpriteSheet = {
@@ -745,8 +835,8 @@ export function catSheet(): SpriteSheet {
     rows: 1,
     anims: {
       sleep: { frames: [0, 1, 2, 1], fps: 1.5, loop: true },
-      awake: { frames: [3, 3, 3, 2], fps: 2, loop: true },
-      hiss: { frames: [4, 5], fps: 8, loop: true },
+      awake: { frames: [3, 7, 3, 3, 4], fps: 2.5, loop: true },
+      hiss: { frames: [5, 6], fps: 8, loop: true },
     },
     pivotY: fh - 1,
   };

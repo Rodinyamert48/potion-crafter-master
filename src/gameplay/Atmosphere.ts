@@ -8,29 +8,44 @@ import type { GameContext } from '../core/GameContext';
 import type { GameSystem } from '../core/Game';
 import { Entity, type HoverInfo } from '../world/Entity';
 import { catSheet } from '../rendering/three/sprites/CharacterPainter';
+import { catEyes, catFur, type CatLook } from '../data/cat';
 import { PixelSprite } from '../rendering/three/sprites/PixelSprite';
 import { ambienceLoop } from '../audio/Sfx';
 import { clamp, damp, smoothstep } from '../core/math';
 import { rng } from '../core/Random';
 import { t } from '../core/i18n';
 
-class ShopCat extends Entity {
+export function catSheetFor(look: CatLook) {
+  const fur = catFur(look.fur);
+  const eyes = catEyes(look.eyes);
+  return catSheet({ fur: fur.color, nose: fur.nose, eyeL: eyes.left, eyeR: eyes.right });
+}
+
+export class ShopCat extends Entity {
   readonly kind = 'cat';
-  readonly sprite = new PixelSprite(catSheet(), 1.2);
+  sprite: PixelSprite;
+  private lookKey = '';
   private awakeUntil = 0;
   private hissUntil = 0;
 
-  constructor(pos: THREE.Vector3) {
+  constructor(pos: THREE.Vector3, look: CatLook) {
     super();
-    this.object.add(this.sprite.root);
     this.object.position.copy(pos);
-    this.sprite.play('sleep');
-    this.sprite.facing = -1;
-    this.sprite.shadow.visible = false;
+    this.sprite = this.makeSprite(look);
   }
 
-  override hover(): HoverInfo {
-    return { title: t('obj.cat'), hint: t('hint.cat') };
+  private makeSprite(look: CatLook): PixelSprite {
+    this.lookKey = `${look.fur}:${look.eyes}`;
+    const sprite = new PixelSprite(catSheetFor(look), 0.95);
+    sprite.play('sleep');
+    sprite.facing = -1;
+    sprite.shadow.visible = false;
+    this.object.add(sprite.root);
+    return sprite;
+  }
+
+  override hover(ctx: GameContext): HoverInfo {
+    return { title: ctx.state.cat.name || t('obj.cat'), hint: t('hint.cat') };
   }
 
   override cursor() {
@@ -38,10 +53,15 @@ class ShopCat extends Entity {
   }
 
   override press(ctx: GameContext) {
-    this.awakeUntil = ctx.time + 3;
+    this.pet(ctx);
+    ctx.ui.openPanel('cat');
+    return null;
+  }
+
+  pet(ctx: GameContext): void {
+    this.awakeUntil = ctx.time + 4;
     ctx.audio.play('meow', { x: this.object.position.x });
     ctx.vfx.heartBurst(this.object.position.clone().add(new THREE.Vector3(0, 0.3, 0)), '#f6757a');
-    return null;
   }
 
   startle(ctx: GameContext): void {
@@ -49,7 +69,18 @@ class ShopCat extends Entity {
     ctx.audio.play('hissCat', { x: this.object.position.x, delay: 0.2 });
   }
 
+  /** Rebuild the sprite when the look changed (customization panel, load). */
+  syncLook(ctx: GameContext): void {
+    const look = ctx.state.cat;
+    if (`${look.fur}:${look.eyes}` === this.lookKey) return;
+    this.sprite.dispose();
+    this.sprite = this.makeSprite(look);
+  }
+
   override update(ctx: GameContext, dt: number): void {
+    this.syncLook(ctx);
+    // Stays awake while its panel is open.
+    if (ctx.ui.isPanelOpen('cat')) this.awakeUntil = Math.max(this.awakeUntil, ctx.time + 1);
     const want = ctx.time < this.hissUntil ? 'hiss' : ctx.time < this.awakeUntil ? 'awake' : 'sleep';
     if (this.sprite.current !== want) this.sprite.play(want);
     this.sprite.hop = want === 'hiss' ? Math.abs(Math.sin(ctx.time * 12)) * 0.03 : 0;
@@ -60,7 +91,7 @@ class ShopCat extends Entity {
 export class Atmosphere implements GameSystem {
   readonly always = true;
   chaos = 0;
-  private readonly cat: ShopCat;
+  readonly cat: ShopCat;
   private musicMood: 'day' | 'night' | null = null;
 
   constructor(private readonly ctx: GameContext) {
@@ -69,11 +100,14 @@ export class Atmosphere implements GameSystem {
       if (amount >= 0.5) this.cat.startle(ctx);
     });
     ctx.bus.on('cauldron:exploded', () => this.cat.startle(ctx));
-    this.cat = ctx.world.add(new ShopCat(new THREE.Vector3(-1.05, 1.39, -3.62)), ctx);
+    this.cat = ctx.world.add(new ShopCat(new THREE.Vector3(-1.05, 1.39, -3.62), ctx.state.cat), ctx);
   }
 
   update(dt: number): void {
     const ctx = this.ctx;
+    // The world is paused behind panels; keep the cat alive (and restyled
+    // live) while its own panel is open.
+    if (ctx.paused && ctx.ui.isPanelOpen('cat')) this.cat.update(ctx, dt);
     const lighting = ctx.renderer.lighting;
     const cauldron = ctx.shop.cauldron;
     // Sustained danger from the cauldron keeps the tension up.

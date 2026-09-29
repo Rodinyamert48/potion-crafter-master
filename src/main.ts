@@ -1,8 +1,7 @@
 // Entry point: loads fonts & styles, boots the engines, shows the title.
 
-import '@fontsource/pixelify-sans/400.css';
-import '@fontsource/pixelify-sans/600.css';
-import '@fontsource/pixelify-sans/700.css';
+import '@fontsource/vt323/latin-400.css';
+import '@fontsource/vt323/latin-ext-400.css';
 import './ui/styles.css';
 import { Game } from './core/Game';
 import { App } from './App';
