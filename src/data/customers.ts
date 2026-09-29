@@ -311,7 +311,7 @@ export const CUSTOMERS: Record<string, CustomerDef> = {
     generosity: 0.25,
     voice: { pitch: 1.05, speed: 1.05, wave: 'triangle' },
     phases: ['morning', 'afternoon'],
-    minDay: 2,
+    minDay: 1,
     height: 1.72,
     requests: [
       {

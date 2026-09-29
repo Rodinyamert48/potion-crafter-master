@@ -147,18 +147,23 @@ export class CustomerSystem implements GameSystem {
     this.rng.next();
     const visits: Visit[] = [];
     if (day === 1 && !state.tutorialDone) {
+      // First day: the tutorial customer, then someone about every 1.5–2
+      // hours with easy orders (healing, light, strength, vision).
       visits.push({ hour: 7.3, customerId: 'witch_hazel', requestId: 'hazel_heal', tutorial: true });
-      visits.push({ hour: 12.5, customerId: 'knight_roland', requestId: 'roland_strength' });
-      visits.push({ hour: 17.5, customerId: 'elf_elowen', requestId: 'elowen_vision' });
-      // An easy extra visitor so the first day is not too quiet.
-      visits.push({ hour: 14.8, customerId: 'bard_melo', requestId: 'melo_voice' });
+      visits.push({ hour: 9.1, customerId: 'farmer_tom', requestId: 'tom_heal' });
+      visits.push({ hour: 10.8, customerId: 'bard_melo', requestId: 'melo_voice' });
+      visits.push({ hour: 12.4, customerId: 'knight_roland', requestId: 'roland_strength' });
+      visits.push({ hour: 14.1, customerId: 'farmer_tom', requestId: 'tom_glow' });
+      visits.push({ hour: 15.8, customerId: 'elf_elowen', requestId: 'elowen_vision' });
+      visits.push({ hour: 17.6, customerId: 'bard_melo', requestId: 'melo_stage' });
+      visits.push({ hour: 19.4, customerId: 'witch_hazel', requestId: 'hazel_heal' });
     } else {
-      // Customers drop by often: about every 1–2 in-game hours, more as the
-      // shop's reputation grows.
-      const count = Math.min(12, 6 + Math.floor(state.reputation / 20) + (day > 3 ? 2 : 0));
+      // Customers drop by often: roughly every 1–1.7 in-game hours, a bit
+      // more often as the shop's reputation grows.
+      const count = Math.min(14, 8 + Math.floor(state.reputation / 20) + (day > 3 ? 2 : 0));
       const eligible = Object.values(CUSTOMERS).filter((c) => !c.questOnly && !c.celebrity && c.minDay <= day && (c.minReputation ?? 0) <= state.reputation);
       const slots: number[] = [];
-      for (let i = 0; i < count; i++) slots.push(7.8 + ((21.3 - 7.8) * (i + this.rng.range(0.1, 0.9))) / count);
+      for (let i = 0; i < count; i++) slots.push(7.5 + ((21.3 - 7.5) * (i + this.rng.range(0.25, 0.75))) / count);
       let lastId = '';
       const used = new Set<string>();
       for (const hour of slots) {

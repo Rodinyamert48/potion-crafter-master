@@ -80,7 +80,8 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
 - **Müşteriler:** Cadı Hazel, Şövalye Roland, Elf Elowen, Goblin Snik, Dev
   Grumbold, Vampir Vlador, Ozan Melo, Madenci Dorin (cüce), Kaptan Tuzluca ve
   köylüler; her birinin kişiliği, sabrı, bütçesi, isteği, repliği ve sesi
-  var. Günde 6–12 müşteri gelir (itibar arttıkça daha çok). Kapıdan girer, sıraya geçer, sipariş verir,
+  var. Müşteriler sık gelir: ilk gün eğitimden sonra yaklaşık her 1,5–2
+  saatte bir, sonraki günlerde her 1–2 saatte bir (itibar arttıkça daha sık). Kapıdan girer, sıraya geçer, sipariş verir,
   bekler, içer, tepki verir, öder (paralar tezgâha düşer) ve gider.
 - **Toplama bölgeleri:** duvardaki keşif haritasından Fısıldayan Orman,
   Yankı Mağarası, Bulanık Bataklık veya Ejderha Vadisi'ne gidilir. Her bölgenin
