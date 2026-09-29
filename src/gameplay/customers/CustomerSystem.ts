@@ -15,7 +15,7 @@ import { judge } from './Economy';
 import { Frog } from './Frog';
 import type { Mentor } from './Mentor';
 import { FlaskItem } from '../potion/FlaskItem';
-import { Random } from '../../core/Random';
+import { Random, rng } from '../../core/Random';
 import { t, tr } from '../../core/i18n';
 import { phaseOf } from '../GameState';
 import { CG } from '../../physics/PhysicsTypes';
@@ -108,7 +108,7 @@ export class CustomerSystem implements GameSystem {
       c.sprite.play('surprised');
       const d = Math.hypot(c.object.position.x - pot.x, c.object.position.z - pot.z);
       const brave = c.def.personality === 'proud' || c.def.archetype === 'giant' || c.def.archetype === 'knight' || !!c.quest || c.infinitePatience;
-      const flee = !brave && strength >= 1 && (d < 2.5 || c.patience < c.patienceMax * 0.4 || this.rng.chance(0.3));
+      const flee = !brave && strength >= 1 && (d < 2.5 || c.patience < c.patienceMax * 0.4 || rng.chance(0.3));
       if (flee) {
         c.say(ctx, t('customer.fleeing'), 'worried', 2);
         ctx.later(0.5, () => c.alive && this.leave(c, 'fled'));
@@ -217,8 +217,36 @@ export class CustomerSystem implements GameSystem {
   private afterEnter(c: Customer): void {
     const ctx = this.ctx;
     c.line(ctx, 'greet');
+    // Most visitors look around the shop first; quest givers and the
+    // tutorial customer come straight to the counter.
+    const a = ctx.shop.anchors;
+    if (!c.infinitePatience && !c.quest && rng.chance(0.7)) {
+      c.phase = 'browsing';
+      const spot = a.browse[rng.int(0, a.browse.length - 1)].clone().add(new THREE.Vector3(rng.range(-0.3, 0.3), 0, rng.range(-0.2, 0.2)));
+      c.walk([spot], () => {
+        const secs = rng.range(2.5, 4.5);
+        c.lookAround(secs);
+        ctx.later(0.8, () => c.alive && c.phase === 'browsing' && rng.chance(0.6) && c.say(ctx, this.browseRemark(), 'neutral', 2.6));
+        ctx.later(secs, () => {
+          if (!c.alive || c.phase !== 'browsing') return;
+          c.phase = 'toSpot';
+          this.assignSpots();
+        });
+      });
+      return;
+    }
     c.phase = 'toSpot';
     this.assignSpots();
+  }
+
+  /** Something a visitor might mutter while looking around. */
+  private browseRemark(): string {
+    const ctx = this.ctx;
+    const keys = ['browse.bottles', 'browse.smell', 'browse.cozy', 'browse.books'];
+    if (ctx.shop.cauldron.chem.temperature > 95) keys.push('browse.bubbling');
+    if (ctx.renderer.lighting.nightness > 0.5) keys.push('browse.night');
+    keys.push('browse.cat', 'browse.slime');
+    return t(keys[rng.int(0, keys.length - 1)]);
   }
 
   /** First in line gets the counter, the rest queue behind. */

@@ -640,7 +640,9 @@ export function buildShop(ctx: GameContext): Shop {
     doorInside: V(3.8, 0, -3.2),
     counterSpot: V(3.4, 0, 0.08),
     queue: [V(3.95, 0, -0.95), V(3.3, 0, -1.75), V(4.3, 0, -2.3)],
-    browse: [V(2.2, 0, -1.9), V(4.4, 0, -1.6), V(3.0, 0, -2.6)],
+    // Places visitors stop to look around: the bookcase, the plants by the
+    // right wall and the shelf by the door (clear of the master's armchair).
+    browse: [V(1.7, 0, -1.3), V(4.4, 0, -1.55), V(2.95, 0, -3.0)],
     mentorSeat: V(2.35, 0.42, -2.72),
     serveZone: { minX: 2.8, maxX: 4.0, minZ: 0.5, maxZ: 1.25, y: 1.05 },
     coinDrop: V(3.35, 1.3, 0.85),

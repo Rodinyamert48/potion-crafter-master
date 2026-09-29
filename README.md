@@ -17,7 +17,16 @@ npm run dev        # geliştirme sunucusu (http://localhost:5173)
 npm run build      # tip kontrolü + üretim derlemesi (dist/)
 npm run preview    # derlenmiş sürümü sun
 npm test           # iksir kimyası birim testleri (vitest)
+npm run e2e        # tarayıcıda uçtan uca oynanış testi (önce npm run dev)
 ```
+
+`npm run e2e` (tests/e2e/first-potion.mjs) oyunu gerçek fare ve klavye
+girdisiyle baştan sona oynar: mantarı sepetten alıp doğrar, kovayla su döker,
+ocağa odun atıp körüğü pompalar, dilimleri kazana atar, kepçeyle karıştırır,
+şişeyi daldırıp iksiri tezgâha koyar, parayı alır ve kaydın sayfa
+yenilemesinden sağ çıktığını kontrol eder. Playwright'ın Chromium'u gerekir
+(`npx playwright install chromium`); farklı bir tarayıcı `CHROMIUM_PATH`, farklı
+bir adres `GAME_URL` ile verilebilir.
 
 Node 20+ ve WebGL2 destekli bir tarayıcı gerekir. Oyun sesleri ilk
 tıklamada açılır (tarayıcı otomatik oynatma kuralı).

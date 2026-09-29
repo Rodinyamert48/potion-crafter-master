@@ -18,6 +18,7 @@ import type { DrinkEffect } from './DrinkEffects';
 
 export type CustomerPhase =
   | 'entering'
+  | 'browsing'
   | 'toSpot'
   | 'queued'
   | 'ordering'
@@ -64,6 +65,8 @@ export class Customer extends Entity {
   infinitePatience = false;
   /** Temporary sprite scale (giant effect). */
   scaleMul = 1;
+  private lookT = 0;
+  private lookFlip = 0;
 
   constructor(ctx: GameContext, def: CustomerDef, request: CustomerRequest, start: THREE.Vector3) {
     super();
@@ -125,6 +128,16 @@ export class Customer extends Entity {
     return this.path.length > 0;
   }
 
+  /** Stand and look around the shop for a while (turning now and then). */
+  lookAround(seconds: number): void {
+    this.lookT = seconds;
+    this.lookFlip = 0.6;
+  }
+
+  get lookingAround(): boolean {
+    return this.lookT > 0;
+  }
+
   say(ctx: GameContext, text: string, mood: 'neutral' | 'happy' | 'angry' | 'worried' = 'neutral', duration?: number): void {
     if (!text) return;
     if (this.bubble >= 0) ctx.ui.removeBubble(this.bubble);
@@ -174,6 +187,15 @@ export class Customer extends Entity {
         if (Math.abs(dx) > 0.05) this.sprite.facing = dx > 0 ? 1 : -1;
         // footsteps
         ctx.vfx.rate(`steps${this.uid}`, 3.5, dt, () => ctx.audio.play('footstep', { x: p.x, volume: 0.5, pitch: 0.8 + this.def.height * 0.1, minGap: 0.05 }));
+      }
+    }
+
+    if (this.lookT > 0) {
+      this.lookT -= dt;
+      this.lookFlip -= dt;
+      if (this.lookFlip <= 0) {
+        this.lookFlip = rng.range(0.7, 1.4);
+        this.sprite.facing = -this.sprite.facing as 1 | -1;
       }
     }
 

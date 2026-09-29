@@ -20,6 +20,11 @@ import { CatalogPanel } from './ui/CatalogPanel';
 import { InventoryPanel, MenuPanel, SummaryPanel } from './ui/Panels';
 import { TitleScreen } from './ui/TitleScreen';
 import type { Settings } from './core/Settings';
+import { IngredientItem } from './gameplay/ingredients/IngredientItem';
+import { FlaskItem } from './gameplay/potion/FlaskItem';
+import { RECIPE_MAP } from './data/potions';
+import type { PrepState } from './data/types';
+import type { Tier } from './gameplay/potion/PotionEvaluator';
 
 const AUTOSTART = 'witchs-brew:autostart';
 
@@ -39,6 +44,16 @@ export class App {
   private readonly menu: MenuPanel;
   private readonly summary: SummaryPanel;
   private loadedSave = false;
+
+  /** Developer and playtest hooks (reachable as window.__wb.app.debug). */
+  readonly debug = {
+    spawnIngredient: (id: string, state: PrepState = 'whole', at: { x: number; y: number; z: number }) => this.ctx.world.add(new IngredientItem(this.ctx, id, state, 1, at), this.ctx),
+    spawnPotion: (recipeId: string, tier: Tier, at: { x: number; y: number; z: number }) => {
+      const r = RECIPE_MAP[recipeId];
+      const potion = { recipeId, tier, potency: 1 + tier, color: r.color, color2: r.color2, tags: r.tags, price: r.price, stability: 0.7, ingredients: [], brewTemp: 60 };
+      return this.ctx.world.add(new FlaskItem(this.ctx, at, potion), this.ctx);
+    },
+  };
 
   constructor(readonly game: Game) {
     const ctx = game.ctx;

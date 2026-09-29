@@ -529,7 +529,9 @@ export class BrewChemistry {
     const load = this.load(env.undissolvedMass);
     const cap = this.loadCapacity(env.capacity);
     if (load > cap && (this.water > 0.1 || env.undissolvedMass > 0)) {
-      this.volatility += 0.22 * (load / cap - 1 + 0.25) * dt;
+      // A few seconds of shaking and warnings before it goes off – time to
+      // fish pieces out or add water.
+      this.volatility += 0.16 * (load / cap - 1 + 0.25) * dt;
       volatile = true;
       this.pushEvent({ type: 'overload', value: load / cap }, 2.0);
     }
