@@ -69,6 +69,12 @@ export function recipeMismatch(recipe: RecipeDef, snap: BrewSnapshot): string | 
   if (recipe.requires) {
     for (const id of recipe.requires) if ((snap.ingredientMass[id] ?? 0) < 0.05) return `requires:${id}`;
   }
+  if (recipe.states) {
+    for (const [id, allowed] of Object.entries(recipe.states)) {
+      const used = snap.ingredientStates[id] ?? [];
+      if (!used.some((st) => allowed.includes(st))) return `state:${id}=${used.join('/') || 'none'}`;
+    }
+  }
   if (recipe.order) {
     for (const [first, second] of recipe.order) {
       const a = snap.ingredientFirst[first];

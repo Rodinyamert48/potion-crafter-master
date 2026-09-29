@@ -74,6 +74,7 @@ export class Customer extends Entity {
     this.request = request;
     this.patience = def.patience;
     this.patienceMax = def.patience;
+    this.speed *= def.walkSpeed ?? 1;
     const sheet = characterSheet(def.id, def.archetype, def.look);
     const heightPx = sheet.frameH;
     const scale = def.height / (heightPx / 40) / 0.97;

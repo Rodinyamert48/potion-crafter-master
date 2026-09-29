@@ -13,6 +13,7 @@ import { Customer } from './Customer';
 import { createDrinkEffect } from './DrinkEffects';
 import { judge } from './Economy';
 import { Frog } from './Frog';
+import { celebEntrance, celebIdle } from './Celebrity';
 import type { Mentor } from './Mentor';
 import { FlaskItem } from '../potion/FlaskItem';
 import { Random, rng } from '../../core/Random';
@@ -151,7 +152,7 @@ export class CustomerSystem implements GameSystem {
       visits.push({ hour: 17.5, customerId: 'elf_elowen', requestId: 'elowen_vision' });
     } else {
       const count = Math.min(7, 3 + Math.floor(state.reputation / 25) + (day > 3 ? 1 : 0));
-      const eligible = Object.values(CUSTOMERS).filter((c) => !c.questOnly && c.minDay <= day && (c.minReputation ?? 0) <= state.reputation);
+      const eligible = Object.values(CUSTOMERS).filter((c) => !c.questOnly && !c.celebrity && c.minDay <= day && (c.minReputation ?? 0) <= state.reputation);
       const slots: number[] = [];
       for (let i = 0; i < count; i++) slots.push(7.8 + ((21.3 - 7.8) * (i + this.rng.range(0.1, 0.9))) / count);
       let lastId = '';
@@ -170,9 +171,25 @@ export class CustomerSystem implements GameSystem {
         if (req) visits.push({ hour, customerId: c.id, requestId: req.id });
       }
     }
+    const guest = day > 1 ? this.pickCelebrity(day) : null;
+    if (guest) visits.push(guest);
     for (const e of extra) visits.push(e);
     visits.sort((a, b) => a.hour - b.hour);
     this.visits = visits;
+  }
+
+  /** At most one famous guest a day: whoever is still waiting for their
+   *  potion comes (again), otherwise now and then someone drops by. */
+  private pickCelebrity(day: number): Visit | null {
+    const state = this.ctx.state;
+    const celebs = Object.values(CUSTOMERS).filter((c) => c.celebrity && c.minDay <= day);
+    const unserved = celebs.filter((c) => !state.celebsServed.includes(c.id)).sort((a, b) => a.minDay - b.minDay);
+    const def = unserved[0] ?? (celebs.length > 0 && this.rng.chance(0.3) ? this.rng.pick(celebs) : undefined);
+    if (!def) return null;
+    const ranges: Record<DayPhase, [number, number]> = { morning: [8.2, 10.4], afternoon: [11.5, 15.5], evening: [17.2, 19.8], night: [21, 21] };
+    const phase = this.rng.pick(def.phases.filter((p) => p !== 'night'));
+    const [a, b] = ranges[phase ?? 'afternoon'];
+    return { hour: this.rng.range(a, b), customerId: def.id, requestId: def.requests[0].id };
   }
 
   addVisit(v: Visit): void {
@@ -217,6 +234,13 @@ export class CustomerSystem implements GameSystem {
   private afterEnter(c: Customer): void {
     const ctx = this.ctx;
     c.line(ctx, 'greet');
+    if (c.def.celebrity) {
+      // Famous guests make an entrance and head straight for the counter.
+      celebEntrance(ctx, c);
+      c.phase = 'toSpot';
+      ctx.later(1.2, () => c.alive && this.assignSpots());
+      return;
+    }
     // Most visitors look around the shop first; quest givers and the
     // tutorial customer come straight to the counter.
     const a = ctx.shop.anchors;
@@ -314,6 +338,8 @@ export class CustomerSystem implements GameSystem {
       ctx.world.remove(c);
     });
     ctx.later(reason === 'fled' ? 0.6 : 2.2, () => ctx.shop.door.open(ctx, 2));
+    if (c.def.celebrity && !ctx.state.celebsServed.includes(c.def.id))
+      ctx.bus.emit('toast', { text: t('celeb.comeback', { name: c.name }), kind: 'info' });
     ctx.bus.emit('customer:left', { uid: c.uid, customerId: c.def.id, reason });
     this.assignSpots();
   }
@@ -367,6 +393,20 @@ export class CustomerSystem implements GameSystem {
     if (j.outcome === 'happy' || j.outcome === 'delighted') {
       ctx.state.dayStats.happy++;
       ctx.state.stats.happy++;
+      if (c.def.celebrity) {
+        const first = !ctx.state.celebsServed.includes(c.def.id);
+        if (first) ctx.state.celebsServed.push(c.def.id);
+        ctx.bus.emit('celeb:served', { customerId: c.def.id, first });
+        if (c.def.celebrity === 'beast') {
+          // The giveaway: a pile of gold on top of the tip.
+          ctx.later(1.4, () => {
+            ctx.state.addMoney(100);
+            ctx.ui.floatText(ctx.shop.anchors.coinDrop.clone().add(new THREE.Vector3(0, 0.8, 0)), '+100', '#fee761');
+            ctx.bus.emit('toast', { text: t('celeb.giveaway'), kind: 'good' });
+            ctx.audio.play('coins', { amount: 12 });
+          });
+        }
+      }
     }
     if (total > 0) {
       ctx.state.addMoney(total);
@@ -479,6 +519,7 @@ export class CustomerSystem implements GameSystem {
 
     for (const c of this.customers) {
       if (!c.alive) continue;
+      if (c.def.celebrity) celebIdle(ctx, c, dt);
       if (c.phase === 'waiting') {
         const f = this.findServed(c);
         if (f) {

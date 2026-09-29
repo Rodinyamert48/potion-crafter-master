@@ -8,6 +8,7 @@ import type { DrinkEffectId } from '../../data/types';
 import type { Customer } from './Customer';
 import type { Judgement } from './Economy';
 import { rng } from '../../core/Random';
+import { cameraPunch, goldRain, sprinkleSalt } from './Celebrity';
 
 export interface DrinkEffect {
   update(ctx: GameContext, c: Customer, dt: number): void;
@@ -255,6 +256,85 @@ export function createDrinkEffect(ctx: GameContext, c: Customer, drink: DrinkEff
           if (cu.def.archetype === 'vampire') {
             if (t < 1.5) cx.vfx.rate(`bl${cu.uid}`, 10, dt, () => cx.vfx.magic(head(), '#a22633', 1, 0.2, 0.2));
           } else if (t < 2) cu.sprite.play('sick');
+        },
+        speak,
+      );
+    case 'peace':
+      // Everything goes quiet and lavender… (a streamer only lasts so long).
+      return new TimedEffect(
+        4.2,
+        (cx, cu, t, dt) => {
+          mat.emissive.set('#e8e0ff');
+          mat.emissiveIntensity = t < 3 ? 0.35 : 0.12;
+          if (t < 0.05) {
+            cx.vfx.runes(cu.object.position.clone().setY(0.05), '#b8a0ff', 5, 0.6);
+            cx.audio.play('chime', { x: cu.object.position.x, pitch: 0.8, volume: 0.6 });
+          }
+          if (t > 0.3 && t < 0.35) cu.say(cx, '✌️ …', 'happy', 2.2);
+          if (t < 3) cx.vfx.rate(`peace${cu.uid}`, 6, dt, () => cx.vfx.mote(cu.object.position.clone().add(new THREE.Vector3(0, 0.2, 0)), '#e8e0ff', 0.5));
+          if (cu.def.celebrity === 'speed' && t > 3 && t < 3.05) {
+            cu.sprite.play('happy');
+            cx.audio.play('bark', { x: cu.object.position.x });
+            cx.vfx.stars(head(), '#c42430', 20);
+            cx.bus.emit('shake', { amount: 0.15 });
+          }
+        },
+        speak,
+        restore,
+      );
+    case 'salt':
+      return new TimedEffect(
+        3.2,
+        (cx, cu, t) => {
+          if (t < 0.05) {
+            cu.sprite.play('happy');
+            sprinkleSalt(cx, cu, 1.8);
+            cx.audio.play('sprinkle', { x: cu.object.position.x });
+            cx.audio.play('sizzle', { x: cu.object.position.x, delay: 0.3, volume: 0.4 });
+          }
+        },
+        speak,
+      );
+    case 'goldrain':
+      return new TimedEffect(
+        3.6,
+        (cx, cu, t) => {
+          if (t < 0.05) {
+            goldRain(cx, cu.object.position.clone(), 2.4);
+            cx.audio.play('chime', { x: cu.object.position.x });
+            mat.emissive.set('#fee761');
+          }
+          mat.emissiveIntensity = t < 2.6 ? 0.45 : 0.12;
+        },
+        speak,
+        restore,
+      );
+    case 'eyebrow':
+      return new TimedEffect(
+        3,
+        (cx, cu, t) => {
+          if (t < 0.05) {
+            cx.audio.play('boom', { x: cu.object.position.x });
+            cameraPunch(cx, head().add(new THREE.Vector3(0, -0.2, 0)), 1.3);
+            cu.sprite.play('surprised');
+            cx.bus.emit('shake', { amount: 0.12 });
+          }
+          if (t > 0.2 && t < 0.25) cu.say(cx, '🤨', 'neutral', 1.6);
+          cu.sprite.squash = t < 0.4 ? -0.3 * Math.sin((t / 0.4) * Math.PI) : 0;
+        },
+        speak,
+      );
+    case 'breathtaking':
+      return new TimedEffect(
+        3.4,
+        (cx, cu, t, dt) => {
+          if (t < 0.05) cx.audio.play('magic', { x: cu.object.position.x, pitch: 1.2 });
+          // Frosty breath and floating hearts
+          if (t < 2.2)
+            cx.vfx.rate(`breath${cu.uid}`, 10, dt, () =>
+              cx.vfx.puff(head().add(new THREE.Vector3(cu.sprite.facing * 0.15, -0.15, 0.1)), '#d8f0ff', 2, 0.35),
+            );
+          if (t > 1.2 && t < 1.25) cx.vfx.heartBurst(head(), '#9fe8ff');
         },
         speak,
       );

@@ -71,6 +71,12 @@ export abstract class Entity {
     return null;
   }
 
+  /** Secondary press: right click, or a long press on touch screens.
+   *  Return true when handled. */
+  altPress(_ctx: GameContext): boolean {
+    return false;
+  }
+
   update(_ctx: GameContext, _dt: number): void {}
   fixedUpdate(_ctx: GameContext, _dt: number): void {}
 

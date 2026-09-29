@@ -195,3 +195,40 @@ describe('recipes are reachable', () => {
     }
   });
 });
+
+describe('celebrity specials are reachable', () => {
+  it("Lâ Peace: dried moon flower + mushroom, warm and perfectly calm", () => {
+    const sim = new BrewSim().water(2).fire(0.5).heatTo(45).add('moon_flower', 'dried').addPieces('glowing_mushroom', 'sliced', 1, 3).stirAt(1.2).run(60);
+    expectRecipe(sim, 'la_peace', 2);
+  });
+
+  it('…but without calm stirring there is no peace', () => {
+    const sim = new BrewSim().water(2).fire(0.5).heatTo(45).add('moon_flower', 'dried').addPieces('glowing_mushroom', 'sliced', 1, 3).run(60);
+    expect(sim.result().recipeId).not.toBe('la_peace');
+  });
+
+  it('Salt Sprinkle: hot dragon scale first, ground frost crystal sprinkled last', () => {
+    const sim = new BrewSim().water(2).fire(1).heatTo(90).add('dragon_scale', 'ground').run(10).add('frost_crystal', 'ground').stirAt(1.5).run(30);
+    expectRecipe(sim, 'salt_sprinkle', 2);
+  });
+
+  it('salt first spoils the Salt Sprinkle', () => {
+    const sim = new BrewSim().water(2).fire(1).heatTo(90).add('frost_crystal', 'ground').run(5).add('dragon_scale', 'ground').stirAt(1.5).run(30);
+    expect(sim.result().recipeId).not.toBe('salt_sprinkle');
+  });
+
+  it('Golden Rain: ground dragon scale + dried mushroom, hot and steady', () => {
+    const sim = new BrewSim().water(2).fire(0.8).heatTo(75).add('dragon_scale', 'ground').add('glowing_mushroom', 'dried').stirAt(1.5).run(50);
+    expectRecipe(sim, 'gold_rain', 2);
+  });
+
+  it('Eyebrow Raise: dragon scale + a whole bog toad eye, hot', () => {
+    const sim = new BrewSim().water(2).fire(0.95).heatTo(85).add('dragon_scale', 'shards', 3, 1 / 3).add('bog_toad_eye', 'whole').stirAt(1.5).run(60);
+    expectRecipe(sim, 'eyebrow_raise', 2);
+  });
+
+  it('Breathtaking: moon flower + frost crystal, kept cool', () => {
+    const sim = new BrewSim().water(2).fire(0.3).heatTo(30).add('moon_flower', 'whole').add('frost_crystal', 'whole').stirAt(1.3).run(60);
+    expectRecipe(sim, 'breathtaking', 2);
+  });
+});

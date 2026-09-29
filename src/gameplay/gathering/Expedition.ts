@@ -93,6 +93,7 @@ export class Expedition {
       parts.push(`${n}× ${tr(def.name)}`);
     }
     s.stats.trips = (s.stats.trips ?? 0) + 1;
+    ctx.bus.emit('trip:done', { region: region.id });
     ctx.audio.play('doorBell', {});
     ctx.bus.emit('toast', { text: parts.length ? t('trip.back', { r: tr(region.name), items: parts.join(', ') }) : t('trip.empty'), kind: parts.length ? 'good' : 'info' });
     if (missed > 0) ctx.bus.emit('toast', { text: t('trip.missed', { n: missed }), kind: 'warn' });

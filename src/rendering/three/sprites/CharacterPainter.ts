@@ -67,6 +67,9 @@ const BUILDS: Record<Archetype, Build> = {
   villager: { w: 40, h: 74, scale: 1, headR: 7.5, bodyW: 15, legLen: 14, skirt: false, bulky: false },
   guard: { w: 42, h: 76, scale: 1, headR: 7.5, bodyW: 16, legLen: 15, skirt: false, bulky: true },
   wizard: { w: 44, h: 80, scale: 1, headR: 7.5, bodyW: 16, legLen: 12, skirt: true, bulky: false },
+  // Present-day guests (the celebrity cameos): plain clothes, see extras.
+  celeb: { w: 40, h: 76, scale: 1, headR: 7.5, bodyW: 14, legLen: 16, skirt: false, bulky: false },
+  strongman: { w: 46, h: 80, scale: 1, headR: 7.5, bodyW: 20, legLen: 16, skirt: false, bulky: true },
 };
 
 const ANIMS: Record<string, { poses: Pose[]; fps: number; loop: boolean }> = {
@@ -222,8 +225,8 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
       const swing = pose.leg * side;
       const fx = cx + side * legGap + swing * 3 * k - legW / 2;
       p.thickLine(cx + side * legGap, hipY, fx + legW / 2, footY - 2, legW, legColor);
-      // boots
-      const bootC = arch === 'knight' || arch === 'guard' ? '#8b9bb4' : '#3e2731';
+      // boots (sneakers for the modern guests)
+      const bootC = arch === 'knight' || arch === 'guard' ? '#8b9bb4' : extra.has('sneakers') ? '#f4f4f4' : '#3e2731';
       p.rect(fx - 1, footY - 3, legW + 2, 3, bootC);
       if (swing < 0) p.rect(fx - 1, footY - 3, legW + 2, 1, shadeHex(bootC, 0.2));
     }
@@ -240,6 +243,21 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
   const torsoTop = oy + (arch === 'goblin' ? 20 : arch === 'giant' ? 34 : 30) + bob + (sitting ? 6 : 0);
   const torsoBot = hipY + 2;
   const tx0 = cx - bw / 2 + lean;
+  if (extra.has('backpack')) {
+    // A traveller's frame pack behind the body: bedroll on top, a pot and
+    // a lantern dangling from the sides.
+    const px0 = tx0 - 4;
+    const pw = bw + 8;
+    const pTop = torsoTop - 13;
+    p.rect(px0, pTop, pw, torsoBot - pTop - 4, '#8f5d3b');
+    p.rect(px0 + pw - 3, pTop, 3, torsoBot - pTop - 4, '#733e39');
+    p.hline(px0, px0 + pw - 1, pTop + 6, '#3e2731');
+    p.ellipse(px0 + pw / 2, pTop - 1, pw / 2 + 1, 3, '#a22633');
+    p.hline(px0 + 2, px0 + pw - 3, pTop - 1, '#e43b44');
+    p.disc(px0 - 1, pTop + 12, 3, '#5a6988');
+    p.rect(px0 + pw, pTop + 8, 3, 5, '#feae34');
+    p.px(px0 + pw + 1, pTop + 10, '#fee761');
+  }
   if (b.skirt) {
     // Robe / dress: trapezoid down to the ankles
     const skirtBot = sitting ? hipY + 10 : footY - 3;
@@ -268,8 +286,48 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
     p.rect(tx0 + 1, torsoTop, 2, torsoBot - torsoTop, mainL);
   }
   // Belt
-  p.rect(tx0, hipY - 1, bw, 2, arch === 'vampire' ? '#3a4466' : '#3e2731');
-  p.rect(cx - 1 + lean, hipY - 1, 3, 2, accent);
+  if (!extra.has('hoodie') && !extra.has('jersey')) {
+    p.rect(tx0, hipY - 1, bw, 2, arch === 'vampire' ? '#3a4466' : '#3e2731');
+    p.rect(cx - 1 + lean, hipY - 1, 3, 2, accent);
+  }
+  // Modern clothes
+  if (extra.has('jersey')) {
+    // Football shirt: white collar trim, side stripes and a big number 7.
+    p.hline(cx - 3 + lean, cx + 3 + lean, torsoTop, '#ffffff');
+    p.vline(tx0, torsoTop + 2, torsoBot - 1, second);
+    p.vline(tx0 + bw - 1, torsoTop + 2, torsoBot - 1, second);
+    const nx = cx - 2 + lean;
+    const ny = torsoTop + 4;
+    p.hline(nx, nx + 4, ny, accent);
+    p.line(nx + 4, ny + 1, nx + 1, ny + 7, accent);
+  }
+  if (extra.has('hoodie')) {
+    // Kangaroo pocket and drawstrings
+    p.rect(cx - 4 + lean, hipY - 7, 8, 5, mainD);
+    p.hline(cx - 3 + lean, cx + 3 + lean, hipY - 7, mainL);
+    p.vline(cx - 2 + lean, torsoTop + 1, torsoTop + 6, '#f4f4f4');
+    p.vline(cx + 2 + lean, torsoTop + 1, torsoTop + 5, '#f4f4f4');
+  }
+  if (extra.has('suit')) {
+    // White shirt, lapels and a thin tie
+    p.poly(
+      [
+        [cx - 3 + lean, torsoTop],
+        [cx + 3 + lean, torsoTop],
+        [cx + lean, torsoTop + 9],
+      ],
+      '#f4f4f4',
+    );
+    p.vline(cx + lean, torsoTop + 1, torsoTop + 10, accent);
+    p.line(cx - 4 + lean, torsoTop, cx - 1 + lean, torsoTop + 9, mainL);
+    p.line(cx + 4 + lean, torsoTop, cx + 1 + lean, torsoTop + 9, mainL);
+  }
+  if (extra.has('tank')) {
+    // Tank top: bare shoulders, straps
+    p.rect(tx0, torsoTop, 3, 4, skin);
+    p.rect(tx0 + bw - 3, torsoTop, 3, 4, skin);
+    p.rect(cx - 3 + lean, torsoTop, 6, 2, skin);
+  }
 
   // Archetype torso details
   if (arch === 'knight' || arch === 'guard') {
@@ -330,13 +388,19 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
   const shoulderY = torsoTop + 2;
   const armLen = Math.round((arch === 'goblin' ? 9 : arch === 'giant' ? 20 : 12) * (arch === 'giant' ? 1 : 1));
   const armT = arch === 'giant' ? 6 : b.bulky ? 4 : 3;
-  const sleeve = arch === 'knight' || arch === 'guard' ? '#8b9bb4' : main;
+  const bareArms = extra.has('tank') || extra.has('tee');
+  const sleeve = arch === 'knight' || arch === 'guard' ? '#8b9bb4' : bareArms ? skin : main;
   const leftShoulderX = tx0 - 1;
   const rightShoulderX = tx0 + bw + 1;
   // Left arm (screen left) swings "forward" as negative x? keep simple: angle opens outward.
   const lh = limb(p, leftShoulderX, shoulderY, -pose.armL * 0.9, armLen, armT, sleeve, skin);
   const rh = limb(p, rightShoulderX, shoulderY, pose.armR * 0.9, armLen, armT, sleeve, skin);
   void lh;
+  if (extra.has('tee')) {
+    // Short sleeves over the bare arms
+    limb(p, leftShoulderX, shoulderY, -pose.armL * 0.9, 4, armT + 1, main, null);
+    limb(p, rightShoulderX, shoulderY, pose.armR * 0.9, 4, armT + 1, main, null);
+  }
   if (pose.holding) {
     // Potion in the right hand
     p.rect(rh.x - 2, rh.y - 6, 4, 6, '#c0cbdc');
@@ -402,17 +466,27 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
       p.px(hx + s * (hr + 1), headCY - 1, skinD);
     }
   }
+  if (extra.has('hoodie')) {
+    // The hood rests down behind the neck.
+    p.ellipse(hx, headCY + hr + 1, hr + 1, 3, mainD);
+  }
+  if (extra.has('longhair')) {
+    // Long hair falls behind the head to the shoulders.
+    p.rect(hx - hr - 1, headCY - 2, hr * 2 + 2, hr + 7, hair);
+  }
   p.ellipse(hx, headCY, hr, hr * (arch === 'goblin' ? 0.85 : 1), skin);
   p.ellipse(hx + hr * 0.45, headCY + 1, hr * 0.55, hr * 0.8, skinD, 0.35);
   // Beard (giant / wizard)
-  if (extra.has('beard') || arch === 'wizard') {
-    const beardC = arch === 'wizard' ? '#f4f4f4' : hair;
+  if (extra.has('beard') || extra.has('stubble') || arch === 'wizard') {
+    // Stubble is a shadow on the jaw (skin mixed with hair), a beard is hair.
+    const beardC = arch === 'wizard' ? '#f4f4f4' : extra.has('stubble') ? mixHex(skin, hair, 0.55) : hair;
+    const beardLen = arch === 'wizard' ? 12 : extra.has('stubble') ? 1 : 6;
     p.poly(
       [
         [hx - hr + 1, headCY + 1],
         [hx + hr - 1, headCY + 1],
-        [hx + hr * 0.4, headCY + hr + (arch === 'wizard' ? 12 : 6)],
-        [hx - hr * 0.4, headCY + hr + (arch === 'wizard' ? 12 : 6)],
+        [hx + hr * 0.4, headCY + hr + beardLen],
+        [hx - hr * 0.4, headCY + hr + beardLen],
       ],
       beardC,
     );
@@ -469,6 +543,17 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
     p.px(ex0, ey, '#e43b44');
     p.px(ex1, ey, '#e43b44');
   }
+  if (extra.has('sunglasses')) {
+    p.rect(ex0 - 2, ey - 1, ex1 - ex0 + 5, 3, '#181425');
+    p.px(ex0 - 1, ey - 1, '#5a6988');
+    p.px(ex1, ey - 1, '#5a6988');
+  }
+  if (extra.has('brow')) {
+    // The People's Eyebrow: one brow raised high, the other low and serious.
+    p.hline(ex0 - 1, ex0 + 1, ey - 2, OUTLINE);
+    p.line(ex1 - 2, ey - 3, ex1 + 1, ey - 5, OUTLINE);
+    p.px(ex1 + 2, ey - 4, OUTLINE);
+  }
 
   // Mouth
   const my = headCY + Math.round(hr * 0.5);
@@ -494,7 +579,7 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
       p.px(hx + 2, my + 1, '#3e2731');
       break;
     default:
-      if (!(extra.has('beard') || arch === 'wizard')) p.hline(hx - 1, hx + 1, my, shadeHex(skin, -0.35));
+      if (!(extra.has('beard') || arch === 'wizard')) p.hline(hx - 1, hx + 1, my, extra.has('stubble') ? '#3e2731' : shadeHex(skin, -0.35));
   }
   if (arch === 'vampire' && (pose.mouth === 'open' || pose.mouth === 'grin' || pose.mouth === 'smile')) {
     p.px(hx - 1, my + 2, '#ffffff');
@@ -555,6 +640,24 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
     p.ellipse(hx, top + 1, hr - 1, 3, '#d4b04a');
     p.hline(hx - hr + 1, hx + hr - 1, top + 2, '#a22633');
     p.rect(hx - hr, top + 4, 2, 3, hair);
+  } else if (extra.has('bald')) {
+    p.px(hx - 2, top + 2, shadeHex(skin, 0.35));
+    p.px(hx - 1, top + 2, shadeHex(skin, 0.25));
+  } else if (extra.has('fade')) {
+    // Short fade: dark on top, lighter at the sides.
+    p.ellipse(hx, top + 2, hr - 0.5, 3, hair);
+    p.rect(hx - hr, top + 3, 1, 4, shadeHex(hair, 0.25));
+    p.rect(hx + hr - 1, top + 3, 1, 4, shadeHex(hair, 0.25));
+  } else if (extra.has('slick')) {
+    // Slicked back: flat and glossy on top, a little volume at the back.
+    p.ellipse(hx, top + 2, hr + 0.5, 3.5, hair);
+    p.rect(hx - hr, top + 2, 2, 4, hair);
+    p.rect(hx + hr - 2, top + 2, 2, 4, hair);
+    p.hline(hx - 3, hx + 2, top, shadeHex(hair, 0.35));
+  } else if (extra.has('longhair')) {
+    p.ellipse(hx, top + 2, hr + 1, 4, hair);
+    p.rect(hx - hr - 1, top + 2, 3, hr + 6, hair);
+    p.rect(hx + hr - 2, top + 2, 3, hr + 6, hair);
   } else {
     // Plain hair
     p.ellipse(hx, top + 3, hr + 0.5, 4, hair);

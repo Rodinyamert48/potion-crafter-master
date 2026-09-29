@@ -98,6 +98,7 @@ export class CatPanel implements Panel {
     input.type = 'text';
     input.maxLength = CAT_NAME_MAX;
     input.value = look.name;
+    input.defaultValue = look.name;
     input.spellcheck = false;
     input.addEventListener('input', () => {
       look.name = input.value.slice(0, CAT_NAME_MAX);
@@ -108,8 +109,10 @@ export class CatPanel implements Panel {
       if (e.key === 'Escape') ctx.ui.openPanel(null);
     });
     input.addEventListener('blur', () => {
+      const before = input.defaultValue;
       look.name = look.name.trim() || defaultCat().name;
       input.value = look.name;
+      if (look.name !== before) ctx.bus.emit('cat:customized', {});
     });
     form.appendChild(input);
 
@@ -122,6 +125,7 @@ export class CatPanel implements Panel {
       b.setAttribute('aria-label', b.title);
       b.addEventListener('click', () => {
         look.fur = f.id;
+        ctx.bus.emit('cat:customized', {});
         ctx.audio.play('uiClick', {});
         this.render();
       });
@@ -140,6 +144,7 @@ export class CatPanel implements Panel {
       b.setAttribute('aria-label', b.title);
       b.addEventListener('click', () => {
         look.eyes = e.id;
+        ctx.bus.emit('cat:customized', {});
         ctx.audio.play('uiClick', {});
         this.render();
       });

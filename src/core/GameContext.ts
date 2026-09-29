@@ -30,10 +30,12 @@ export interface UIHooks {
   removeBubble(id: number): void;
   /** Floating text (e.g. +12 gold) at a world position. */
   floatText(world: THREE.Vector3, text: string, color?: string): void;
-  openPanel(panel: 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat' | null): void;
-  isPanelOpen(panel: 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat'): boolean;
+  openPanel(panel: PanelName | null): void;
+  isPanelOpen(panel: PanelName): boolean;
   readonly panelOpen: boolean;
 }
+
+export type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat' | 'merchant' | 'achievements';
 
 export interface Bounds {
   minX: number;

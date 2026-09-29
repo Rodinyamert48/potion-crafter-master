@@ -5,7 +5,7 @@ import type { BrewEventType } from '../gameplay/potion/BrewChemistry';
 import type { PotionResult } from '../gameplay/potion/PotionEvaluator';
 
 export type ServeOutcome = 'delighted' | 'happy' | 'weak' | 'wrong' | 'harmful' | 'frog';
-export type ToastKind = 'info' | 'good' | 'bad' | 'warn' | 'discovery' | 'quest';
+export type ToastKind = 'info' | 'good' | 'bad' | 'warn' | 'discovery' | 'quest' | 'achievement';
 
 export interface GameEvents {
   money: { money: number; delta: number };
@@ -19,6 +19,13 @@ export interface GameEvents {
   'shop:closed': Record<string, never>;
   /** The player touched the save crystal. */
   'crystal:touched': Record<string, never>;
+  'cat:petted': { count: number };
+  'celeb:served': { customerId: string; first: boolean };
+  'merchant:arrived': Record<string, never>;
+  'merchant:trade': { kind: 'buy' | 'sell'; amount: number };
+  'cat:customized': Record<string, never>;
+  'trip:done': { region: string };
+  achievement: { id: string };
 
   'ingredient:taken': { id: string };
   'ingredient:processed': { id: string; from: PrepState; to: PrepState; action: ToolAction };

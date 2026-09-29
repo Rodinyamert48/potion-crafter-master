@@ -156,7 +156,12 @@ export type DrinkEffectId =
   | 'water'
   | 'glow'
   | 'blood'
-  | 'scorched';
+  | 'scorched'
+  | 'peace'
+  | 'salt'
+  | 'goldrain'
+  | 'eyebrow'
+  | 'breathtaking';
 
 export type BottleShape = 'round' | 'tall' | 'flask' | 'vial' | 'heart' | 'skull';
 
@@ -181,6 +186,8 @@ export interface RecipeDef {
   /** [first, second]: `first` must begin dissolving before `second`. */
   order?: Array<[string, string]>;
   requires?: string[];
+  /** Ingredient must have gone in prepared one of these ways. */
+  states?: Record<string, PrepState[]>;
   /** Weighted average temperature while essence was released. */
   brewTemp?: ShareCondition;
   /** Average temperature while a specific ingredient dissolved. */
@@ -203,7 +210,7 @@ export interface RecipeDef {
 // Characters
 // ---------------------------------------------------------------------------
 
-export type Archetype = 'witch' | 'knight' | 'giant' | 'elf' | 'goblin' | 'vampire' | 'villager' | 'guard' | 'wizard';
+export type Archetype = 'witch' | 'knight' | 'giant' | 'elf' | 'goblin' | 'vampire' | 'villager' | 'guard' | 'wizard' | 'celeb' | 'strongman';
 
 export interface CharacterLook {
   skin: string;
@@ -263,7 +270,13 @@ export interface CustomerDef {
   height: number;
   /** Only visits as part of a quest. */
   questOnly?: boolean;
+  /** A famous guest (affectionate parody cameo) with its own gags. */
+  celebrity?: CelebId;
+  /** Walking speed multiplier. */
+  walkSpeed?: number;
 }
+
+export type CelebId = 'speed' | 'saltbae' | 'beast' | 'rock' | 'keanu';
 
 // ---------------------------------------------------------------------------
 // Quests

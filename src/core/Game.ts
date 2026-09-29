@@ -226,7 +226,7 @@ export class Game {
       if (input.isDown('KeyQ')) rig.rotate(dt * 0.9);
       if (input.isDown('KeyE')) rig.rotate(-dt * 0.9);
       // Right/middle drag pans the view when nothing is held.
-      if ((input.pointer.down[2] || input.pointer.down[1]) && input.pointer.valid) {
+      if ((input.pointer.down[2] || input.pointer.down[1]) && input.pointer.valid && !ctx.interaction.altConsumed) {
         const k = rig.distance * 0.0016;
         rig.pan(-input.pointer.dx * k, -input.pointer.dy * k);
       }

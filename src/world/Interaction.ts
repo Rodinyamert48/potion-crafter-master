@@ -308,19 +308,37 @@ export class Interaction {
   }
 
   private pointerDown(button: number): void {
-    if (!this.enabled || button !== 0) return;
+    if (!this.enabled) return;
     this.updateRay();
     if (this.grab) return;
+    if (button === 2) {
+      // Right click: secondary action (e.g. the cat's customization).
+      const picked = this.pick();
+      if (picked?.entity.altPress(this.ctx)) this.altConsumed = true;
+      return;
+    }
+    if (button !== 0) return;
     const picked = this.pick();
     if (!picked) return;
+    const input = this.ctx.input;
+    // On touch screens a long press stands in for the right click.
+    this.longPress =
+      input.pointer.type !== 'mouse' ? { entity: picked.entity, t: 0, x: input.pointer.x, y: input.pointer.y } : null;
     const grab = picked.entity.press(this.ctx, picked.hit);
     if (grab) {
       this.grab = grab;
       this.highlighter.set(null);
+      this.longPress = null;
     }
   }
 
+  /** True while a right press was used by an entity (so it doesn't pan). */
+  altConsumed = false;
+  private longPress: { entity: Entity; t: number; x: number; y: number } | null = null;
+
   private pointerUp(button: number): void {
+    if (button === 2) this.altConsumed = false;
+    if (button === 0) this.longPress = null;
     if (button !== 0 || !this.grab) return;
     const g = this.grab;
     this.grab = null;
@@ -338,6 +356,16 @@ export class Interaction {
     const ctx = this.ctx;
     this.updateRay();
     this.highlighter.setResolution(ctx.renderer.lowWidth, ctx.renderer.lowHeight);
+    const lp = this.longPress;
+    if (lp) {
+      const p = ctx.input.pointer;
+      lp.t += dt;
+      if (!p.down[0] || this.grab || Math.hypot(p.x - lp.x, p.y - lp.y) > 14) this.longPress = null;
+      else if (lp.t > 0.5) {
+        this.longPress = null;
+        if (lp.entity.alive) lp.entity.altPress(ctx);
+      }
+    }
     if (this.grab) {
       if (!this.grab.entity.alive) {
         this.cancelGrab();

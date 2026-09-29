@@ -7,7 +7,7 @@ import type { GameContext, UIHooks } from '../core/GameContext';
 import type { CursorKind, HoverInfo } from '../world/Entity';
 import { cursorCSS, gloveCursorCSS } from './pixelArt';
 
-type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat';
+import type { PanelName } from '../core/GameContext';
 
 export interface Panel {
   readonly el: HTMLElement;
@@ -230,8 +230,9 @@ export class UIRoot implements UIHooks {
     const el = h('div', `wb-toast wb-toast-${kind}`, text);
     this.toastBox.appendChild(el);
     while (this.toastBox.children.length > 4) this.toastBox.firstElementChild?.remove();
-    setTimeout(() => el.classList.add('wb-toast-out'), kind === 'discovery' ? 4200 : 3000);
-    setTimeout(() => el.remove(), kind === 'discovery' ? 4800 : 3600);
+    const long = kind === 'discovery' || kind === 'achievement';
+    setTimeout(() => el.classList.add('wb-toast-out'), long ? 4200 : 3000);
+    setTimeout(() => el.remove(), long ? 4800 : 3600);
   }
 
   // -------------------------------------------------------------------------

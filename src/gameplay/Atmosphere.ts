@@ -27,6 +27,7 @@ export class ShopCat extends Entity {
   private lookKey = '';
   private awakeUntil = 0;
   private hissUntil = 0;
+  private pets = 0;
 
   constructor(pos: THREE.Vector3, look: CatLook) {
     super();
@@ -45,20 +46,31 @@ export class ShopCat extends Entity {
   }
 
   override hover(ctx: GameContext): HoverInfo {
-    return { title: ctx.state.cat.name || t('obj.cat'), hint: t('hint.cat') };
+    const touch = ctx.input.pointer.type !== 'mouse';
+    return { title: ctx.state.cat.name || t('obj.cat'), hint: t(touch ? 'hint.catTouch' : 'hint.cat') };
   }
 
   override cursor() {
     return 'point' as const;
   }
 
+  /** Left click: pet the cat. */
   override press(ctx: GameContext) {
     this.pet(ctx);
-    ctx.ui.openPanel('cat');
     return null;
   }
 
+  /** Right click (long press on touch): dress it up. */
+  override altPress(ctx: GameContext): boolean {
+    ctx.audio.play('meow', { x: this.object.position.x, pitch: 1.2 });
+    this.awakeUntil = ctx.time + 4;
+    ctx.ui.openPanel('cat');
+    return true;
+  }
+
   pet(ctx: GameContext): void {
+    this.pets++;
+    ctx.bus.emit('cat:petted', { count: this.pets });
     this.awakeUntil = ctx.time + 4;
     ctx.audio.play('meow', { x: this.object.position.x });
     ctx.vfx.heartBurst(this.object.position.clone().add(new THREE.Vector3(0, 0.3, 0)), '#f6757a');

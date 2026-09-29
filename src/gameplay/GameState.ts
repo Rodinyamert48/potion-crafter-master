@@ -79,12 +79,25 @@ export class GameState {
   servedToday: string[] = [];
   /** The shop cat's name and look. */
   cat: CatLook = defaultCat();
+  /** Famous guests who got the potion they came for. */
+  celebsServed: string[] = [];
+  /** What was bought from the wandering merchant on his current visit. */
+  merchant: { day: number; bought: Record<string, number> } = { day: 0, bought: {} };
+  /** Unlocked achievements (id → day). */
+  achievements: Record<string, number> = {};
+  /** Misc. counters the achievements look at (cat pets, trades, regions…). */
+  counters: Record<string, number> = {};
 
   constructor(private readonly bus: EventBus<GameEvents>) {}
 
   // -------------------------------------------------------------------------
   // Economy
   // -------------------------------------------------------------------------
+
+  /** Bump one of the achievement counters. */
+  count(key: string, n = 1): void {
+    this.counters[key] = (this.counters[key] ?? 0) + n;
+  }
 
   canAfford(n: number): boolean {
     return this.money >= n;
@@ -247,6 +260,10 @@ export class GameState {
       dayStats: this.dayStats,
       servedToday: this.servedToday,
       cat: this.cat,
+      celebsServed: this.celebsServed,
+      merchant: this.merchant,
+      achievements: this.achievements,
+      counters: this.counters,
     };
   }
 
@@ -273,6 +290,10 @@ export class GameState {
     this.dayStats = { ...newDayStats(), ...(g.dayStats ?? {}) };
     this.servedToday = g.servedToday ?? [];
     this.cat = { ...defaultCat(), ...(g.cat ?? {}) };
+    this.celebsServed = g.celebsServed ?? [];
+    this.merchant = g.merchant ?? { day: 0, bought: {} };
+    this.achievements = g.achievements ?? {};
+    this.counters = g.counters ?? {};
   }
 }
 

@@ -410,6 +410,47 @@ export const SFX = {
     const { t, out, v } = start(a, o, 0.2);
     for (let i = 0; i < 2; i++) a.osc('square', 330, t + i * 0.25, 0.14, out, 0.05 * v, 0.004);
   },
+  // --- Guests & rewards ------------------------------------------------------
+  /** A deep dramatic "boom" (the eyebrow-raise sting). */
+  boom: (a, o) => {
+    const { t, out, v } = start(a, o, 0.5);
+    a.osc('sine', 110, t, 1.1, out, 0.55 * v, 0.004, 32);
+    a.osc('triangle', 220, t, 0.25, out, 0.2 * v, 0.002, 60);
+    a.noiseBurst('brown', t, 0.5, out, 0.35 * v, { type: 'lowpass', freq: 260 }, 0.004);
+  },
+  bark: (a, o) => {
+    const { t, out, v, p } = start(a, o, 0.15);
+    for (let i = 0; i < 2; i++) {
+      const tt = t + i * 0.22;
+      a.osc('sawtooth', 420 * p, tt, 0.12, out, 0.12 * v, 0.004, 240 * p);
+      a.noiseBurst('pink', tt, 0.1, out, 0.1 * v, { type: 'bandpass', freq: 900 * p, q: 1.5 });
+    }
+  },
+  sprinkle: (a, o) => {
+    const { t, out, v } = start(a, o, 0.3);
+    for (let i = 0; i < 14; i++) a.noiseBurst('white', t + i * r(0.02, 0.06), 0.012, out, 0.05 * v, { type: 'highpass', freq: r(5000, 9000) });
+  },
+  cheer: (a, o) => {
+    const { t, out, v } = start(a, o, 0.5);
+    a.noiseBurst('pink', t, 1.3, out, 0.14 * v, { type: 'bandpass', freq: 1400, q: 0.6, freqEnd: 900 }, 0.25);
+    for (let i = 0; i < 8; i++) a.osc('triangle', r(500, 900), t + r(0, 0.6), r(0.08, 0.18), out, 0.03 * v, 0.01, r(700, 1200));
+  },
+  achievement: (a, o) => {
+    const { t, out, v } = start(a, o, 0.55);
+    [0, 7, 12, 16, 19, 24].forEach((n, i) => {
+      const f = 392 * Math.pow(2, n / 12);
+      a.osc('square', f, t + i * 0.075, i === 5 ? 0.7 : 0.14, out, 0.045 * v, 0.003);
+      a.osc('triangle', f / 2, t + i * 0.075, 0.2, out, 0.05 * v, 0.003);
+    });
+  },
+  caravanBells: (a, o) => {
+    const { t, out, v } = start(a, o, 0.6);
+    for (let i = 0; i < 7; i++) {
+      const f = r(1400, 2300);
+      a.osc('sine', f, t + i * r(0.07, 0.14), 0.4, out, 0.05 * v, 0.002);
+      a.osc('sine', f * 2.4, t + i * 0.1, 0.2, out, 0.02 * v, 0.002);
+    }
+  },
   quest: (a, o) => {
     const { t, out, v } = start(a, o, 0.5);
     [0, 5, 9, 12].forEach((n, i) => a.osc('triangle', 440 * Math.pow(2, n / 12), t + i * 0.12, 0.5, out, 0.09 * v, 0.004));

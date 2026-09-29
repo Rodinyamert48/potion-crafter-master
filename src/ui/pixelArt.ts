@@ -466,6 +466,27 @@ const ICONS: Record<string, { rows: string[]; pal: Record<string, string> }> = {
     ],
     pal: { k: '#733e39', y: '#feae34', Y: '#fee761' },
   },
+  trophy: {
+    rows: [
+      '................',
+      '..kkkkkkkkkkkk..',
+      '.kkYyyyyyyyyykk.',
+      'kyk.kYyyyyyk.kyk',
+      'ky..kYyyyyyk..yk',
+      'kyk.kYyyyyyk.kyk',
+      '.kkkkYyyyyykkkk.',
+      '....kkyyyykk....',
+      '.....kkyykk.....',
+      '......kyyk......',
+      '......kyyk......',
+      '.....kyyyyk.....',
+      '....kkkkkkkk....',
+      '....kooooook....',
+      '....kkkkkkkk....',
+      '................',
+    ],
+    pal: { k: '#733e39', y: '#feae34', Y: '#fee761', o: '#b86f50' },
+  },
 };
 
 export function iconURL(name: string, scale = 1): string {

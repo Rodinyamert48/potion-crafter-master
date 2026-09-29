@@ -1,5 +1,5 @@
-// Merchant catalog: buy ingredient bundles, flasks, firewood, equipment
-// upgrades and decorations.
+// The market: buy ingredient bundles, flasks, firewood, equipment upgrades
+// and decorations.
 
 import type { GameContext } from '../core/GameContext';
 import type { Panel } from './UIRoot';
@@ -10,6 +10,7 @@ import { INGREDIENTS } from '../data/ingredients';
 import { UPGRADES, UPGRADE_MAP, SUPPLIES } from '../data/upgrades';
 import { iconURL, ingredientIconURL } from './pixelArt';
 import { t, tr } from '../core/i18n';
+import { daysUntilMerchant } from '../gameplay/shop/TravelingMerchant';
 
 type Tab = 'supplies' | 'upgrades' | 'decor';
 
@@ -20,6 +21,7 @@ export class CatalogPanel implements Panel {
   private readonly body: HTMLElement;
   private readonly tabs: HTMLElement;
   private readonly title: HTMLElement;
+  private readonly note: HTMLElement;
 
   constructor(
     private readonly ctx: GameContext,
@@ -29,12 +31,13 @@ export class CatalogPanel implements Panel {
     this.el.hidden = true;
     const panel = h('div', 'wb-catalog wb-panel wb-frame-parchment');
     this.title = h('h2');
+    this.note = h('p', 'wb-merchant-sub');
     this.tabs = h('div', 'wb-seg');
     this.tabs.style.marginBottom = '8px';
     this.body = h('div', 'wb-catalog-grid');
     const close = h('button', 'wb-btn wb-close', '✕');
     close.addEventListener('click', () => ctx.ui.openPanel(null));
-    panel.append(close, this.title, this.tabs, this.body);
+    panel.append(close, this.title, this.note, this.tabs, this.body);
     this.el.appendChild(panel);
     this.el.addEventListener('pointerdown', (e) => {
       if (e.target === this.el) ctx.ui.openPanel(null);
@@ -58,6 +61,8 @@ export class CatalogPanel implements Panel {
   private render(): void {
     const s = this.ctx.state;
     this.title.textContent = `${t('catalog.title')} · ${s.money} ${t('hud.money')} · ${t('catalog.shopLevel', { n: s.shopLevel })}`;
+    const until = daysUntilMerchant(s.day);
+    this.note.textContent = until === 0 ? t('catalog.merchantToday') : until === 1 ? t('catalog.merchantTomorrow') : t('catalog.merchantIn', { n: until });
     this.tabs.innerHTML = '';
     for (const [id, label] of [
       ['supplies', t('catalog.supplies')],

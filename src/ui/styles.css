@@ -501,3 +501,27 @@ img, .wb-icon { image-rendering: pixelated; }
 /* Coloured status lines stay readable on the blue windows. */
 .retro .wb-tip-label { filter: brightness(1.45) saturate(0.85); }
 .retro .wb-mentor-card .who { color: #ffb0f0; }
+
+/* ------------------------------------------------------------- merchant */
+.wb-merchant-sub { margin: -2px 0 8px; font-size: 17px; color: #733e39; }
+.wb-merchant-empty { font-size: 19px; color: #733e39; padding: 12px; }
+.wb-card.deal { box-shadow: 0 0 0 2px #feae34, 0 0 0 4px #c28569; }
+.wb-card.owned { opacity: 0.6; }
+
+/* ---------------------------------------------------------- achievements */
+.wb-ach { width: min(820px, 94vw); max-height: 86vh; display: flex; flex-direction: column; padding: 4px 10px 8px; }
+.wb-ach h2 { margin: 0 0 8px; color: var(--gold-hi); font-size: 28px; }
+.wb-ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; overflow-y: auto; padding: 2px; }
+.wb-ach-card { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; background: #1d1b3388; box-shadow: 0 0 0 2px #181425; opacity: 0.7; }
+.wb-ach-card.done { opacity: 1; background: #3e273188; box-shadow: 0 0 0 2px #181425, inset 0 0 0 2px #feae34; }
+.wb-ach-icon { flex: 0 0 32px; height: 32px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; filter: grayscale(1) brightness(0.8); }
+.wb-ach-card.done .wb-ach-icon { filter: none; }
+.wb-ach-text { flex: 1; min-width: 0; }
+.wb-ach-name { font-size: 20px; color: var(--gold-hi); }
+.wb-ach-card:not(.done) .wb-ach-name { color: var(--text); }
+.wb-ach-desc { font-size: 16px; color: var(--muted); line-height: 1.2; }
+.wb-ach-day { font-size: 14px; color: var(--gold); margin-top: 2px; }
+.wb-ach-bar { height: 6px; margin-top: 4px; background: #181425; box-shadow: 0 0 0 1px #3a4466; }
+.wb-ach-bar span { display: block; height: 100%; background: var(--gold); }
+.wb-toast-achievement { color: #fee761; font-size: 22px; padding: 9px 20px; background: #3e2731; box-shadow: 0 0 0 2px #181425, 0 0 0 4px #feae34, 0 0 22px #feae3488; }
+.retro .wb-toast-achievement { background: var(--rpg-win); box-shadow: var(--rpg-edge), 0 0 22px #fee76188; }

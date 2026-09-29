@@ -178,6 +178,16 @@ export class SupplySource extends Entity {
     this.shakeT = Math.max(0, this.shakeT - dt);
     this.model.position.x = this.shakeT > 0 ? Math.sin(this.shakeT * 60) * 0.01 : 0;
     this.label.mesh.quaternion.copy(ctx.renderer.rig.camera.quaternion);
+    // Jars of rare ingredients appear once the ingredient is unlocked (by a
+    // trip, a quest, the wandering merchant or a loaded save).
+    if (INGREDIENTS[this.supplyId]) {
+      const unlocked = ctx.state.isUnlocked(this.supplyId);
+      if (this.object.visible !== unlocked) {
+        this.object.visible = unlocked;
+        this.interactive = unlocked;
+        if (unlocked && !ctx.world.pickables.includes(this.object)) ctx.world.pickables.push(this.object);
+      }
+    }
   }
 }
 

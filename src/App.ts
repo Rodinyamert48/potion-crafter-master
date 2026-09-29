@@ -10,6 +10,10 @@ import { QuestSystem } from './gameplay/quests/QuestSystem';
 import { Tutorial } from './gameplay/tutorial/Tutorial';
 import { Atmosphere } from './gameplay/Atmosphere';
 import { CatPanel } from './ui/CatPanel';
+import { MerchantPanel } from './ui/MerchantPanel';
+import { AchievementsPanel } from './ui/AchievementsPanel';
+import { Achievements } from './gameplay/Achievements';
+import { TravelingMerchant } from './gameplay/shop/TravelingMerchant';
 import { t } from './core/i18n';
 import { ShopSystem } from './gameplay/shop/ShopSystem';
 import { Discovery } from './gameplay/potion/Discovery';
@@ -25,6 +29,7 @@ import type { Settings } from './core/Settings';
 import { IngredientItem } from './gameplay/ingredients/IngredientItem';
 import { FlaskItem } from './gameplay/potion/FlaskItem';
 import { RECIPE_MAP } from './data/potions';
+import { CUSTOMERS } from './data/customers';
 import type { PrepState } from './data/types';
 import type { Tier } from './gameplay/potion/PotionEvaluator';
 
@@ -38,6 +43,8 @@ export class App {
   readonly tutorial: Tutorial;
   readonly atmosphere: Atmosphere;
   readonly shopSystem: ShopSystem;
+  readonly merchant: TravelingMerchant;
+  readonly achievements: Achievements;
   readonly save: SaveSystem;
   readonly mentor: Mentor;
   readonly expedition: Expedition;
@@ -49,6 +56,11 @@ export class App {
 
   /** Developer and playtest hooks (reachable as window.__wb.app.debug). */
   readonly debug = {
+    /** Schedule a visit right now (e.g. 'celeb_speed'). */
+    visit: (customerId: string) => {
+      const def = CUSTOMERS[customerId];
+      this.customers.addVisit({ hour: this.ctx.state.hour, customerId, requestId: def?.requests[0]?.id });
+    },
     spawnIngredient: (id: string, state: PrepState = 'whole', at: { x: number; y: number; z: number }) => this.ctx.world.add(new IngredientItem(this.ctx, id, state, 1, at), this.ctx),
     spawnPotion: (recipeId: string, tier: Tier, at: { x: number; y: number; z: number }) => {
       const r = RECIPE_MAP[recipeId];
@@ -64,6 +76,8 @@ export class App {
     this.day = new DayCycle(ctx);
     this.quests = new QuestSystem(ctx, this.customers);
     this.shopSystem = new ShopSystem(ctx);
+    this.merchant = new TravelingMerchant(ctx, this.shopSystem);
+    this.achievements = new Achievements(ctx);
     this.expedition = new Expedition(ctx, this.customers);
     new Discovery(ctx);
     this.save = new SaveSystem(ctx, this.customers);
@@ -83,6 +97,8 @@ export class App {
     ui.registerPanel('inventory', new InventoryPanel(ctx));
     ui.registerPanel('map', new MapPanel(ctx, this.expedition));
     ui.registerPanel('cat', new CatPanel(ctx, this.atmosphere.cat));
+    ui.registerPanel('merchant', new MerchantPanel(ctx, this.merchant));
+    ui.registerPanel('achievements', new AchievementsPanel(ctx));
     ctx.bus.on('crystal:touched', () => {
       if (this.game.playing && this.save.save()) ctx.bus.emit('toast', { text: t('crystal.saved'), kind: 'good' });
     });
@@ -120,6 +136,8 @@ export class App {
 
     game.addSystem(this.day);
     game.addSystem(this.customers);
+    game.addSystem(this.merchant);
+    game.addSystem(this.achievements);
     game.addSystem(this.tutorial);
     game.addSystem(this.atmosphere);
     game.addSystem({ update: (dt) => this.frame(dt), always: true });
@@ -210,6 +228,7 @@ export class App {
     if (code === 'KeyC') ui.togglePanel('catalog');
     if (code === 'KeyI') ui.togglePanel('inventory');
     if (code === 'KeyM') ui.togglePanel('map');
+    if (code === 'KeyK') ui.togglePanel('achievements');
     if (code === 'KeyH') {
       this.menu.fromTitle = false;
       ui.openPanel('menu');
