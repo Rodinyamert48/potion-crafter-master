@@ -135,7 +135,7 @@ export class Input {
 
   /** Secondary "use" action: Space, F or right mouse button. */
   get actionHeld(): boolean {
-    return this.keys.has('Space') || this.keys.has('KeyF') || this.pointer.down[2];
+    return this.keys.has('Space') || this.pointer.down[2];
   }
 
   /** Pointer velocity averaged over the recent history window (px/s). */

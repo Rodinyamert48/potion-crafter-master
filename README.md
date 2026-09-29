@@ -42,6 +42,7 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 | Havan tokmağını, kepçeyi daire çizerek çevir | Öğüt / karıştır |
 | Körüğü aşağı yukarı pompala | Ateşi harla |
 | Tutarken `Q`/`E` veya fare tekerleği | Nesneyi döndür |
+| Tutarken `R` · `F` | Nesneyi yukarı kaldır · aşağı indir (dokunmatikte ▲ ▼) |
 | `WASD` / oklar, sağ/orta tık ya da boş zemini sürükle | Kamerayı kaydır |
 | Tekerlek / `+` `-` · `Q`/`E` | Yakınlaştır · kamerayı döndür (önünde kalan duvar alçalır) |
 | `1`–`5` | Kamera: dükkân, kazan, masa, raflar, tezgâh |
@@ -53,7 +54,8 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 **Dokunmatik (telefon, tablet, akıllı tahta):** tek parmakla eşyaları sürükle,
 boş zemini sürükleyerek kamerayı kaydır, iki parmakla yakınlaştır ve çevirerek
 döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran düğmeleri
-çıkar: ✋ eylem (SPACE gibi döker/eğer/vurur), ⟲ ⟳ döndür, − + yakınlaştır,
+çıkar: ✋ eylem (SPACE gibi döker/eğer/vurur), ▲ ▼ tutulan eşyayı kaldır/indir,
+⟲ ⟳ döndür, − + yakınlaştır,
 ⛶ tam ekran. Dikey tutulan telefonlarda arayüz üst üste dizilir.
 
 ## Oynanış

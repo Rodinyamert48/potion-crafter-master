@@ -8,6 +8,7 @@ import type { GameContext } from '../core/GameContext';
 import type { CursorKind, Entity } from './Entity';
 import type { SurfaceInfo } from './World';
 import { clamp, damp, smoothstep } from '../core/math';
+import { t } from '../core/i18n';
 import { CG } from '../physics/PhysicsTypes';
 import { AssistVisuals, assistHint, defaultAssistTargets, type AssistTarget } from './Assist';
 
@@ -130,6 +131,8 @@ export class PhysicsGrab implements Grab {
   private stuckT = 0;
   /** Collision mask to restore after squeezing past an obstacle. */
   private unstickMask: number | null = null;
+  /** Extra height the player gave the item with R (up) / F (down). */
+  lift = 0;
 
   constructor(
     readonly entity: Entity,
@@ -152,7 +155,11 @@ export class PhysicsGrab implements Grab {
   }
 
   hint(ctx: GameContext): string | null {
-    return (this.assist ? assistHint(this.assist) : null) ?? ctx.interaction.heldHint(this.entity);
+    return (
+      (this.assist ? assistHint(this.assist) : null) ??
+      ctx.interaction.heldHint(this.entity) ??
+      t(ctx.input.pointer.type !== 'mouse' ? 'hint.liftTouch' : 'hint.lift')
+    );
   }
 
   private popT = 0;
@@ -191,6 +198,10 @@ export class PhysicsGrab implements Grab {
       if (ia.ray.intersectPlane(plane, tmpV)) this.target.copy(tmpV);
     }
     this.applyAssist(ctx, dt);
+    // R raises the carried item, F lowers it (on touch: the ▲ ▼ buttons).
+    const lift = (ctx.input.isDown('KeyR') ? 1 : 0) - (ctx.input.isDown('KeyF') ? 1 : 0);
+    if (lift !== 0) this.lift = clamp(this.lift + lift * 1.2 * dt, -0.8, 1.8);
+    this.target.y += this.lift;
     const b = ctx.shopBounds;
     this.target.x = clamp(this.target.x, b.minX, b.maxX);
     this.target.z = clamp(this.target.z, b.minZ, b.maxZ);

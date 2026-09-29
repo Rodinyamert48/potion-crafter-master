@@ -128,7 +128,7 @@ abstract class Tool extends Entity {
     // Gesture: a quick downward flick on screen, or the action key.
     const v = ctx.input.recentVelocity(70);
     if (v.vy > 950 && Math.abs(v.vx) < v.vy) this.startStrike(ctx);
-    if (ctx.input.wasPressed('Space') || ctx.input.wasPressed('KeyF') || (ctx.input.pointer.down[2] && this.strikeT < 0 && this.cooldown <= 0)) this.startStrike(ctx);
+    if (ctx.input.wasPressed('Space') || (ctx.input.pointer.down[2] && this.strikeT < 0 && this.cooldown <= 0)) this.startStrike(ctx);
     if (this.strikeT >= 0) {
       const prev = this.strikeT;
       this.strikeT += dt / 0.2;

@@ -14,6 +14,8 @@ export function isTouchUI(): boolean {
 export class TouchControls {
   readonly el: HTMLElement;
   private readonly action: HTMLButtonElement;
+  /** ▲ ▼: raise / lower the held item (only shown while holding). */
+  private readonly lift: HTMLButtonElement[];
   private readonly portrait: HTMLElement;
   private portraitDismissed = false;
 
@@ -44,6 +46,9 @@ export class TouchControls {
       b.addEventListener('contextmenu', (e) => e.preventDefault());
       return b;
     };
+    const row0 = h('div', 'wb-touch-row');
+    this.lift = [hold('▲', t('touch.up'), 'KeyR', 'small'), hold('▼', t('touch.down'), 'KeyF', 'small')];
+    row0.append(...this.lift);
     const row1 = h('div', 'wb-touch-row');
     row1.append(hold('⟲', t('touch.rotateLeft'), 'KeyQ'), hold('⟳', t('touch.rotateRight'), 'KeyE'));
     const row2 = h('div', 'wb-touch-row');
@@ -54,7 +59,7 @@ export class TouchControls {
     row2.append(full);
     this.action = hold('✋', t('touch.action'), 'Space', 'action');
     const col = h('div', 'wb-touch-col');
-    col.append(row1, row2);
+    col.append(row0, row1, row2);
     this.el.append(col, this.action);
 
     this.portrait = h('div', 'wb-portrait-hint wb-interactive', t('touch.rotateDevice'));
@@ -89,6 +94,7 @@ export class TouchControls {
     const e = grab?.entity;
     const useful = !!e && (e.tiltable || e.kind === 'knife' || e.kind === 'hammer');
     this.action.classList.toggle('idle', !useful);
+    for (const b of this.lift) b.hidden = !(grab && 'lift' in grab);
     const portrait = touch && playing && window.innerHeight > window.innerWidth * 1.1;
     this.portrait.hidden = !portrait || this.portraitDismissed;
   }
