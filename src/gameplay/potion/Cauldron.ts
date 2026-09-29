@@ -94,7 +94,8 @@ export class Cauldron extends Entity {
     this.shell.add(thermoGroup);
 
     // Opening proxy: a placement surface above the rim.
-    this.opening = new THREE.Mesh(new THREE.CircleGeometry(0.53, 16), new THREE.MeshBasicMaterial({ visible: false }));
+    // Generous catch area: pointing anywhere at the top of the pot counts.
+    this.opening = new THREE.Mesh(new THREE.CircleGeometry(0.8, 16), new THREE.MeshBasicMaterial({ visible: false }));
     this.opening.rotation.x = -Math.PI / 2;
     this.opening.position.y = 0.8;
     this.opening.userData.noPick = true;

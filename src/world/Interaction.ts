@@ -7,7 +7,9 @@ import * as THREE from 'three';
 import type { GameContext } from '../core/GameContext';
 import type { CursorKind, Entity } from './Entity';
 import type { SurfaceInfo } from './World';
-import { clamp } from '../core/math';
+import { clamp, damp, smoothstep } from '../core/math';
+import { CG } from '../physics/PhysicsTypes';
+import { AssistVisuals, assistHint, defaultAssistTargets, type AssistTarget } from './Assist';
 
 export interface Grab {
   readonly entity: Entity;
@@ -110,11 +112,20 @@ export class PhysicsGrab implements Grab {
   overrideTarget: THREE.Vector3 | null = null;
   /** Stiffness multiplier for tools that must track the cursor tightly. */
   stiffness = 1;
+  /** Entities may tilt themselves (e.g. the bucket pouring on its own). */
+  autoTilt = 0;
   cursor: CursorKind = 'grabbing';
+  /** Drop target the item is currently pulled toward (see Assist). */
+  assist: AssistTarget | null = null;
+  assistStrength = 0;
+  readonly assistPoint = new THREE.Vector3();
+  hasSurface = false;
   private readonly vel = new THREE.Vector3();
   private readonly ang = new THREE.Vector3();
   private readonly lastTarget = new THREE.Vector3();
+  private smoothY: number | null = null;
   private released = false;
+  private readonly filter: { group: number; mask: number } | null = null;
 
   constructor(
     readonly entity: Entity,
@@ -128,29 +139,45 @@ export class PhysicsGrab implements Grab {
     const q = b.getRotation(new THREE.Quaternion());
     const e = new THREE.Euler().setFromQuaternion(q, 'YXZ');
     this.yaw = e.y;
+    if (entity.ghostWhenHeld) {
+      this.filter = { group: b.group, mask: b.mask };
+      b.setCollisionFilter(b.group, CG.STATIC);
+    }
     entity.held = true;
     entity.onPicked(ctx);
   }
 
   hint(ctx: GameContext): string | null {
-    return ctx.interaction.heldHint(this.entity);
+    return (this.assist ? assistHint(this.assist) : null) ?? ctx.interaction.heldHint(this.entity);
   }
+
+  private popT = 0;
 
   update(ctx: GameContext, dt: number): void {
     const ia = ctx.interaction;
+    // A little "pop" when an item is picked up.
+    if (this.entity.ghostWhenHeld && this.popT < 0.28) {
+      this.popT += dt;
+      this.entity.object.scale.setScalar(1 + 0.16 * Math.sin(Math.min(1, this.popT / 0.28) * Math.PI));
+    }
     // Rotation with Q/E or wheel while holding.
     if (ctx.input.isDown('KeyQ')) this.yaw += dt * 2.5;
     if (ctx.input.isDown('KeyE')) this.yaw -= dt * 2.5;
     if (ctx.input.wheel !== 0) this.yaw -= ctx.input.wheel * 0.004;
 
     const hit = ia.surfaceUnderPointer(this.entity);
+    this.hasSurface = !!hit;
     if (hit) {
       const info = hit.object.userData.surface as SurfaceInfo;
       this.surfaceTag = info.tag ?? null;
       this.surfaceObject = hit.object;
       this.surfacePoint.copy(hit.point);
       const h = this.hoverHeight + (info.hover ?? 0) + this.entity.halfHeight + this.heightOffset;
-      this.target.set(hit.point.x, hit.point.y + h, hit.point.z);
+      // Smooth the carry height: rise quickly over obstacles, settle gently,
+      // so sweeping across table edges doesn't make the item jump.
+      const want = hit.point.y + h;
+      this.smoothY = this.smoothY === null ? want : damp(this.smoothY, want, want > this.smoothY ? 22 : 11, dt);
+      this.target.set(hit.point.x, this.smoothY, hit.point.z);
       this.lastTarget.copy(this.target);
     } else {
       this.surfaceTag = null;
@@ -159,15 +186,49 @@ export class PhysicsGrab implements Grab {
       const plane = new THREE.Plane(UP, -this.lastTarget.y);
       if (ia.ray.intersectPlane(plane, tmpV)) this.target.copy(tmpV);
     }
+    this.applyAssist(ctx, dt);
     const b = ctx.shopBounds;
     this.target.x = clamp(this.target.x, b.minX, b.maxX);
     this.target.z = clamp(this.target.z, b.minZ, b.maxZ);
     this.target.y = clamp(this.target.y, 0.1, 3.0);
 
-    const tiltTarget = this.entity.tiltable && ctx.input.actionHeld ? 1 : 0;
+    const tiltTarget = this.entity.tiltable ? Math.max(ctx.input.actionHeld ? 1 : 0, this.autoTilt) : 0;
     this.tilt += (tiltTarget - this.tilt) * Math.min(1, dt * 6);
 
     this.entity.onHeld(ctx, dt);
+  }
+
+  /** Pull toward the nearest drop target that wants this item. */
+  private applyAssist(ctx: GameContext, dt: number): void {
+    this.assist = null;
+    if (this.overrideTarget) {
+      this.assistStrength = damp(this.assistStrength, 0, 10, dt);
+      return;
+    }
+    let best: AssistTarget | null = null;
+    let bestPoint: THREE.Vector3 | null = null;
+    let bestK = 1;
+    for (const a of ctx.interaction.assists) {
+      if (!a.accepts(ctx, this.entity)) continue;
+      const p = a.point(ctx, this.entity);
+      if (!p) continue;
+      const d = Math.hypot(this.target.x - p.x, this.target.z - p.z) / a.radius;
+      if (d < bestK) {
+        bestK = d;
+        best = a;
+        bestPoint = p;
+      }
+    }
+    const pull = best ? smoothstep(1, 0.6, bestK) : 0;
+    this.assistStrength = damp(this.assistStrength, pull, 12, dt);
+    if (!best || !bestPoint) return;
+    this.assistPoint.copy(bestPoint);
+    const k = this.assistStrength;
+    this.target.x += (bestPoint.x - this.target.x) * k;
+    this.target.z += (bestPoint.z - this.target.z) * k;
+    const snapY = bestPoint.y + best.hover + this.entity.halfHeight;
+    this.target.y += (Math.max(snapY, Math.min(this.target.y, snapY + 0.3)) - this.target.y) * k;
+    if (this.assistStrength > 0.45) this.assist = best;
   }
 
   fixedUpdate(ctx: GameContext, _dt: number): void {
@@ -175,23 +236,23 @@ export class PhysicsGrab implements Grab {
     if (!body || !body.alive || this.released) return;
     const goal = this.overrideTarget ?? this.target;
     const pos = body.getPosition(tmpV);
-    const k = 14 * this.stiffness;
+    const k = 17 * this.stiffness;
     this.vel.subVectors(goal, pos).multiplyScalar(k);
     // Rise before travelling and travel before descending, so carried things
     // clear cauldron rims, barrel staves and table edges instead of snagging.
     const dy = goal.y - pos.y;
     const horiz = Math.hypot(goal.x - pos.x, goal.z - pos.z);
-    if (dy > 0.08) {
-      const s = clamp(1 - (dy - 0.08) / 0.35, 0.25, 1);
+    if (dy > 0.1) {
+      const s = clamp(1 - (dy - 0.1) / 0.4, 0.4, 1);
       this.vel.x *= s;
       this.vel.z *= s;
-    } else if (dy < -0.08 && horiz > 0.12) {
-      this.vel.y *= clamp(1 - (horiz - 0.12) / 0.3, 0.1, 1);
+    } else if (dy < -0.1 && horiz > 0.12) {
+      this.vel.y *= clamp(1 - (horiz - 0.12) / 0.3, 0.15, 1);
     }
-    const max = 7 * Math.max(1, this.stiffness * 0.8);
+    const max = 9 * Math.max(1, this.stiffness * 0.8);
     if (this.vel.length() > max) this.vel.setLength(max);
     body.getLinearVelocity(tmpV2);
-    tmpV2.lerp(this.vel, 0.65);
+    tmpV2.lerp(this.vel, 0.8);
     body.setLinearVelocity(tmpV2);
 
     if (this.entity.upright) {
@@ -220,7 +281,9 @@ export class PhysicsGrab implements Grab {
     this.released = true;
     const body = this.entity.body;
     this.entity.held = false;
+    if (this.entity.ghostWhenHeld) this.entity.object.scale.setScalar(1);
     if (body && body.alive) {
+      if (this.filter) body.setCollisionFilter(this.filter.group, this.filter.mask);
       body.setGravityFactor(1);
       body.setDamping(0.05, 0.1);
       body.getLinearVelocity(tmpV);
@@ -228,6 +291,8 @@ export class PhysicsGrab implements Grab {
         tmpV.setLength(5.5);
         body.setLinearVelocity(tmpV);
       }
+      // Dropped on a target: land on it instead of bouncing off.
+      if (this.assist?.drop && !this.overrideTarget) this.assist.drop(ctx, this.entity);
     }
     this.entity.onReleased(ctx);
   }
@@ -248,6 +313,9 @@ export class Interaction {
   readonly viewAxis = new THREE.Vector3(0, 0, -1);
   /** Disable while menus are open. */
   enabled = true;
+  /** Magnetic drop targets for carried items. */
+  readonly assists: AssistTarget[] = defaultAssistTargets();
+  private visuals: AssistVisuals | null = null;
   private heldHints = new Map<string, (e: Entity, ctx: GameContext) => string | null>();
 
   constructor(private readonly ctx: GameContext) {
@@ -366,6 +434,14 @@ export class Interaction {
         if (lp.entity.alive) lp.entity.altPress(ctx);
       }
     }
+    this.visuals ??= new AssistVisuals(ctx.scene);
+    const pg = this.grab instanceof PhysicsGrab && this.grab.entity.alive ? this.grab : null;
+    this.visuals.update(
+      dt,
+      pg && pg.hasSurface && pg.assistStrength < 0.3 && !pg.overrideTarget ? pg.surfacePoint : null,
+      pg && pg.assistStrength > 0.05 ? pg.assistPoint : null,
+      pg?.assistStrength ?? 0,
+    );
     if (this.grab) {
       if (!this.grab.entity.alive) {
         this.cancelGrab();

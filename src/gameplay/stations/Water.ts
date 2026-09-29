@@ -70,6 +70,7 @@ export class Bucket extends Entity {
   private readonly parts: ReturnType<typeof bucketModel>;
   private pouring = 0;
   private filling = false;
+  private stillT = 0;
   private rimLocal: THREE.Vector3[] = [];
 
   constructor(
@@ -84,6 +85,7 @@ export class Bucket extends Entity {
     this.draggable = true;
     this.upright = true;
     this.tiltable = true;
+    this.ghostWhenHeld = true;
     this.halfHeight = 0.12;
     this.radius = 0.13;
     for (let i = 0; i < 12; i++) {
@@ -127,6 +129,14 @@ export class Bucket extends Entity {
       grab.heightOffset = 0;
       this.filling = false;
     }
+    // Held still over the cauldron, it tips over by itself (up to a normal
+    // brewing level – hold SPACE to pour more).
+    const cauldron0 = ctx.shop.cauldron;
+    const overPot = Math.hypot(this.object.position.x - cauldron0.center.x, this.object.position.z - cauldron0.center.z) < 0.5 && this.object.position.y > cauldron0.rimY;
+    const v = ctx.input.pointer;
+    const still = Math.hypot(v.vx, v.vy) < 90;
+    this.stillT = overPot && still && this.water > 0.05 && cauldron0.chem.water < 2.2 ? this.stillT + dt : 0;
+    grab.autoTilt = this.stillT > 0.3 ? 1 : 0;
     // Pouring when tilted.
     this.pouring = grab.tilt > 0.5 && this.water > 0 ? grab.tilt : 0;
     if (this.pouring > 0) {
@@ -152,6 +162,7 @@ export class Bucket extends Entity {
   override onReleased(ctx: GameContext): void {
     this.pouring = 0;
     this.filling = false;
+    this.stillT = 0;
     ctx.audio.loop('bucketPour', pourLoop)?.set(0);
   }
 

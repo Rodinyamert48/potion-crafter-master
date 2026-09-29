@@ -43,6 +43,7 @@ export class FlaskItem extends Entity {
     this.draggable = true;
     this.upright = true;
     this.tiltable = true;
+    this.ghostWhenHeld = true;
     this.buildVisual();
     this.body = ctx.physics.createBody({
       shape: { type: 'cylinder', radius: 0.055, height: this.parts.height },
@@ -97,10 +98,68 @@ export class FlaskItem extends Entity {
     };
   }
 
+  /** Automatic dip: bring an empty flask near the brew and it dips itself,
+   *  fills and comes back up. */
+  private autoDip: { phase: 'over' | 'down' | 'up'; t: number } | null = null;
+  private dipCooldown = 0;
+
+  private runAutoDip(ctx: GameContext, grab: PhysicsGrab, dt: number): boolean {
+    const cauldron = ctx.shop.cauldron;
+    const c = cauldron.center;
+    const p = this.object.position;
+    this.dipCooldown = Math.max(0, this.dipCooldown - dt);
+    if (!this.autoDip) {
+      const near = Math.hypot(grab.target.x - c.x, grab.target.z - c.z) < 0.85 || Math.hypot(p.x - c.x, p.z - c.z) < 0.75;
+      if (this.potion || cauldron.chem.water <= 0.3 || !near || this.dipCooldown > 0) return false;
+      this.autoDip = { phase: 'over', t: 0 };
+      ctx.audio.play('whoosh', { x: p.x, pitch: 1.4, volume: 0.5 });
+    }
+    const dip = this.autoDip;
+    dip.t += dt;
+    grab.heightOffset = 0;
+    grab.stiffness = 1.3;
+    const over = new THREE.Vector3(c.x, cauldron.rimY + 0.32 + this.halfHeight, c.z);
+    if (dip.phase === 'over') {
+      grab.overrideTarget = over;
+      if (p.distanceTo(over) < 0.1 || dip.t > 1.1) {
+        dip.phase = 'down';
+        dip.t = 0;
+      }
+    } else if (dip.phase === 'down') {
+      const y = Math.min(cauldron.level + this.halfHeight * 0.25, cauldron.rimY - 0.03);
+      grab.overrideTarget = new THREE.Vector3(c.x + 0.04, y, c.z + 0.04);
+      if (cauldron.isInside(p, 0.05) && p.y - this.halfHeight < cauldron.level) {
+        if (this.dipTime === 0) ctx.audio.play('plop', { x: p.x });
+        this.dipTime += dt;
+        if (rng.chance(dt * 18)) ctx.vfx.bubble(new THREE.Vector3(p.x, cauldron.level, p.z), 0.06, cauldron.color, true);
+        if (this.dipTime > 0.55) this.fillFromCauldron(ctx);
+      }
+      if (this.potion || dip.t > 3 || cauldron.chem.water <= 0.3) {
+        dip.phase = 'up';
+        dip.t = 0;
+      }
+    } else {
+      grab.overrideTarget = over.clone().setY(over.y + 0.12);
+      if (p.distanceTo(grab.overrideTarget) < 0.12 || dip.t > 0.8) this.endAutoDip(grab);
+    }
+    return true;
+  }
+
+  private endAutoDip(grab: PhysicsGrab | null): void {
+    if (grab) {
+      grab.overrideTarget = null;
+      grab.stiffness = 1;
+    }
+    this.autoDip = null;
+    this.dipCooldown = 1.2;
+    this.dipTime = 0;
+  }
+
   override onHeld(ctx: GameContext, dt: number): void {
     const grab = ctx.interaction.grab as PhysicsGrab | null;
     if (!grab) return;
     const cauldron = ctx.shop.cauldron;
+    if (this.runAutoDip(ctx, grab, dt)) return;
     if (!this.potion && grab.surfaceTag === 'cauldron' && cauldron.chem.water > 0.3) {
       // Lower the flask into the brew.
       // Hover height over the opening minus where the flask should sit: its
@@ -149,6 +208,7 @@ export class FlaskItem extends Entity {
   }
 
   override onReleased(ctx: GameContext): void {
+    if (this.autoDip) this.endAutoDip(null);
     if (this.potion && ctx.shop.shelf.tryStore(ctx, this)) return;
     if (!this.potion) ctx.shop.sources.get('flask')?.tryReturn(ctx, this);
   }

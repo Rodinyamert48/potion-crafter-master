@@ -45,6 +45,7 @@ export class IngredientItem extends Entity {
     this.mass = mass;
     this.initialMass = mass;
     this.draggable = true;
+    this.ghostWhenHeld = true;
     this.build(ctx, pos, rot);
   }
 

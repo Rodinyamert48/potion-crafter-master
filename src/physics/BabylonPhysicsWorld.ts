@@ -177,6 +177,14 @@ class BabylonBody implements BodyHandle {
     this.shape.filterMembershipMask = group;
     this.shape.filterCollideMask = mask;
   }
+
+  get group(): number {
+    return this.shape.filterMembershipMask;
+  }
+
+  get mask(): number {
+    return this.shape.filterCollideMask;
+  }
 }
 
 export class BabylonPhysicsWorld implements PhysicsWorld {

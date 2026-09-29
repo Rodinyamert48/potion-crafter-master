@@ -45,6 +45,9 @@ export abstract class Entity {
   upright = false;
   /** Is the entity tiltable when held (pouring). */
   tiltable = false;
+  /** While carried, only collide with the room (not other items or people),
+   *  so carrying things around never snags. */
+  ghostWhenHeld = false;
   /** Time spent resting (used for cleanup & sleep checks). */
   lifetime = 0;
 

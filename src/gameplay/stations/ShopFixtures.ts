@@ -202,6 +202,7 @@ export class LogItem extends Entity {
     super();
     this.object.add(logModel());
     this.draggable = true;
+    this.ghostWhenHeld = true;
     this.halfHeight = 0.06;
     this.radius = 0.17;
     this.body = ctx.physics.createBody({

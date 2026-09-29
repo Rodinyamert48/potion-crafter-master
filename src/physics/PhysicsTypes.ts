@@ -75,6 +75,9 @@ export interface BodyHandle {
   /** Kinematic bodies: move toward this transform over the next step (pushes others). */
   setKinematicTarget(position: Vec3Like, rotation: QuatLike): void;
   setCollisionFilter(group: number, mask: number): void;
+  /** Current collision membership and mask. */
+  readonly group: number;
+  readonly mask: number;
 }
 
 export interface CollisionInfo {
