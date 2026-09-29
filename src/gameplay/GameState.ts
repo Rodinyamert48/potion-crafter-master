@@ -11,6 +11,18 @@ import { clamp } from '../core/math';
 import { defaultCat, type CatLook } from '../data/cat';
 import { BASIC_RECIPES } from '../data/potions';
 import { defaultPets, type PetsState } from '../data/pets';
+import { absHour, defaultGarden, PLOTS, type GardenState } from '../data/garden';
+
+/** Open-world bookkeeping for one day (what was picked, which altars were used). */
+export interface OutdoorDayState {
+  day: number;
+  /** Gather spots already emptied today. */
+  picked: string[];
+  /** Regions whose gathering altar was used today. */
+  altars: string[];
+  /** The wishing well at the Moon Shrine was used today. */
+  well: boolean;
+}
 
 export interface DiscoveryEntry {
   day: number;
@@ -95,6 +107,10 @@ export class GameState {
   achievements: Record<string, number> = {};
   /** Misc. counters the achievements look at (cat pets, trades, regions…). */
   counters: Record<string, number> = {};
+  /** The garden behind the shop. */
+  garden: GardenState = defaultGarden();
+  /** Today's state of the world outside. */
+  outdoor: OutdoorDayState = { day: 0, picked: [], altars: [], well: false };
 
   constructor(private readonly bus: EventBus<GameEvents>) {}
 
@@ -115,6 +131,12 @@ export class GameState {
   /** Bump one of the achievement counters. */
   count(key: string, n = 1): void {
     this.counters[key] = (this.counters[key] ?? 0) + n;
+  }
+
+  /** Today's outdoor state (reset on a new day). */
+  get outdoorToday(): OutdoorDayState {
+    if (this.outdoor.day !== this.day) this.outdoor = { day: this.day, picked: [], altars: [], well: false };
+    return this.outdoor;
   }
 
   canAfford(n: number): boolean {
@@ -285,6 +307,8 @@ export class GameState {
       learned: this.learned,
       furniture: this.furniture,
       pets: this.pets,
+      garden: this.garden,
+      outdoor: this.outdoor,
     };
   }
 
@@ -319,6 +343,18 @@ export class GameState {
     this.furniture = g.furniture ?? {};
     const pets = defaultPets();
     this.pets = { slime: { ...pets.slime, ...(g.pets?.slime ?? {}) }, dog: { ...pets.dog, ...(g.pets?.dog ?? {}) } };
+    const garden = defaultGarden();
+    garden.clock = absHour(this.day, this.hour);
+    const sg = g.garden;
+    if (sg) {
+      garden.plots = PLOTS.map((_, i) => ({ crop: sg.plots?.[i]?.crop ?? null, growth: sg.plots?.[i]?.growth ?? 0, water: sg.plots?.[i]?.water ?? 0 }));
+      garden.seeds = { ...(sg.seeds ?? {}) };
+      garden.clock = sg.clock ?? garden.clock;
+      garden.toadDay = sg.toadDay ?? 0;
+      garden.harvests = sg.harvests ?? 0;
+    }
+    this.garden = garden;
+    this.outdoor = g.outdoor ?? { day: 0, picked: [], altars: [], well: false };
   }
 }
 

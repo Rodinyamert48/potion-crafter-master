@@ -49,8 +49,16 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 | `1`–`5` | Kamera: dükkân, kazan, masa, raflar, tezgâh |
 | Vincin krank kolunu daire çizerek çevir | Kazanı ateşten kaldır / indir |
 | Kediye, tezgâh balçığına, ustanın köpeğine sol tık · sağ tık | Sev · özelleştirme paneli |
-| `B` · `C` · `I` · `M` · `K` · `H` · `Esc` | İksir kitabı · pazar · envanter · keşif haritası · başarımlar · yardım · menü |
+| Dükkânın kapısına tıkla / `O` | Kapı menüsü: **Dışarı çık** (açık dünya) · **Bahçeye çık** |
+| `B` · `C` · `I` · `K` · `H` · `Esc` | İksir kitabı · pazar · envanter · başarımlar · yardım · menü |
 | `"` / `` ` `` (Esc'nin altındaki tuş) | Admin menüsü (şifre: `4884`) |
+
+**Açık dünya (yalnızca PC):** `WASD` / oklar yürü · fare etrafa bak (ilk
+tıklamada fare yakalanır; yakalanamazsa sürükleyerek bakılır) · `Shift` koş ·
+`Space` zıpla · `E` topla / sunağı, kuyuyu, kapıyı kullan · `Esc` duraklat.
+
+**Bahçe:** tarha tıkla (ek · sula · hasat et), tohum sandığına tıkla (tohum al),
+`WASD` kamerayı kaydır, tekerlek yakınlaştır, `Q`/`E` döndür.
 
 **Dokunmatik (telefon, tablet, akıllı tahta):** tek parmakla eşyaları sürükle,
 boş zemini sürükleyerek kamerayı kaydır, iki parmakla yakınlaştır ve çevirerek
@@ -94,14 +102,50 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   var. Müşteriler sık gelir: ilk gün eğitimden sonra yaklaşık her 1,5–2
   saatte bir, sonraki günlerde her 1–2 saatte bir (itibar arttıkça daha sık). Kapıdan girer, sıraya geçer, sipariş verir,
   bekler, içer, tepki verir, öder (paralar tezgâha düşer) ve gider.
-- **Toplama bölgeleri:** duvardaki keşif haritasından Fısıldayan Orman,
-  Yankı Mağarası, Bulanık Bataklık veya Ejderha Vadisi'ne gidilir. Her bölgenin
-  kendi piksel sahnesi, malzemeleri ve tuzakları var: yürürken beliren
-  malzemelere tıkla, zehirli mantar, kurt gözü, sülük, kor gibi tehlikelere
-  dokunma (dokunursan sepetten bir şey düşer). Gezi saatler sürer; bu sırada
-  dükkân kapalıdır, gelen müşteriler kaçar. Ay Çiçeği gece ormanda, Buz
-  Kristali mağarada, Bataklık Kurbağası Gözü yalnızca bataklıkta, Anka Tüyü
-  nadiren vadide bulunur. Bölgeler gün ve itibarla açılır.
+- **Dükkânın kapısı:** duvardaki harita kaldırıldı; kapıya tıklayınca
+  (ya da `O`) *Dışarı çık* ve *Bahçeye çık* seçenekleri çıkar. Dışarı
+  çıkarken "Evcil hayvanlarını da almak ister misin?" diye sorulur; seçilen
+  hayvanlar (Duman, Pamuk, Pıtırcık) seninle gelir.
+- **Açık dünya (PC, birinci şahıs):** dükkândan çıkan yol biraz ilerleyince
+  kavşakta beşe ayrılır: **Fısıldayan Orman** (batı), **Yankı Mağarası**
+  (kuzeybatı, sonunda kubbeli bir mağara), **Ay Tapınağı** (kuzey; taş
+  çember, harabeler, dilek kuyusu – yeni özel bölge), **Bulanık Bataklık**
+  (kuzeydoğu; sular, nilüferler, sis) ve **Ejderha Vadisi** (doğu; lav gölleri
+  ve uyuyan bir ejderha). Three.js dünyayı dükkânla aynı piksel hattında
+  çizer; ayrı bir Babylon.js/Havok sahnesi araziyi (üçgen mesh), ağaç/kaya
+  çarpıştırıcılarını, düşen kayaları ve Havok karakter kontrolcüsünü
+  (PhysicsCharacterController: eğim, basamak, zıplama) çalıştırır; ateş
+  böcekleri, sis, kor, kül, ay tozları ve ejderha ateşi Babylon parçacık
+  sistemleridir. Yerde parlayan ışık sütunlu noktalarda `E` ile malzeme
+  toplanır (günde bir kez; zehirli kırmızı mantarlara dikkat), her bölgenin
+  **toplama sunağında** o bölgeye özel mini oyun oynanır (günde bir).
+  Tehlikeler: gece ormanda kurtlar, ısırgan otları, mağarada düşen kayalar,
+  tapınakta gece gölgeleri, bataklıkta sülükler ve bataklık ışıkları,
+  vadide lav ve fazla gürültüyle uyanıp ateş püskürten ejderha. 5 kalbin
+  biterse bayılırsın: Usta Mortimer seni kapıda bulur, sepetin yarısı gider.
+  Dışarıdayken saat işler, dükkân kapalıdır (gelen müşteriler kaçar), gece
+  yarısı eve çağrılırsın; kapıdan girince sepet raflara boşalır. Evcil
+  hayvan yetenekleri: köpek buluntuları koklar ve kurtları kovar, kedi
+  karanlıkta görür ve tehlikeye tıslar, balçık sepete 4 yer açar ve düşeni
+  yakalar. Açık dünya yalnızca PC içindir; telefon ve tablette "Dışarı çık"
+  bölge listesini açar (bir yer seç, mini oyununu oyna, saat bölgenin süresi
+  kadar ilerler). Bölgeler gün ve itibarla açılır (kilitliyken yolda büyülü
+  bir bariyer durur).
+- **Mini oyunlar (bölgeye özel):** *Orman* – yürüyen patikada kaybolmadan
+  tıkla, ruh tilkisini yakala; *Mağara* – fareyi takip eden fener ışığında
+  kristallere üç kez vur, yarasalara dokunma, toz dökülünce oradan kaç;
+  *Bataklık* – kurbağaya gözleri parlarken (ya da havada, iki tane!) dokun;
+  *Vadi* – uyuyan ejderhanın pullarını al, her dokunuş gürültü, göz açılınca
+  dokunma, anka tüyünü lava düşmeden yakala; *Ay Tapınağı* – rünlerin sırasını
+  tekrarla, her tur hediye getirir. Hepsinde kombo (5'te bir bonus) ve evcil
+  hayvan yetenekleri var.
+- **Bahçe:** dükkânın arkasında 6 toprak tarh, 2 kristal jeot, tohum
+  sandığı, pompa, gölet ve korkuluk. Mantar sporu (6 saat), Ay Çiçeği tohumu
+  (12 saat, yalnızca gece hasat) ve tohum kristali (jeotta, 10 saat, su
+  istemez) ekilebilir; tarhlar yalnızca nemliyken büyür (bir sulama 8 saat
+  yeter), hasat doğrudan raflara girer. Bataklığı keşfettiysen gölete her
+  gün bir kurbağa uğrar ve bir göz bırakır. Bahçedeyken dükkân açık kalır;
+  müşteri gelince zil çalar.
 - **Gün döngüsü:** sabah/öğle/akşam/gece; Ay Çiçeği yalnızca geceleri açar.
   Gece tabelayla dükkânı kapat, gün özetini gör.
 - **Keşif ve tarifler:** temel iksirlerin tarifi (malzemeler, sıcaklık,
@@ -195,7 +239,13 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   arkada kısık bir rüzgâr/uğultu sesi çalar; arayüz karartılmış demir,
   eskimiş altın ve kızıl çerçevelere, gotik piksel başlıklara (Jacquard 24)
   ve çelik eldiven imlecine bürünür. Tüm yazılar retro VT323 fontuyla
-  (Türkçe karakter destekli).
+  (Türkçe karakter destekli). Dükkânda yerde soğuk bir sis dolaşır, pencere
+  pervazında bir kuzgun bekler, tavandan zincirler sarkar, köşelerde eriyen
+  mum kümeleri ve kafatası belirir; görüntüye nefes alan bir vinyet ve ince
+  film greni eklenir. Açık dünyada Dark Fantasy daha yoğun sis, kan kırmızısı
+  ay, havada uçuşan kül, soluk renkler ve gece uzaktan çakan şimşeklerle
+  karanlık fantastik bir havaya bürünür (normal modda da yol kenarı
+  fenerleri, ölü ağaçlar, mezar taşları, kuzgunlar ve harabelerle kasvetli).
 - **Düşen aletler:** çekiç ya da bıçak yere, masanın altına düşerse kısa
   süre sonra kendiliğinden süzülerek masadaki yerine döner; elde taşınan
   bir eşya masa kenarına takılırsa içinden geçip imlece ulaşır. Aleti
@@ -219,6 +269,12 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   duman için CPU `ParticleSystem` simülasyonu (parçacıklar Three.js'e aktarılır).
 - `PhysicsWorld` arayüzü oyun kodunu Babylon'dan ayırır; `PhysicsSync` sabit
   adımlı (60 Hz) fiziği ara değerlemeyle (interpolation) görüntüye bağlar.
+- **Açık dünya ve bahçe** ayrı Three.js sahneleridir; `ThreeRenderer.setView`
+  dükkân yerine onları aynı piksel boru hattıyla çizer, `Game.setMode`
+  güncellemeyi yönlendirir (dışarıdayken dükkân durur, bahçedeyken çalışmaya
+  devam eder). Açık dünyanın ikinci bir başsız Babylon sahnesi ve kendi Havok
+  dünyası vardır: arazi (aynı yükseklik fonksiyonundan üretilen üçgen mesh),
+  ağaç/kaya/bina çarpıştırıcıları, düşen kayalar ve `PhysicsCharacterController`.
 
 ```
 src/
@@ -234,10 +290,12 @@ src/
     customers/   müşteri durum makinesi, ekonomi, içme etkileri, kurbağa, usta
     day/ quests/ tutorial/ shop/
   world/         varlık kaydı, etkileşim (fiziksel tutma), dükkân kurulumu
+    outdoor/     açık dünya: yerleşim/arazi, modeller, inşa, FPS kontrolcüsü, HUD, evcil hayvanlar
+    garden/      bahçe sahnesi (tarhlar, jeotlar, sulama, hasat)
   vfx/ audio/    piksel parçacıklar, enkaz; Web Audio ile sentezlenmiş ses ve uyarlanır müzik
   data/          malzemeler, iksir tarifleri, özler, müşteriler, görevler, geliştirmeler, metinler
-  save/ ui/      kayıt sistemi; hafif, diegetik piksel arayüz
-tests/           kimya/tarif birim testleri
+  save/ ui/      kayıt sistemi; hafif, diegetik piksel arayüz (ui/minigames: bölge mini oyunları)
+tests/           kimya/tarif, açık dünya yerleşimi ve bahçe birim testleri
 ```
 
 ### Yeni malzeme veya iksir eklemek

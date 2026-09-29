@@ -7,7 +7,6 @@ import {
   candleWax,
   cobweb,
   leafSprite,
-  parchmentMap,
   rug,
   straw,
   woodBeam,
@@ -225,22 +224,6 @@ export function cobwebQuad(size = 0.6): THREE.Mesh {
   const m = quad(size, size, new THREE.MeshBasicMaterial({ map: cobweb(), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide, depthWrite: false }));
   m.userData.noPick = true;
   return m;
-}
-
-export function wallMap(): THREE.Group {
-  const g = new THREE.Group();
-  const m = quad(0.9, 0.68, toon({ map: parchmentMap() }));
-  g.add(m);
-  for (const [x, y] of [
-    [-0.42, 0.31],
-    [0.42, 0.31],
-  ]) {
-    const pin = mesh(cyl(0.015, 0.015, 0.02, 6), toon({ color: '#a22633' }));
-    pin.rotation.x = Math.PI / 2;
-    pin.position.set(x, y, 0.01);
-    g.add(pin);
-  }
-  return g;
 }
 
 export function rugModel(w: number, d: number): THREE.Mesh {

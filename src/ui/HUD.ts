@@ -98,7 +98,7 @@ export class HUD {
     mk('book', t('hud.book'), 'B', () => ui.togglePanel('book'));
     mk('bag', t('hud.inventory'), 'I', () => ui.togglePanel('inventory'));
     mk('scroll', t('hud.catalog'), 'C', () => ui.togglePanel('catalog'));
-    mk('map', t('hud.map'), 'M', () => ui.togglePanel('map'));
+    mk('door', t('hud.door'), 'O', () => ui.togglePanel('door'));
     mk('trophy', t('hud.achievements'), 'K', () => ui.togglePanel('achievements'));
     mk('gear', t('hud.menu'), 'Esc', () => ui.togglePanel('menu'));
     this.el.appendChild(this.buttons);
@@ -151,6 +151,11 @@ export class HUD {
 
   set visible(v: boolean) {
     this.el.style.display = v ? 'block' : 'none';
+  }
+
+  /** In the garden the shop's station buttons and tool bar step aside. */
+  setMode(mode: 'shop' | 'garden'): void {
+    this.el.classList.toggle('mode-garden', mode === 'garden');
   }
 
   update(): void {

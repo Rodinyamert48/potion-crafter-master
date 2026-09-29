@@ -17,11 +17,23 @@ export class BabylonCore {
   readonly engine: NullEngine;
   readonly scene: Scene;
   readonly havok: HavokPlugin;
+  /** The Havok WASM module (other scenes – the open world – get their own plugin on it). */
+  readonly hk: unknown;
 
-  private constructor(engine: NullEngine, scene: Scene, havok: HavokPlugin) {
+  private constructor(engine: NullEngine, scene: Scene, havok: HavokPlugin, hk: unknown) {
     this.engine = engine;
     this.scene = scene;
     this.havok = havok;
+    this.hk = hk;
+  }
+
+  /** A second headless scene with its own Havok world (e.g. outdoors). */
+  createPhysicsScene(): { scene: Scene; havok: HavokPlugin } {
+    const scene = new Scene(this.engine);
+    scene.useRightHandedSystem = true;
+    const havok = new HavokPlugin(true, this.hk);
+    scene.enablePhysics(new Vector3(0, -9.81, 0), havok);
+    return { scene, havok };
   }
 
   static async create(): Promise<BabylonCore> {
@@ -39,6 +51,6 @@ export class BabylonCore {
     scene.useRightHandedSystem = true;
     const havok = new HavokPlugin(true, hk);
     scene.enablePhysics(new Vector3(0, -9.81, 0), havok);
-    return new BabylonCore(engine, scene, havok);
+    return new BabylonCore(engine, scene, havok, hk);
   }
 }

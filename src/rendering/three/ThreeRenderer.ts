@@ -12,6 +12,15 @@ export type PixelPreset = 'fine' | 'normal' | 'chunky';
  *  15-bit colour and no outlines (also the lightest mode). */
 export type Quality = 'low' | 'medium' | 'high' | 'ps1';
 
+/** Another scene drawn instead of the shop (the open world, the garden). */
+export interface RenderView {
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  /** Per-frame work before drawing (lights, sky, sprites…). */
+  update?(dt: number): void;
+  setAspect?(aspect: number): void;
+}
+
 const TARGET_HEIGHT: Record<PixelPreset, number> = { fine: 620, normal: 460, chunky: 340 };
 
 export class ThreeRenderer {
@@ -31,6 +40,13 @@ export class ThreeRenderer {
   /** Callbacks that want the per-frame render dt (shaders, sprites…). */
   private readonly frameHooks: Array<(dt: number, time: number) => void> = [];
   private time = 0;
+  /** When set, this view is drawn instead of the shop. */
+  view: RenderView | null = null;
+  /** Other scenes whose materials follow quality switches (PS1 shader patch). */
+  readonly extraScenes = new Set<THREE.Scene>();
+  /** Called when the mood (Dark Fantasy / PS1) changes. */
+  readonly moodHooks: Array<() => void> = [];
+  private aspect = 16 / 9;
 
   constructor(private readonly container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({
@@ -84,11 +100,12 @@ export class ThreeRenderer {
     this.applyMood();
     document.documentElement.classList.toggle('psx', psx);
     setPsx(this.scene, psx);
-    this.scene.traverse((o) => {
-      const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
-      if (!m) return;
-      for (const mat of Array.isArray(m) ? m : [m]) mat.needsUpdate = true;
-    });
+    for (const sc of [this.scene, ...this.extraScenes])
+      sc.traverse((o) => {
+        const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+        if (!m) return;
+        for (const mat of Array.isArray(m) ? m : [m]) mat.needsUpdate = true;
+      });
     this.resize();
   }
 
@@ -110,6 +127,18 @@ export class ThreeRenderer {
     fog.far = psx ? 26 : dark ? 32 : 40;
     (this.scene.background as THREE.Color).set(bg);
     this.renderer.setClearColor(bg, 1);
+    for (const fn of this.moodHooks) fn();
+  }
+
+  /** Draw another scene instead of the shop (null: back to the shop). */
+  setView(view: RenderView | null): void {
+    this.view = view;
+    view?.setAspect?.(this.aspect);
+  }
+
+  /** The camera currently on screen. */
+  get activeCamera(): THREE.PerspectiveCamera {
+    return this.view?.camera ?? this.rig.camera;
   }
 
   resize(): void {
@@ -130,12 +159,14 @@ export class ThreeRenderer {
     this.canvas.style.width = `${w}px`;
     this.canvas.style.height = `${h}px`;
     this.pipeline.setSize(this.lowWidth, this.lowHeight);
-    this.rig.setAspect(w / h);
+    this.aspect = w / h;
+    this.rig.setAspect(this.aspect);
+    this.view?.setAspect?.(this.aspect);
   }
 
   /** Project a world position to CSS pixel coordinates of the viewport. */
   project(world: THREE.Vector3, out: { x: number; y: number; visible: boolean }): void {
-    const v = _proj.copy(world).project(this.rig.camera);
+    const v = _proj.copy(world).project(this.activeCamera);
     out.x = (v.x * 0.5 + 0.5) * this.container.clientWidth;
     out.y = (-v.y * 0.5 + 0.5) * this.container.clientHeight;
     out.visible = v.z < 1 && v.z > -1;
@@ -144,6 +175,11 @@ export class ThreeRenderer {
   render(dt: number): void {
     this.time += dt;
     for (const fn of this.frameHooks) fn(dt, this.time);
+    if (this.view) {
+      this.view.update?.(dt);
+      this.pipeline.render(this.view.scene, this.view.camera);
+      return;
+    }
     this.rig.update(dt);
     this.lighting.update(dt);
     this.lighting.scheduleShadows();

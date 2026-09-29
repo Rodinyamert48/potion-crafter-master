@@ -31,6 +31,12 @@ import { t } from './i18n';
 import type { Quality } from '../rendering/three/ThreeRenderer';
 import { setRetroTheme } from '../ui/theme';
 
+/** The open world / garden: runs instead of (outside) or next to (garden) the shop. */
+export interface ModeHandler {
+  fixed?(dt: number): void;
+  update(dt: number): void;
+}
+
 export interface GameSystem {
   fixed?(dt: number): void;
   update?(dt: number): void;
@@ -43,6 +49,7 @@ export class Game {
   readonly loop: Loop;
   readonly ui: UIRoot;
   private readonly systems: GameSystem[] = [];
+  private modeHandler: ModeHandler | null = null;
   private readonly particles: ParticleRenderer;
   private readonly babylonSim: BabylonParticleSim;
   readonly scheduler = new Scheduler();
@@ -95,6 +102,8 @@ export class Game {
       time: 0,
       gameTime: 0,
       paused: false,
+      mode: 'shop',
+      renderAlpha: 0,
       later: (seconds: number, fn: () => void) => this.scheduler.later(seconds, fn),
     } as unknown as GameContext;
     this.ctx = ctx;
@@ -124,6 +133,7 @@ export class Game {
       fixed: (dt) => this.fixed(dt),
       update: (dt, time) => this.update(dt, time),
       render: (alpha, dt) => {
+        ctx.renderAlpha = alpha;
         sync.interpolate(alpha);
         renderer.render(dt);
       },
@@ -141,6 +151,16 @@ export class Game {
 
   addSystem(s: GameSystem): void {
     this.systems.push(s);
+  }
+
+  /** Switch between the shop, the open world and the garden. */
+  setMode(mode: GameContext['mode'], handler: ModeHandler | null): void {
+    const ctx = this.ctx;
+    ctx.mode = mode;
+    this.modeHandler = handler;
+    ctx.ui.tooltip(null);
+    ctx.ui.setHint(null);
+    ctx.ui.setCursor('default');
   }
 
   applySettings(s: Settings): void {
@@ -187,12 +207,12 @@ export class Game {
     const ctx = this.ctx;
     const rig = this.renderer.rig;
     ctx.input.onWheel((dy) => {
-      if (!this.playing || ctx.ui.panelOpen) return;
+      if (!this.playing || ctx.ui.panelOpen || ctx.mode !== 'shop') return;
       if (ctx.interaction.grab instanceof PhysicsGrab) return;
       rig.zoom(dy * 0.0012);
     });
     ctx.input.onPinch((scale, px, py, rot) => {
-      if (!this.playing || ctx.ui.panelOpen) return;
+      if (!this.playing || ctx.ui.panelOpen || ctx.mode !== 'shop') return;
       rig.zoom(-(scale - 1) * 1.5);
       const k = rig.distance * 0.0016;
       rig.pan(-px * k, -py * k);
@@ -200,7 +220,7 @@ export class Game {
       if (Math.abs(rot) > 0.002) rig.rotate(rot * 0.8);
     });
     ctx.input.onKeyDown((code) => {
-      if (!this.playing || ctx.ui.panelOpen) return;
+      if (!this.playing || ctx.ui.panelOpen || ctx.mode !== 'shop') return;
       const p = ctx.shop.presets;
       if (code === 'Digit1') rig.setPreset(p.overview);
       if (code === 'Digit2') rig.setPreset(p.cauldron);
@@ -242,6 +262,11 @@ export class Game {
 
   private fixed(dt: number): void {
     const ctx = this.ctx;
+    if (this.playing && ctx.mode === 'outside') {
+      // The shop waits (the master keeps an eye on it); only the open world runs.
+      if (!ctx.ui.panelOpen) this.modeHandler?.fixed?.(dt);
+      return;
+    }
     if (ctx.paused || !this.playing) {
       // Keep the world alive behind the title screen, but no gameplay.
       if (!this.playing) {
@@ -256,26 +281,30 @@ export class Game {
     for (const s of this.systems) s.fixed?.(dt);
     ctx.physics.step(dt);
     ctx.sync.afterStep();
+    if (ctx.mode === 'garden') this.modeHandler?.fixed?.(dt);
   }
 
   private update(dt: number, time: number): void {
     const ctx = this.ctx;
     ctx.time = time;
-    ctx.paused = this.playing ? ctx.ui.panelOpen : false;
-    ctx.interaction.enabled = this.playing && !ctx.ui.panelOpen;
+    const outside = this.playing && ctx.mode === 'outside';
+    const inShop = ctx.mode === 'shop';
+    ctx.paused = this.playing ? ctx.ui.panelOpen || outside : false;
+    ctx.interaction.enabled = this.playing && !ctx.ui.panelOpen && inShop;
     ctx.input.enabled = true;
-    if (this.playing) this.cameraControls(dt);
-    ctx.audio.listenerX = this.renderer.rig.focus.x;
+    if (this.playing && inShop) this.cameraControls(dt);
+    ctx.audio.listenerX = inShop ? this.renderer.rig.focus.x : 0;
     if (this.playing && !ctx.paused) {
       this.scheduler.update(dt);
-      ctx.interaction.update(dt);
+      if (inShop) ctx.interaction.update(dt);
       ctx.world.update(ctx, dt);
     } else if (!this.playing) {
       ctx.world.update(ctx, dt);
-    } else {
+    } else if (inShop) {
       ctx.ui.tooltip(null);
     }
-    for (const s of this.systems) if (this.playing || s.always) s.update?.(dt);
+    for (const s of this.systems) if ((this.playing && !outside) || s.always) s.update?.(dt);
+    if (this.playing && this.modeHandler) this.modeHandler.update(dt);
 
     // Environment visuals
     ctx.shop.cutaway.update(this.renderer.rig.camera.position, dt);
@@ -298,10 +327,12 @@ export class Game {
     g.flash = Math.max(0, g.flash - dt * 2.2);
 
     this.governQuality(dt);
-    this.babylonSim.update(dt);
-    this.particles.setViewport(this.renderer.lowHeight, this.renderer.rig.camera.fov);
-    this.particles.update(dt);
-    ctx.debris.update(dt);
+    if (!outside) {
+      this.babylonSim.update(dt);
+      this.particles.setViewport(this.renderer.lowHeight, this.renderer.rig.camera.fov);
+      this.particles.update(dt);
+      ctx.debris.update(dt);
+    }
     this.ui.update(dt);
     ctx.world.flush(ctx);
     ctx.input.endFrame(dt);

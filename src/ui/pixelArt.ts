@@ -351,6 +351,27 @@ const ICONS: Record<string, { rows: string[]; pal: Record<string, string> }> = {
     ],
     pal: { k: '#733e39', p: '#ead4aa', g: '#c8b890', b: '#3b5dc9', r: '#e43b44' },
   },
+  door: {
+    rows: [
+      '................',
+      '....kkkkkkkk....',
+      '...kwwwwwwwwk...',
+      '..kwwbwwwwbwwk..',
+      '..kwwbwwwwbwwk..',
+      '..kwwbwwwwbwwk..',
+      '..kwwwwwwwwwwk..',
+      '..kwwbwwwwbwwk..',
+      '..kwwbwwwwyywk..',
+      '..kwwbwwwwyywk..',
+      '..kwwbwwwwbwwk..',
+      '..kwwwwwwwwwwk..',
+      '..kwwbwwwwbwwk..',
+      '..kkkkkkkkkkkk..',
+      '.gggggggggggggg.',
+      '................',
+    ],
+    pal: { k: '#3e2731', w: '#8f563b', b: '#733e39', y: '#fee761', g: '#3e8948' },
+  },
   gear: {
     rows: [
       '................',

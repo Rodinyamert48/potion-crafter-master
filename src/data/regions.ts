@@ -4,7 +4,7 @@
 
 import type { LocalizedText } from '../core/i18n';
 
-export type RegionId = 'forest' | 'cave' | 'swamp' | 'valley';
+export type RegionId = 'forest' | 'cave' | 'swamp' | 'valley' | 'shrine';
 
 export interface RegionFind {
   ingredientId: string;
@@ -164,6 +164,37 @@ export const REGIONS: RegionDef[] = [
       { id: 'claw', name: { en: 'A sleeping dragon’s claw', tr: 'Uyuyan bir ejderhanın pençesi' }, weight: 2 },
     ],
     map: { x: 0.76, y: 0.68 },
+  },
+  {
+    id: 'shrine',
+    name: { en: 'Moon Shrine', tr: 'Ay Tapınağı' },
+    description: {
+      en: 'The ruins of an ancient moon temple beyond the crossroads. The old stones hum at night, and whoever repeats the runes of the moon is rewarded. Moon Flowers bloom around the altar.',
+      tr: 'Kavşağın ötesinde, kadim bir ay tapınağının kalıntıları. Eski taşlar geceleri uğuldar; ayın rünlerini tekrarlayan ödüllendirilir. Sunağın çevresinde Ay Çiçekleri açar.',
+    },
+    hours: 3,
+    minDay: 3,
+    scenery: {
+      skyDay: ['#5a6988', '#a8b8d8'],
+      skyNight: ['#0b0a1e', '#1f1d3a'],
+      far: '#3a4466',
+      mid: '#262b44',
+      ground: '#4a5070',
+      groundHi: '#8b9bb4',
+      accent: '#c0cbff',
+    },
+    finds: [
+      { ingredientId: 'moon_flower', weight: 2, when: 'day' },
+      { ingredientId: 'moon_flower', weight: 5, when: 'night' },
+      { ingredientId: 'frost_crystal', weight: 2 },
+      { ingredientId: 'glowing_mushroom', weight: 2 },
+      { ingredientId: 'phoenix_feather', weight: 0.35, rare: true },
+    ],
+    hazards: [
+      { id: 'shade', name: { en: 'Restless shade', tr: 'Huzursuz gölge' }, weight: 3, when: 'night' },
+      { id: 'raven', name: { en: 'Angry raven', tr: 'Kızgın kuzgun' }, weight: 2 },
+    ],
+    map: { x: 0.5, y: 0.13 },
   },
 ];
 

@@ -51,7 +51,6 @@ import {
   pottedPlant,
   rugModel,
   skullModel,
-  wallMap,
 } from '../rendering/three/models/decorModels';
 import { flaskModel } from '../rendering/three/models/toolModels';
 import { createSkyMaterial } from '../rendering/three/shaders/SkyMaterial';
@@ -63,6 +62,7 @@ import { Bellows, Damper } from '../gameplay/stations/FireControls';
 import { CuttingBoard, DryingRack, Hammer, Knife, Mortar } from '../gameplay/stations/PrepStations';
 import { Bucket, WaterBarrel } from '../gameplay/stations/Water';
 import { ClickFixture, Door, PotionShelf, SupplySource, sparkleAbove } from '../gameplay/stations/ShopFixtures';
+import { ravenModel } from './outdoor/OutdoorModels';
 import { INGREDIENTS } from '../data/ingredients';
 import { t } from '../core/i18n';
 import { JarSlime, ShelfSpider } from '../gameplay/ShelfCritters';
@@ -647,23 +647,6 @@ export function buildShop(ctx: GameContext): Shop {
   const broom = broomModel();
   add(broom, -4.85, 0, 0.1);
   broom.rotation.z = -0.22;
-  // The expedition map: click it to plan a gathering trip.
-  const map = wallMap();
-  map.rotation.y = Math.PI / 2;
-  const mapFixture = world.add(
-    new ClickFixture(
-      'map',
-      map,
-      V(leftX + 0.17, 1.9, -1.3),
-      () => ({ title: t('obj.map'), hint: t('hint.map') }),
-      (c) => {
-        c.audio.play('pageFlip', {});
-        c.ui.openPanel('map');
-      },
-    ),
-    ctx,
-  );
-  leftWall.attach(mapFixture.object, mapFixture);
   // A floating save crystal in the back-right corner.
   world.add(new SaveCrystal(V(4.62, 0, -2.72)), ctx);
   staticBox(V(4.62, 0.13, -2.72), [0.46, 0.26, 0.46]);
@@ -723,6 +706,76 @@ export function buildShop(ctx: GameContext): Shop {
     }),
     ctx,
   );
+
+  // ---------------------------------------------------------------------
+  // Dark Fantasy extras: only visible in that mood (Settings → Dark Fantasy)
+  // ---------------------------------------------------------------------
+  const df = new THREE.Group();
+  scene.add(df);
+  const dfLights: THREE.PointLight[] = [];
+  // A raven watching from the window sill
+  const raven = ravenModel();
+  raven.group.position.set(-0.8, win.y0 + 0.02, wallZ + 0.24);
+  raven.group.rotation.y = Math.PI + 0.3;
+  raven.group.scale.setScalar(1.3);
+  df.add(raven.group);
+  // Iron chains hanging from the cross beam
+  const ironM = toon({ color: '#3a3440' });
+  for (const [cx, len] of [
+    [-4.55, 1.3],
+    [4.45, 1.0],
+  ]) {
+    for (let k = 0; k < Math.round(len / 0.09); k++) {
+      const link = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 4, 8), ironM);
+      link.position.set(cx, H - 0.28 - k * 0.09, -2.25);
+      link.rotation.y = k % 2 ? Math.PI / 2 : 0;
+      df.add(link);
+    }
+    const hook = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.014, 4, 10, Math.PI * 1.3), ironM);
+    hook.position.set(cx, H - 0.3 - len, -2.25);
+    hook.rotation.z = Math.PI * 0.6;
+    df.add(hook);
+  }
+  // Candle clusters on the floor, dripping wax
+  for (const [cx, cz] of [
+    [-4.55, -3.35],
+    [4.6, 2.3],
+  ]) {
+    const puddle = new THREE.Mesh(new THREE.CircleGeometry(0.28, 10), toon({ color: '#d8ccb0' }));
+    puddle.rotation.x = -Math.PI / 2;
+    puddle.position.set(cx, 0.006, cz);
+    df.add(puddle);
+    let flame: THREE.Mesh | null = null;
+    for (let k = 0; k < 4; k++) {
+      const c = candleModel(0.1 + k * 0.07);
+      c.group.position.set(cx + Math.cos(k * 1.7) * 0.13, 0, cz + Math.sin(k * 1.7) * 0.13);
+      df.add(c.group);
+      flame ??= c.flame;
+    }
+    const l = ctx.renderer.lighting.addCandle(V(cx, 0.45, cz), 2.6, flame ?? undefined, '#ff9a4a', 4);
+    dfLights.push(l);
+  }
+  // Extra cobwebs in the front corners and a skull by the hearth
+  for (const [x, z, ry] of [
+    [-4.9, 2.6, -Math.PI / 4],
+    [4.95, 2.6, Math.PI / 4],
+  ]) {
+    const web = cobwebQuad(0.9);
+    web.position.set(x, 2.9, z);
+    web.rotation.set(0, ry, 0);
+    df.add(web);
+  }
+  const floorSkull = skullModel();
+  floorSkull.position.set(-1.45, 0, -0.35);
+  floorSkull.rotation.y = 0.8;
+  df.add(floorSkull);
+  const syncDf = () => {
+    const on = ctx.renderer.darkFantasy;
+    df.visible = on;
+    for (const l of dfLights) l.visible = on;
+  };
+  syncDf();
+  ctx.renderer.moodHooks.push(syncDf);
 
   // ---------------------------------------------------------------------
   // Anchors & camera presets

@@ -246,10 +246,16 @@ export class UIRoot implements UIHooks {
   update(dt: number): void {
     const ctx = this.ctx;
     if (!ctx) return;
+    const inShop = ctx.mode === 'shop';
     for (const b of [...this.bubbles.values()]) {
       b.life -= dt;
       if (b.life <= 0 || !b.anchor.parent) {
         this.removeBubble(b.id);
+        continue;
+      }
+      // Speech in the shop is not heard outside (unless it belongs out there).
+      if (!inShop && !b.anchor.userData.outdoor) {
+        b.el.style.display = 'none';
         continue;
       }
       // Typewriter

@@ -150,6 +150,10 @@ export class Atmosphere implements GameSystem {
     ctx.audio.loop('ambience', ambienceLoop)?.set(1, lighting.nightness);
     ctx.audio.loop('darkfantasy', horrorLoop)?.set(ctx.settings.retro ? 0.45 : 0);
 
+    // Dark Fantasy: cold mist creeping over the floorboards.
+    if (ctx.settings.retro && !ctx.paused && ctx.mode === 'shop')
+      ctx.vfx.rate('dfMist', 2.2, dt, () => ctx.vfx.mist({ x: rng.range(-4.8, 4.8), y: rng.range(0.05, 0.25), z: rng.range(-3.5, 2.4) }));
+
     // Faint magic glimmers drifting up all over the shop
     if (ctx.state && !ctx.paused)
       ctx.vfx.rate('glimmer', 1.4, dt, () =>

@@ -35,7 +35,25 @@ export interface UIHooks {
   readonly panelOpen: boolean;
 }
 
-export type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat' | 'merchant' | 'achievements' | 'pet' | 'admin';
+export type PanelName =
+  | 'book'
+  | 'catalog'
+  | 'inventory'
+  | 'menu'
+  | 'summary'
+  | 'map'
+  | 'cat'
+  | 'merchant'
+  | 'achievements'
+  | 'pet'
+  | 'admin'
+  | 'door'
+  | 'outpause'
+  | 'minigame'
+  | 'seeds';
+
+/** Where the apprentice is: in the shop, roaming outside (PC) or in the garden. */
+export type GameMode = 'shop' | 'outside' | 'garden';
 
 export interface Bounds {
   minX: number;
@@ -67,6 +85,10 @@ export interface GameContext {
   /** Seconds of simulated game time elapsed (pauses with menus). */
   gameTime: number;
   paused: boolean;
+  /** In the shop, outside (open world) or in the garden. */
+  mode: GameMode;
+  /** Fraction of a physics step left over at render time (for interpolation). */
+  renderAlpha: number;
   /** Run a callback after `seconds` of (pausable) game time. */
   later(seconds: number, fn: () => void): void;
 }

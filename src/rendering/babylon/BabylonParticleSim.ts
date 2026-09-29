@@ -32,11 +32,110 @@ export interface FireHandle {
   setCenter(x: number, y: number, z: number): void;
 }
 
+/** A continuous emitter filling a box around a movable centre (fireflies,
+ *  mist, ash…). Sizes are in metres, colours are sRGB hex with alpha. */
+export interface AmbientSpec {
+  capacity: number;
+  rate: number;
+  /** Half extents of the emission box around the centre. */
+  box: [number, number, number];
+  life: [number, number];
+  size: Array<[number, number]>;
+  colors: Array<[number, string, number]>;
+  dir1: [number, number, number];
+  dir2: [number, number, number];
+  power: [number, number];
+  gravity?: [number, number, number];
+  drag?: number;
+  shape?: number;
+  additive?: boolean;
+}
+
+export interface AmbientHandle {
+  setCenter(x: number, y: number, z: number): void;
+  setRate(rate: number): void;
+  dispose(): void;
+}
+
+export interface BurstSpec {
+  count: number;
+  radius?: number;
+  life: [number, number];
+  size: Array<[number, number]>;
+  colors: Array<[number, string, number]>;
+  dir1: [number, number, number];
+  dir2: [number, number, number];
+  power: [number, number];
+  gravity?: [number, number, number];
+  drag?: number;
+  shape?: number;
+  additive?: boolean;
+}
+
+/** Only the Babylon scene is needed (the shop's core, or the open world's own scene). */
+export type ParticleHost = Pick<BabylonCore, 'scene'>;
+
 export class BabylonParticleSim implements ParticleSource {
   private readonly entries: SimEntry[] = [];
   density = 1;
 
-  constructor(private readonly core: BabylonCore) {}
+  constructor(private readonly core: ParticleHost) {}
+
+  private styled(ps: ParticleSystem, s: { life: [number, number]; size: Array<[number, number]>; colors: Array<[number, string, number]>; dir1: [number, number, number]; dir2: [number, number, number]; power: [number, number]; gravity?: [number, number, number]; drag?: number }): void {
+    ps.minLifeTime = s.life[0];
+    ps.maxLifeTime = s.life[1];
+    ps.direction1 = new Vector3(...s.dir1);
+    ps.direction2 = new Vector3(...s.dir2);
+    ps.minEmitPower = s.power[0];
+    ps.maxEmitPower = s.power[1];
+    ps.gravity = new Vector3(...(s.gravity ?? [0, 0, 0]));
+    for (const [t, hex, a] of s.colors) ps.addColorGradient(t, linear(hex, a));
+    for (const [t, size] of s.size) ps.addSizeGradient(t, size);
+    if (s.drag) ps.addDragGradient(0, s.drag);
+  }
+
+  /** Continuous ambience around a centre that can follow the player. */
+  ambient(spec: AmbientSpec): AmbientHandle {
+    const center = new Vector3(0, 0, 0);
+    const ps = this.make('ambient', spec.capacity, spec.shape ?? Shape.SQUARE, spec.additive ?? true, false);
+    const [bx, by, bz] = spec.box;
+    ps.startPositionFunction = (_m: Matrix, pos: Vector3) => {
+      pos.set(center.x + (Math.random() * 2 - 1) * bx, center.y + (Math.random() * 2 - 1) * by, center.z + (Math.random() * 2 - 1) * bz);
+    };
+    this.styled(ps, spec);
+    let rate = spec.rate;
+    ps.emitRate = rate * this.density;
+    ps.start();
+    return {
+      setCenter: (x, y, z) => center.set(x, y, z),
+      setRate: (r) => {
+        rate = r;
+        ps.emitRate = Math.max(0, rate * this.density);
+      },
+      dispose: () => {
+        const i = this.entries.findIndex((e) => e.ps === ps);
+        if (i >= 0) this.entries.splice(i, 1);
+        ps.dispose();
+      },
+    };
+  }
+
+  /** A one-shot burst (sparkles, dust, dragon fire…). */
+  burst(x: number, y: number, z: number, spec: BurstSpec): void {
+    const count = Math.max(1, Math.round(spec.count * this.density));
+    const ps = this.make('burst', count + 4, spec.shape ?? Shape.SQUARE, spec.additive ?? true, true);
+    ps.emitter = new Vector3(x, y, z);
+    if (spec.radius) ps.createSphereEmitter(spec.radius, 1);
+    this.styled(ps, spec);
+    ps.manualEmitCount = count;
+    ps.start();
+  }
+
+  /** Remove every simulation (a scene is being torn down). */
+  clear(): void {
+    for (const e of this.entries) e.ps.dispose();
+    this.entries.length = 0;
+  }
 
   private make(name: string, capacity: number, shape: number, additive: boolean, oneShot: boolean, sizeScale = 1): ParticleSystem {
     const ps = new ParticleSystem(name, capacity, this.core.scene);

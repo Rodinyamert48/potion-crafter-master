@@ -5,7 +5,10 @@
 import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { PhysicsBody } from '@babylonjs/core/Physics/v2/physicsBody.js';
+import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
+import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
 import {
+  PhysicsShapeMesh,
   PhysicsShape,
   PhysicsShapeBox,
   PhysicsShapeCapsule,
@@ -196,7 +199,7 @@ export class BabylonPhysicsWorld implements PhysicsWorld {
   private readonly collisionFns: Array<(c: CollisionInfo) => void> = [];
   private readonly raycastResult = new PhysicsRaycastResult();
 
-  constructor(core: BabylonCore) {
+  constructor(core: Pick<BabylonCore, 'scene' | 'havok'>) {
     this.scene = core.scene;
     this.plugin = core.havok;
     this.helper = new PhysicsHelper(this.scene);
@@ -275,6 +278,27 @@ export class BabylonPhysicsWorld implements PhysicsWorld {
     if (desc.motion === 'static') body.disableSync = true;
 
     const handle = new BabylonBody(id, node, body, shape, this.plugin, desc);
+    this.bodies.set(body, handle);
+    return handle;
+  }
+
+  /** A static triangle mesh (terrain). Positions xyz, indices of triangles. */
+  createStaticMesh(positions: Float32Array, indices: Uint32Array, group: number = CG.STATIC): BodyHandle {
+    const id = this.nextId++;
+    const mesh = new Mesh(`mesh${id}`, this.scene);
+    const vd = new VertexData();
+    vd.positions = positions;
+    vd.indices = indices;
+    vd.applyToMesh(mesh);
+    mesh.rotationQuaternion = Quaternion.Identity();
+    const shape = new PhysicsShapeMesh(mesh, this.scene);
+    shape.material = { friction: 0.8, restitution: 0.05 };
+    shape.filterMembershipMask = group;
+    shape.filterCollideMask = CG.ALL;
+    const body = new PhysicsBody(mesh, PhysicsMotionType.STATIC, false, this.scene);
+    body.shape = shape;
+    body.disableSync = true;
+    const handle = new BabylonBody(id, mesh, body, shape, this.plugin, { shape: { type: 'box', size: [1, 1, 1] }, motion: 'static', position: { x: 0, y: 0, z: 0 }, group });
     this.bodies.set(body, handle);
     return handle;
   }

@@ -110,6 +110,26 @@ export class VFX {
     });
   }
 
+  /** Low, slow ground mist (Dark Fantasy). */
+  mist(p: V3, color = '#8a8aa0'): void {
+    this.particles.spawn({
+      x: p.x,
+      y: p.y,
+      z: p.z,
+      vx: rng.range(-0.12, 0.12),
+      vy: rng.range(0, 0.03),
+      vz: rng.range(-0.08, 0.08),
+      life: rng.range(5, 8),
+      size0: rng.range(0.5, 0.8),
+      size1: rng.range(1.2, 1.8),
+      color0: col(color),
+      color1: col('#3a3a4a'),
+      alpha0: 0.14,
+      alpha1: 0,
+      shape: Shape.SOFT,
+    });
+  }
+
   smoke(p: V3, color = '#3a3040', amount = 1, size = 1): void {
     const n = Math.max(1, Math.round(amount * this.d));
     for (let i = 0; i < n; i++) {

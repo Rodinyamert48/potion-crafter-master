@@ -1,18 +1,15 @@
-// The gathering trip itself: a small side-scrolling pixel scene drawn on a
-// low-resolution canvas. The apprentice walks through the region while finds
-// pop up among the scenery; click them before they vanish, but leave the
-// dangerous look-alikes alone – touching one hurts and makes you drop
-// something from the basket.
+// Whispering Forest: a side-scrolling walk along the forest path. Finds pop
+// up among the scenery – click them before they vanish, but leave the
+// dangerous look-alikes alone (poison toadstools, nettles, wolf eyes at
+// night). Now and then a glowing spirit fox dashes across the path: catch
+// it for a gift. The dog sniffs out rare finds, the cat sees in the dark.
 
-import type { RegionDef, RegionFind, RegionHazard } from '../data/regions';
-import type { AudioSystem } from '../audio/AudioSystem';
-import { ingredientIconURL } from './pixelArt';
-import { characterSheet, type SpriteSheet } from '../rendering/three/sprites/CharacterPainter';
-import { Random } from '../core/Random';
-import { mixHex, shadeHex } from '../core/math';
+import { characterSheet, type SpriteSheet } from '../../rendering/three/sprites/CharacterPainter';
+import { mixHex, shadeHex } from '../../core/math';
+import { MiniGame, SCENE_H, SCENE_W, type MiniGameOptions } from './MiniGame';
+import { disc, tri } from './draw';
+import { t } from '../../core/i18n';
 
-export const SCENE_W = 320;
-export const SCENE_H = 180;
 const GROUND_Y = 132;
 const WALKER_X = 70;
 
@@ -28,126 +25,48 @@ interface Pickup {
   gone: boolean;
 }
 
-interface Flyer {
+interface Fox {
   x: number;
   y: number;
-  id: string;
+  dir: number;
   t: number;
-}
-
-interface FloatText {
-  x: number;
-  y: number;
-  text: string;
-  color: string;
-  t: number;
-}
-
-export interface GatherEvents {
-  onCollect(id: string, total: number, full: boolean): void;
-  onHurt(hazardId: string, lost: string | null): void;
-  onEnd(haul: Record<string, number>): void;
-  onTick(progress: number): void;
 }
 
 const APPRENTICE_LOOK = { skin: '#e8b796', hair: '#b86f50', main: '#3b5dc9', second: '#262b44', accent: '#fee761', eyes: '#3e2731', extra: ['hood'] };
 
-export class GatherScene {
-  readonly canvas: HTMLCanvasElement;
-  private readonly g: CanvasRenderingContext2D;
-  private readonly rng = new Random((Date.now() & 0xffff) + 7);
+export class ForestGame extends MiniGame {
   private readonly layers: { far: HTMLCanvasElement; mid: HTMLCanvasElement; fore: HTMLCanvasElement };
-  private readonly icons = new Map<string, HTMLImageElement>();
   private readonly hazardArt = new Map<string, HTMLCanvasElement>();
   private readonly walker: SpriteSheet;
   private readonly stars: Array<[number, number, number]> = [];
   private readonly pickups: Pickup[] = [];
-  private readonly flyers: Flyer[] = [];
-  private readonly texts: FloatText[] = [];
-  readonly haul: Record<string, number> = {};
-  private raf = 0;
-  private last = 0;
-  private time = 0;
   private scroll = 0;
   private spawnT = 0.6;
-  private stun = 0;
-  private shake = 0;
-  private running = false;
-  private ended = false;
-  private endIn = -1;
-  readonly duration = 30;
+  private fox: Fox | null = null;
+  private foxT = 7;
 
-  constructor(
-    private readonly region: RegionDef,
-    private readonly night: boolean,
-    private readonly finds: RegionFind[],
-    private readonly hazards: RegionHazard[],
-    private readonly audio: AudioSystem,
-    private readonly events: GatherEvents,
-    /** How many things fit in the basket. */
-    readonly capacity = 8,
-  ) {
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = SCENE_W;
-    this.canvas.height = SCENE_H;
-    this.canvas.className = 'wb-gather-canvas';
-    this.g = this.canvas.getContext('2d')!;
-    this.g.imageSmoothingEnabled = false;
+  constructor(o: MiniGameOptions) {
+    super(o);
     this.layers = { far: this.paintFar(), mid: this.paintMid(), fore: this.paintFore() };
-    for (const f of finds) {
-      const img = new Image();
-      img.src = ingredientIconURL(f.ingredientId);
-      this.icons.set(f.ingredientId, img);
-    }
-    for (const h of hazards) this.hazardArt.set(h.id, paintHazard(h.id));
+    for (const h of this.hazards) this.hazardArt.set(h.id, paintHazard(h.id));
     this.walker = characterSheet('apprentice', 'witch', APPRENTICE_LOOK);
     for (let i = 0; i < 60; i++) this.stars.push([this.rng.range(0, SCENE_W), this.rng.range(0, 90), this.rng.range(0, 6.28)]);
-    this.canvas.addEventListener('pointerdown', (e) => this.pointer(e));
+    this.foxT = this.rng.range(6, 11);
   }
 
-  start(): void {
-    if (this.running) return;
-    this.running = true;
-    this.last = performance.now();
-    const tick = (now: number) => {
-      if (!this.running) return;
-      this.raf = requestAnimationFrame(tick);
-      const dt = Math.min(0.1, (now - this.last) / 1000);
-      this.last = now;
-      this.update(dt);
-      this.draw();
-    };
-    this.raf = requestAnimationFrame(tick);
-  }
-
-  stop(): void {
-    this.running = false;
-    cancelAnimationFrame(this.raf);
-  }
-
-  /** End early (e.g. the panel was closed); reports the haul once. */
-  finish(): void {
-    if (this.ended) return;
-    this.ended = true;
-    this.stop();
-    this.events.onEnd({ ...this.haul });
+  get help(): string {
+    return t('mg.help.forest');
   }
 
   // -------------------------------------------------------------------------
   // Simulation
   // -------------------------------------------------------------------------
 
-  private update(dt: number): void {
-    if (this.ended) return;
-    this.time += dt;
+  protected step(dt: number): void {
     this.scroll += dt * 24;
-    this.stun = Math.max(0, this.stun - dt);
-    this.shake = Math.max(0, this.shake - dt * 3);
-    this.events.onTick(Math.min(1, this.time / this.duration));
-
     // Spawning: things appear ahead of the walker as the path unfolds.
     this.spawnT -= dt;
-    if (this.spawnT <= 0 && this.time < this.duration - 2 && this.endIn < 0) {
+    if (this.spawnT <= 0 && !this.closing) {
       this.spawnT = this.rng.range(0.9, 1.5);
       this.spawn();
     }
@@ -156,26 +75,19 @@ export class GatherScene {
       if (p.age > p.life || p.x - this.scroll < -12) p.gone = true;
     }
     for (let i = this.pickups.length - 1; i >= 0; i--) if (this.pickups[i].gone) this.pickups.splice(i, 1);
-    for (let i = this.flyers.length - 1; i >= 0; i--) {
-      const f = this.flyers[i];
-      f.t += dt * 1.8;
-      if (f.t >= 1) this.flyers.splice(i, 1);
+    // The spirit fox dashes across the path now and then.
+    this.foxT -= dt;
+    if (!this.fox && this.foxT <= 0 && !this.closing) {
+      this.foxT = this.rng.range(9, 14);
+      const dir = this.rng.chance(0.5) ? 1 : -1;
+      this.fox = { x: dir > 0 ? -20 : SCENE_W + 20, y: GROUND_Y + this.rng.range(8, 24), dir, t: 0 };
+      this.audio.play('magic', { volume: 0.35, pitch: 1.6 });
     }
-    for (let i = this.texts.length - 1; i >= 0; i--) {
-      const t = this.texts[i];
-      t.t += dt;
-      t.y -= dt * 14;
-      if (t.t > 1.2) this.texts.splice(i, 1);
+    if (this.fox) {
+      this.fox.t += dt;
+      this.fox.x += this.fox.dir * dt * 95;
+      if (this.fox.x < -30 || this.fox.x > SCENE_W + 30) this.fox = null;
     }
-    if (this.endIn >= 0) {
-      this.endIn -= dt;
-      if (this.endIn < 0) this.finish();
-    }
-    if (this.time >= this.duration) this.finish();
-  }
-
-  get count(): number {
-    return Object.values(this.haul).reduce((a, b) => a + Math.max(0, b), 0);
   }
 
   private spawn(): void {
@@ -193,16 +105,24 @@ export class GatherScene {
       const high = f.ingredientId === 'frost_crystal' || f.ingredientId === 'bat_wing' || f.ingredientId === 'phoenix_feather';
       const y = high && this.rng.chance(0.6) ? this.rng.range(58, 104) : this.rng.range(GROUND_Y + 2, GROUND_Y + 30);
       const rare = !!f.rare;
-      this.pickups.push({ x, y, kind: 'find', id: f.ingredientId, rare, age: 0, life: rare ? this.rng.range(3.2, 4.5) : this.rng.range(6, 9), phase: this.rng.range(0, 6.28), gone: false });
+      const rareLife = this.rng.range(3.2, 4.5) * (this.has('dog') ? 1.6 : 1);
+      this.pickups.push({ x, y, kind: 'find', id: f.ingredientId, rare, age: 0, life: rare ? rareLife : this.rng.range(6, 9), phase: this.rng.range(0, 6.28), gone: false });
     }
   }
 
-  private pointer(e: PointerEvent): void {
-    if (this.ended || !this.running) return;
-    e.preventDefault();
-    const r = this.canvas.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * SCENE_W;
-    const y = ((e.clientY - r.top) / r.height) * SCENE_H;
+  protected click(x: number, y: number): void {
+    const fox = this.fox;
+    if (fox && Math.hypot(fox.x - x, fox.y - 6 - y) < 16) {
+      // Caught the spirit fox: it leaves a gift of two finds.
+      this.fox = null;
+      this.word(fox.x, fox.y - 18, t('mg.fox'), '#c0cbff');
+      this.audio.play('discovery', { volume: 0.5, pitch: 1.3 });
+      for (let i = 0; i < 2; i++) {
+        const f = this.pickFind();
+        if (f) this.collect(f.ingredientId, fox.x + i * 8, fox.y - 6, false, true);
+      }
+      return;
+    }
     let best: Pickup | null = null;
     let bestD = 14;
     for (const p of this.pickups) {
@@ -215,36 +135,12 @@ export class GatherScene {
       }
     }
     if (!best) return;
-    if (this.stun > 0) {
-      this.audio.play('denied', { volume: 0.4 });
-      return;
-    }
-    best.gone = true;
     const sx = best.x - this.scroll;
     if (best.kind === 'find') {
-      if (this.count >= this.capacity) {
-        best.gone = false;
-        this.audio.play('denied', { volume: 0.4 });
-        return;
-      }
-      this.haul[best.id] = (this.haul[best.id] ?? 0) + 1;
-      if (this.count >= this.capacity) this.endIn = 1.2;
-      this.flyers.push({ x: sx, y: best.y - 6, id: best.id, t: 0 });
-      this.audio.play(best.rare ? 'discovery' : 'sparkle', { volume: best.rare ? 0.5 : 0.7, pitch: 0.9 + this.rng.next() * 0.3 });
-      this.events.onCollect(best.id, this.haul[best.id], this.count >= this.capacity);
+      if (this.collect(best.id, sx, best.y - 6, best.rare)) best.gone = true;
     } else {
-      this.stun = 1.1;
-      this.shake = 1;
-      const owned = Object.keys(this.haul).filter((k) => this.haul[k] > 0);
-      let lost: string | null = null;
-      if (owned.length) {
-        lost = owned[this.rng.int(0, owned.length - 1)];
-        this.haul[lost]--;
-      }
-      this.texts.push({ x: sx, y: best.y - 16, text: '!', color: '#e43b44', t: 0 });
-      const snd = best.id === 'ember' ? 'sizzle' : best.id === 'leech' || best.id === 'toadstool' ? 'squish' : best.id === 'wolf' || best.id === 'claw' ? 'angry' : 'dropHard';
-      this.audio.play(snd, { volume: 0.8 });
-      this.events.onHurt(best.id, lost);
+      best.gone = true;
+      this.hurt(best.id, sx, best.y - 6);
     }
   }
 
@@ -252,13 +148,8 @@ export class GatherScene {
   // Drawing
   // -------------------------------------------------------------------------
 
-  private draw(): void {
-    const g = this.g;
+  protected paint(g: CanvasRenderingContext2D): void {
     const sc = this.region.scenery;
-    const shx = this.shake > 0 ? Math.round((this.rng.next() - 0.5) * 4 * this.shake) : 0;
-    const shy = this.shake > 0 ? Math.round((this.rng.next() - 0.5) * 3 * this.shake) : 0;
-    g.save();
-    g.translate(shx, shy);
     // Sky
     const [top, bottom] = this.night ? sc.skyNight : sc.skyDay;
     const bands = 8;
@@ -320,6 +211,7 @@ export class GatherScene {
 
     // Pickups
     for (const p of this.pickups) this.drawPickup(p);
+    if (this.fox) this.drawFox(this.fox);
 
     // Walker
     this.drawWalker();
@@ -329,7 +221,8 @@ export class GatherScene {
 
     // Night: darkness with a lantern pool of light around the apprentice.
     if (this.night || this.region.id === 'cave') {
-      const dark = this.region.id === 'cave' ? 0.35 : 0.42;
+      // The cat's eyes cut through the dark.
+      const dark = (this.region.id === 'cave' ? 0.35 : 0.42) * (this.has('cat') ? 0.5 : 1);
       g.fillStyle = `rgba(10, 8, 24, ${dark})`;
       g.fillRect(-4, -4, SCENE_W + 8, SCENE_H + 8);
       g.fillStyle = 'rgba(254, 231, 97, 0.10)';
@@ -354,28 +247,39 @@ export class GatherScene {
         for (let k = x; k < SCENE_W; k += 120) g.fillRect(Math.floor(k), Math.floor(y), 84, 3);
       }
     }
+    if (this.has('dog')) {
+      // The dog points at rare finds with a bobbing marker.
+      g.fillStyle = '#fee761';
+      for (const p of this.pickups) {
+        if (p.kind !== 'find' || !p.rare) continue;
+        const sx = Math.floor(p.x - this.scroll);
+        const b = Math.round(Math.sin(this.time * 6) * 2);
+        g.fillRect(sx - 1, p.y - 32 + b, 2, 5);
+        g.fillRect(sx - 1, p.y - 25 + b, 2, 2);
+      }
+    }
+  }
 
-    // Collected icons flying to the basket (top-left)
-    for (const f of this.flyers) {
-      const img = this.icons.get(f.id);
-      if (!img?.complete) continue;
-      const k = f.t * f.t;
-      const x = f.x + (10 - f.x) * k;
-      const y = f.y + (8 - f.y) * k - Math.sin(f.t * Math.PI) * 18;
-      g.drawImage(img, Math.floor(x) - 8, Math.floor(y) - 8);
-    }
-    for (const t of this.texts) {
-      g.fillStyle = '#181425';
-      g.fillRect(Math.floor(t.x) - 1, Math.floor(t.y) - 1, 5, 9);
-      g.fillStyle = t.color;
-      g.fillRect(Math.floor(t.x), Math.floor(t.y), 3, 5);
-      g.fillRect(Math.floor(t.x), Math.floor(t.y) + 6, 3, 2);
-    }
-    if (this.stun > 0) {
-      g.fillStyle = `rgba(228, 59, 68, ${0.18 * this.stun})`;
-      g.fillRect(-4, -4, SCENE_W + 8, SCENE_H + 8);
-    }
-    g.restore();
+  private drawFox(f: Fox): void {
+    const g = this.g;
+    const x = Math.floor(f.x);
+    const y = Math.floor(f.y + Math.abs(Math.sin(f.t * 14)) * -3);
+    const d = f.dir;
+    // Glow and a trail of sparkles
+    g.fillStyle = 'rgba(192, 203, 255, 0.18)';
+    disc(g, x, y - 5, 11);
+    g.fillStyle = '#c0cbff';
+    for (let i = 1; i < 5; i++) g.fillRect(x - d * i * 7, y - 4 + ((i * 3) % 5) - 2, 1, 1);
+    g.fillStyle = '#e8eef8';
+    g.fillRect(x - 6, y - 7, 12, 5);
+    g.fillRect(x + d * 5 - 2, y - 10, 5, 5);
+    g.fillRect(x + d * 6 - (d > 0 ? 0 : 2), y - 13, 2, 3);
+    g.fillRect(x - d * 9 - 2, y - 8, 5, 3);
+    g.fillStyle = '#c0cbff';
+    g.fillRect(x - 5, y - 2, 2, 2);
+    g.fillRect(x + 3, y - 2, 2, 2);
+    g.fillStyle = '#262b44';
+    g.fillRect(x + d * 6, y - 9, 1, 1);
   }
 
   private drawLayer(layer: HTMLCanvasElement, speed: number, y: number): void {
@@ -575,26 +479,6 @@ export class GatherScene {
     }
     return c;
   }
-}
-
-// ---------------------------------------------------------------------------
-// Tiny helpers
-// ---------------------------------------------------------------------------
-
-function disc(g: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-  for (let y = -r; y <= r; y++) {
-    const w = Math.floor(Math.sqrt(r * r - y * y));
-    g.fillRect(Math.floor(cx - w), Math.floor(cy + y), w * 2 + 1, 1);
-  }
-}
-
-function tri(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number): void {
-  g.beginPath();
-  g.moveTo(x0, y0);
-  g.lineTo(x1, y1);
-  g.lineTo(x2, y2);
-  g.closePath();
-  g.fill();
 }
 
 /** Small pixel sprites for the dangerous look-alikes. */

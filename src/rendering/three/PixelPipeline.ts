@@ -127,8 +127,14 @@ const COMPOSITE_FRAG = /* glsl */ `
       col = mix(col * vec3(0.72, 0.8, 1.02), col, smoothstep(0.02, 0.4, lr));
       col = mix(col, col * vec3(1.12, 0.98, 0.78), warm);
       col = pow(max(col, 0.0), vec3(1.12));
+      // Candle-lit crypt: a heavy, slightly breathing vignette and film grain.
       vec2 qr = vUv - 0.5;
-      col *= 1.0 - dot(qr, qr) * 0.55;
+      float breath = 0.03 * sin(uTime * 0.7);
+      col *= 1.0 - dot(qr, qr) * (0.62 + breath);
+      col *= mix(vec3(1.0), vec3(1.0, 0.88, 0.86), smoothstep(0.25, 0.55, length(qr)));
+      // Grain only in the mid-tones, so shadows stay clean.
+      float grain = fract(sin(dot(floor(gl_FragCoord.xy) + floor(uTime * 24.0) * 17.0, vec2(12.9898, 78.233))) * 43758.5453);
+      col += (grain - 0.5) * 0.03 * smoothstep(0.08, 0.3, lr) * (1.0 - smoothstep(0.6, 0.9, lr));
       col = clamp(col, 0.0, 1.0);
     }
 

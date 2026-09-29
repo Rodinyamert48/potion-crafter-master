@@ -361,7 +361,22 @@ export class Door extends Entity {
     group: THREE.Object3D,
   ) {
     super(group);
-    this.interactive = false;
+  }
+
+  override cursor(): CursorKind {
+    return 'point';
+  }
+
+  override hover(ctx: GameContext): HoverInfo {
+    const touch = ctx.input.pointer.type !== 'mouse';
+    return { title: t('obj.door'), hint: t(touch ? 'hint.doorTouch' : 'hint.door') };
+  }
+
+  /** Clicking the door: go outside or out into the garden. */
+  override press(ctx: GameContext): Grab | null {
+    ctx.audio.play('woodKnock', { x: this.object.position.x, volume: 0.5 });
+    ctx.ui.openPanel('door');
+    return null;
   }
 
   open(ctx: GameContext, holdSeconds = 2.2): void {

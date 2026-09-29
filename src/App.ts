@@ -26,6 +26,13 @@ import { ShopSystem } from './gameplay/shop/ShopSystem';
 import { Discovery } from './gameplay/potion/Discovery';
 import { Expedition } from './gameplay/gathering/Expedition';
 import { MapPanel } from './ui/MapPanel';
+import { DoorPanel } from './ui/DoorPanel';
+import { MiniGamePanel } from './ui/MiniGamePanel';
+import { SeedPanel } from './ui/SeedPanel';
+import { OutdoorWorld } from './world/outdoor/OutdoorWorld';
+import { GardenScene } from './world/garden/GardenScene';
+import { absHour, advanceGarden } from './data/garden';
+import { isMobileDevice } from './core/Settings';
 import { SaveSystem } from './save/SaveSystem';
 import { HUD } from './ui/HUD';
 import { BookPanel } from './ui/BookPanel';
@@ -59,6 +66,9 @@ export class App {
   readonly mentor: Mentor;
   readonly dog: MentorDog;
   readonly expedition: Expedition;
+  readonly outdoor: OutdoorWorld;
+  readonly garden: GardenScene;
+  private readonly mapPanel: MapPanel;
   readonly hud: HUD;
   readonly title: TitleScreen;
   private readonly menu: MenuPanel;
@@ -67,6 +77,9 @@ export class App {
 
   /** Developer and playtest hooks (reachable as window.__wb.app.debug). */
   readonly debug = {
+    /** Step outside (open world) with these pets, or into the garden. */
+    goOutside: (pets: Array<'cat' | 'dog' | 'slime'> = []) => this.outdoor.enter(pets),
+    goGarden: () => this.garden.enter(),
     /** Schedule a visit right now (e.g. 'celeb_speed'). */
     visit: (customerId: string) => {
       const def = CUSTOMERS[customerId];
@@ -111,7 +124,57 @@ export class App {
     ui.registerPanel('book', new BookPanel(ctx));
     ui.registerPanel('catalog', new CatalogPanel(ctx, this.shopSystem, this.furniture));
     ui.registerPanel('inventory', new InventoryPanel(ctx));
-    ui.registerPanel('map', new MapPanel(ctx, this.expedition));
+    this.mapPanel = new MapPanel(ctx, this.expedition);
+    ui.registerPanel('map', this.mapPanel);
+    const minigame = new MiniGamePanel(ctx);
+    ui.registerPanel('minigame', minigame);
+    const seeds = new SeedPanel(ctx);
+    ui.registerPanel('seeds', seeds);
+    this.outdoor = new OutdoorWorld(ctx, {
+      core: game.core,
+      expedition: this.expedition,
+      minigame,
+      setMode: (m, h) => game.setMode(m, h),
+      onEnter: () => {
+        this.hud.visible = false;
+      },
+      onExit: (toGarden) => {
+        this.hud.visible = true;
+        if (toGarden) this.garden.enter();
+      },
+      openMenu: () => {
+        this.menu.fromTitle = false;
+        ui.openPanel('menu');
+      },
+    });
+    ui.registerPanel('outpause', this.outdoor.pause);
+    this.garden = new GardenScene(ctx, {
+      expedition: this.expedition,
+      seeds,
+      setMode: (m, h) => game.setMode(m, h),
+      onEnter: () => this.hud.setMode('garden'),
+      onExit: () => this.hud.setMode('shop'),
+    });
+    ui.registerPanel(
+      'door',
+      new DoorPanel(ctx, {
+        leaveBlocker: () => this.expedition.leaveBlocker(),
+        gardenBlocker: () => (!ctx.state.tutorialDone ? t('trip.tutorial') : ctx.interaction.grab ? t('trip.holding') : null),
+        openWorld: () => this.openWorld,
+        goOutside: (pets) => {
+          ui.openPanel(null);
+          if (this.openWorld) this.outdoor.enter(pets);
+          else {
+            this.mapPanel.pets = pets;
+            ui.openPanel('map');
+          }
+        },
+        goGarden: () => {
+          ui.openPanel(null);
+          this.garden.enter();
+        },
+      }),
+    );
     ui.registerPanel('cat', new CatPanel(ctx, this.atmosphere.cat));
     ui.registerPanel('merchant', new MerchantPanel(ctx, this.merchant));
     ui.registerPanel('achievements', new AchievementsPanel(ctx));
@@ -239,8 +302,16 @@ export class App {
     }
   }
 
+  /** The open world is for PC (mouse + keyboard); phones and tablets get the region list. */
+  get openWorld(): boolean {
+    const coarse = window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia?.('(pointer: fine)').matches;
+    return !isMobileDevice() && !coarse && !document.documentElement.classList.contains('touch');
+  }
+
   private nextDay(): void {
     const ctx = this.ctx;
+    this.garden.exit();
+    this.outdoor.exit(false);
     ctx.ui.openPanel(null);
     this.customers.clearAll();
     this.nobert.dismiss();
@@ -268,7 +339,14 @@ export class App {
       ui.togglePanel('admin');
       return;
     }
+    const mode = this.ctx.mode;
     if (code === 'Escape') {
+      if (mode === 'outside') {
+        // Esc also drops the mouse capture; the pause card may already be up.
+        if (this.outdoor.pauseJustOpened) return;
+        if (!ui.closeAll()) this.outdoor.openPause();
+        return;
+      }
       if (this.ctx.interaction.grab) {
         this.ctx.interaction.cancelGrab();
         return;
@@ -277,9 +355,9 @@ export class App {
       return;
     }
     if (code === 'KeyB') ui.togglePanel('book');
-    if (code === 'KeyC') ui.togglePanel('catalog');
+    if (code === 'KeyC' && mode === 'shop') ui.togglePanel('catalog');
     if (code === 'KeyI') ui.togglePanel('inventory');
-    if (code === 'KeyM') ui.togglePanel('map');
+    if (code === 'KeyO' && mode === 'shop') ui.togglePanel('door');
     if (code === 'KeyK') ui.togglePanel('achievements');
     if (code === 'KeyH') {
       this.menu.fromTitle = false;
@@ -289,7 +367,10 @@ export class App {
   }
 
   private frame(dt: number): void {
-    this.touch.update(this.game.playing && !this.ctx.ui.panelOpen);
+    const ctx = this.ctx;
+    this.touch.update(this.game.playing && !ctx.ui.panelOpen && ctx.mode === 'shop');
+    // The garden grows with the clock, wherever the apprentice is.
+    if (this.game.playing) advanceGarden(ctx.state.garden, absHour(ctx.state.day, ctx.state.hour));
     if (this.game.playing) {
       this.hud.update();
       this.save.update(dt);
