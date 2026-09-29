@@ -22,6 +22,9 @@ export class DayCycle implements GameSystem {
   /** Called when the day ends (the summary panel shows, then `startNextDay`). */
   onDayEnd: (() => void) | null = null;
   ending = false;
+  /** Admin menu: speed up / stop the clock. */
+  timeScale = 1;
+  frozen = false;
 
   constructor(private readonly ctx: GameContext) {
     this.lastPhase = phaseOf(ctx.state.hour);
@@ -34,6 +37,17 @@ export class DayCycle implements GameSystem {
     const hh = Math.floor(h) % 24;
     const mm = Math.floor((h - Math.floor(h)) * 60);
     return `${String(hh).padStart(2, '0')}:${String(Math.floor(mm / 10) * 10).padStart(2, '0')}`;
+  }
+
+  /** Jump the clock (admin menu); phases and hours catch up on the next frame. */
+  setHour(h: number): void {
+    const s = this.ctx.state;
+    s.hour = Math.max(6, Math.min(24.4, h));
+    if (s.hour < 22 && !s.shopOpen) {
+      s.shopOpen = true;
+      this.ctx.bus.emit('shop:open', {});
+    }
+    this.lastHour = Math.floor(s.hour);
   }
 
   closeShop(): void {
@@ -88,7 +102,7 @@ export class DayCycle implements GameSystem {
     if (this.signTimer <= 0) this.signClicks = 0;
     // The tutorial runs at a gentle pace so nobody is rushed on day one.
     const scale = !s.tutorialDone && s.day === 1 ? 0.45 : 1;
-    s.hour += (dt / SECONDS_PER_HOUR) * scale;
+    if (!this.frozen) s.hour += (dt / SECONDS_PER_HOUR) * scale * this.timeScale;
     const phase = phaseOf(s.hour);
     if (phase !== this.lastPhase) {
       this.lastPhase = phase;

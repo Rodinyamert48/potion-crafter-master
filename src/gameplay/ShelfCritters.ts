@@ -6,14 +6,17 @@ import * as THREE from 'three';
 import type { GameContext } from '../core/GameContext';
 import { Entity, pickProxy, type HoverInfo } from '../world/Entity';
 import { PixelSprite } from '../rendering/three/sprites/PixelSprite';
-import { slimeSheet, spiderSheet } from '../rendering/three/sprites/CharacterPainter';
+import { spiderSheet } from '../rendering/three/sprites/CharacterPainter';
+import { slimeSheetFor } from './Pets';
 import { clamp, damp } from '../core/math';
 import { rng } from '../core/Random';
 import { t } from '../core/i18n';
 
 export class JarSlime extends Entity {
   readonly kind = 'slime';
-  private readonly sprite = new PixelSprite(slimeSheet(), 0.9);
+  private sprite: PixelSprite;
+  private lookKey = '';
+  private pets = 0;
   private readonly home: THREE.Vector3;
   private targetX: number;
   private hopT = -1;
@@ -29,18 +32,27 @@ export class JarSlime extends Entity {
     super();
     this.home = position.clone();
     this.targetX = position.x;
-    this.object.add(this.sprite.root);
+    this.sprite = this.makeSprite(ctx);
     this.object.add(pickProxy(new THREE.SphereGeometry(0.12, 6, 4)).translateY(0.1));
     this.object.position.copy(position);
-    this.sprite.shadow.visible = false;
     ctx.bus.on('cauldron:exploded', () => (this.hideUntil = ctx.time + 6));
     ctx.bus.on('chaos', ({ amount }) => {
       if (amount >= 0.5) this.hideUntil = Math.max(this.hideUntil, ctx.time + 3);
     });
   }
 
-  override hover(): HoverInfo {
-    return { title: t('obj.slime'), hint: t('hint.slime') };
+  private makeSprite(ctx: GameContext): PixelSprite {
+    const look = ctx.state.pets.slime;
+    this.lookKey = look.color;
+    const sprite = new PixelSprite(slimeSheetFor(look), 0.9);
+    sprite.shadow.visible = false;
+    this.object.add(sprite.root);
+    return sprite;
+  }
+
+  override hover(ctx: GameContext): HoverInfo {
+    const touch = ctx.input.pointer.type !== 'mouse';
+    return { title: ctx.state.pets.slime.name || t('obj.slime'), subtitle: t('obj.slime'), hint: t(touch ? 'hint.petTouch' : 'hint.pet') };
   }
 
   override cursor() {
@@ -52,7 +64,16 @@ export class JarSlime extends Entity {
     this.startHop(ctx, clamp(this.object.position.x + rng.range(-0.25, 0.25), this.range[0], this.range[1]));
     ctx.audio.play('squeak', { x: this.object.position.x, pitch: 1.3 });
     ctx.vfx.heartBurst(this.object.position.clone().add(new THREE.Vector3(0, 0.3, 0)), '#63c74d');
+    this.pets++;
+    ctx.bus.emit('pet:petted', { kind: 'slime', count: this.pets });
     return null;
+  }
+
+  /** Right click (long press on touch): rename and recolour. */
+  override altPress(ctx: GameContext): boolean {
+    ctx.audio.play('squeak', { x: this.object.position.x, pitch: 1.6 });
+    ctx.bus.emit('pet:open', { kind: 'slime' });
+    return true;
   }
 
   private startHop(ctx: GameContext, x: number): void {
@@ -65,6 +86,10 @@ export class JarSlime extends Entity {
   }
 
   override update(ctx: GameContext, dt: number): void {
+    if (ctx.state.pets.slime.color !== this.lookKey) {
+      this.sprite.dispose();
+      this.sprite = this.makeSprite(ctx);
+    }
     const hiding = ctx.time < this.hideUntil;
     if (hiding) {
       if (this.sprite.current !== 'hide') this.sprite.play('hide');

@@ -602,7 +602,7 @@ export function rumbleLoop(a: AudioSystem): LoopHandle {
 }
 
 /** Ambience: room tone + day birds / night crickets. */
-/** PS1 horror mode: a low detuned drone, wind in the rafters and the odd
+/** Dark Fantasy mood: a low detuned drone, wind in the rafters and the odd
  *  creak, knock or far-off chime. */
 export function horrorLoop(a: AudioSystem): LoopHandle {
   const ctx = a.ctx!;

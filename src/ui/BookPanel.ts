@@ -6,7 +6,7 @@
 import type { GameContext } from '../core/GameContext';
 import type { Panel } from './UIRoot';
 import { h } from './UIRoot';
-import { RECIPES, RECIPE_MAP, TIER_NAMES } from '../data/potions';
+import { RECIPES, RECIPE_MAP, TIER_NAMES, bookIngredients } from '../data/potions';
 import { INGREDIENTS } from '../data/ingredients';
 import { ASPECTS, ASPECT_IDS } from '../data/aspects';
 import { QUESTS } from '../data/quests';
@@ -108,17 +108,23 @@ export class BookPanel implements Panel {
     const potions = RECIPES.filter((r) => r.kind === 'potion');
     const failures = RECIPES.filter((r) => r.kind === 'failure');
     const found = RECIPES.filter((r) => s.discovered[r.id]).length;
+    const learned = potions.filter((r) => s.knowsRecipe(r.id)).length;
     this.left.appendChild(h('h2', undefined, t('book.title')));
     this.left.appendChild(h('p', 'muted', t('book.discoveredCount', { n: found, total: RECIPES.length })));
+    this.left.appendChild(h('p', 'muted', t('book.knownCount', { n: learned, total: potions.length })));
     const list = (arr: RecipeDef[]) => {
       for (const r of arr) {
-        const known = !!s.discovered[r.id];
-        const row = h('div', `wb-entry${known ? '' : ' unknown'}${this.selected === r.id ? ' selected' : ''}`);
+        const brewed = !!s.discovered[r.id];
+        const known = brewed || s.knowsRecipe(r.id);
+        const row = h('div', `wb-entry${known ? '' : ' unknown'}${brewed ? '' : known ? ' learned' : ''}${this.selected === r.id ? ' selected' : ''}`);
         const sw = h('span', 'swatch');
         sw.style.background = known ? r.color : '#b8a88a';
         row.appendChild(sw);
         row.appendChild(h('span', 'name', known ? tr(r.name) : t('book.unknown')));
-        if (known) row.appendChild(h('span', 'meta', stars(s.discovered[r.id].bestTier)));
+        if (brewed) row.appendChild(h('span', 'meta', stars(s.discovered[r.id].bestTier)));
+        else if (known) row.appendChild(h('span', 'meta', '✎'));
+        else if (r.secret) row.appendChild(h('span', 'meta', '🔒'));
+        else if (r.special) row.appendChild(h('span', 'meta', '★'));
         else if (s.hinted.includes(r.id)) row.appendChild(h('span', 'meta', t('book.asked')));
         row.addEventListener('click', () => {
           this.selected = r.id;
@@ -128,13 +134,13 @@ export class BookPanel implements Panel {
         this.left.appendChild(row);
       }
     };
-    // Discovered first, then the ones customers have asked about.
-    const rank = (r: RecipeDef) => (s.discovered[r.id] ? 0 : s.hinted.includes(r.id) ? 1 : 2);
+    // Brewed first, then learned recipes, then the ones customers asked about.
+    const rank = (r: RecipeDef) => (s.discovered[r.id] ? 0 : s.knowsRecipe(r.id) ? 1 : s.hinted.includes(r.id) ? 2 : 3);
     const byRank = (arr: RecipeDef[]) => arr.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i).map((x) => x.r);
     list(byRank(potions));
     this.left.appendChild(h('h3', undefined, t('book.failed')));
     list(byRank(failures));
-    const sel = RECIPE_MAP[this.selected ?? ''] ?? potions.find((r) => s.discovered[r.id]) ?? potions[0];
+    const sel = RECIPE_MAP[this.selected ?? ''] ?? potions.find((r) => s.discovered[r.id]) ?? potions.find((r) => s.knowsRecipe(r.id)) ?? potions[0];
     this.renderPotionPage(sel);
   }
 
@@ -143,11 +149,29 @@ export class BookPanel implements Panel {
     const d = s.discovered[r.id];
     const page = this.right;
     const img = h('img', 'wb-potion-art') as HTMLImageElement;
-    img.src = potionArtURL(r.bottle, r.color, r.color2, !d);
+    const learned = r.kind === 'potion' && s.knowsRecipe(r.id);
+    img.src = potionArtURL(r.bottle, r.color, r.color2, !d && !learned);
     page.appendChild(img);
+    if (!d && learned) {
+      page.appendChild(h('h2', undefined, tr(r.name)));
+      page.appendChild(h('p', undefined, tr(r.description)));
+      page.appendChild(h('span', 'wb-stamp learned', t('book.learnedStamp')));
+      page.appendChild(h('p', undefined, `${t('book.price')}: ${r.price} ${t('hud.money')}`));
+      this.renderMethod(r);
+      page.appendChild(h('p', 'muted', t('book.notBrewedYet')));
+      return;
+    }
     if (!d) {
       page.appendChild(h('h2', undefined, t('book.unknown')));
       page.appendChild(h('p', 'muted', t('book.undiscovered')));
+      if (r.secret) {
+        page.appendChild(h('h3', undefined, `🔒 ${t('book.secret')}`));
+        page.appendChild(h('p', undefined, t('book.secretHow')));
+        if (r.learnCost) page.appendChild(h('p', 'muted', r.learnCost.map((c) => `${c.count}× ${tr(RECIPE_MAP[c.recipe].name)}`).join(' + ')));
+      } else if (r.special) {
+        page.appendChild(h('h3', undefined, `★ ${t('book.special')}`));
+        page.appendChild(h('p', undefined, t('book.specialHow')));
+      }
       if (s.hinted.includes(r.id) || r.kind === 'failure') {
         page.appendChild(h('h3', undefined, t('book.hint')));
         page.appendChild(h('p', undefined, tr(r.hint)));
@@ -184,8 +208,53 @@ export class BookPanel implements Panel {
     });
     page.appendChild(ul);
     page.appendChild(h('p', 'muted', t('book.temp', { t: d.brewTemp })));
-    page.appendChild(h('h3', undefined, t('book.hint')));
-    page.appendChild(h('p', 'muted', tr(r.hint)));
+    if (r.kind === 'potion') this.renderMethod(r);
+    else {
+      page.appendChild(h('h3', undefined, t('book.hint')));
+      page.appendChild(h('p', 'muted', tr(r.hint)));
+    }
+  }
+
+  /** The written recipe: ingredients and how to brew them. */
+  private renderMethod(r: RecipeDef): void {
+    const page = this.right;
+    page.appendChild(h('h3', undefined, t('book.method')));
+    const box = h('div', 'wb-method');
+    for (const entry of bookIngredients(r)) {
+      const [id, states] = entry.split(':');
+      const def = INGREDIENTS[id];
+      if (!def) continue;
+      const row = h('div', 'wb-aspect-row');
+      const ic = h('img') as HTMLImageElement;
+      ic.src = ingredientIconURL(id);
+      ic.style.width = '20px';
+      ic.style.height = '20px';
+      row.appendChild(ic);
+      const st = (states ?? '')
+        .split('/')
+        .filter(Boolean)
+        .map((x) => tr(def.states[x as keyof typeof def.states]?.name ?? { en: x, tr: x }))
+        .join(t('book.or'));
+      row.appendChild(h('span', undefined, st ? `${tr(def.name)} (${st})` : tr(def.name)));
+      box.appendChild(row);
+    }
+    const lines: string[] = [];
+    const name = (id: string) => tr(INGREDIENTS[id]?.name ?? { en: id, tr: id });
+    for (const [a, b] of r.order ?? []) lines.push(t('book.m.order', { a: name(a), b: name(b) }));
+    const range = (c: { min?: number; max?: number }) =>
+      c.min !== undefined && c.max !== undefined ? `${c.min}–${c.max}°C` : c.min !== undefined ? t('book.m.above', { t: c.min }) : t('book.m.below', { t: c.max ?? 0 });
+    if (r.brewTemp) lines.push(t('book.m.temp', { r: range(r.brewTemp) }));
+    for (const [id, c] of Object.entries(r.ingredientTemp ?? {})) lines.push(t('book.m.addAt', { i: name(id), r: range(c) }));
+    if (r.water?.min !== undefined) lines.push(t('book.m.water', { l: r.water.min }));
+    if (r.water?.max !== undefined) lines.push(t('book.m.waterMax', { l: r.water.max }));
+    if (r.agitation?.min !== undefined) lines.push(t('book.m.stirHard'));
+    if (r.agitation?.max !== undefined) lines.push(t('book.m.stirSlow'));
+    if (r.stability?.min !== undefined) lines.push(t(r.stability.min >= 0.7 ? 'book.m.veryCalm' : 'book.m.calm'));
+    if (r.flags?.forbid?.includes('scorched')) lines.push(t('book.m.noScorch'));
+    if (r.minConcentration) lines.push(t('book.m.strong'));
+    for (const l of lines) box.appendChild(h('p', undefined, `• ${l}`));
+    page.appendChild(box);
+    page.appendChild(h('p', 'muted', `✎ ${tr(r.hint)}`));
   }
 
   // -------------------------------------------------------------------------

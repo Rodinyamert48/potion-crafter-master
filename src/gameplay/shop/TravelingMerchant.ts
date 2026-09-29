@@ -19,6 +19,8 @@ import { lanternModel, rugModel } from '../../rendering/three/models/decorModels
 import { CG, type BodyHandle } from '../../physics/PhysicsTypes';
 import type { CharacterLook } from '../../data/types';
 import type { FlaskItem } from '../potion/FlaskItem';
+import { RECIPES, RECIPE_MAP } from '../../data/potions';
+import type { RecipeDef } from '../../data/types';
 import { BUNDLE, type ShopSystem } from './ShopSystem';
 
 /** He comes on day 3, 6, 9… */
@@ -155,6 +157,8 @@ class MerchantNPC extends Entity {
 
 export class TravelingMerchant implements GameSystem {
   npc: MerchantNPC | null = null;
+  /** Admin menu: make today a merchant day. */
+  forceDay = -1;
   wares: Ware[] = [];
   private waresDay = -1;
   private stall: THREE.Group | null = null;
@@ -252,13 +256,71 @@ export class TravelingMerchant implements GameSystem {
   }
 
   // -------------------------------------------------------------------------
+  // Secret recipes: he teaches them in exchange for potions
+  // -------------------------------------------------------------------------
+
+  /** Secret recipes the apprentice does not know yet. */
+  recipeOffers(): RecipeDef[] {
+    return RECIPES.filter((r) => r.secret && r.learnCost && !this.ctx.state.knowsRecipe(r.id));
+  }
+
+  /** Finished potions in the shop that could pay for a recipe (not in hand, not promised). */
+  private tradablePotions(): FlaskItem[] {
+    const held = this.ctx.interaction.grab?.entity;
+    return this.ctx.world.ofKind<FlaskItem>('flask').filter((f) => f.alive && !!f.potion && !f.claimed && f !== held);
+  }
+
+  /** How many of each required potion are available ({recipe → have}). */
+  haveFor(r: RecipeDef): Record<string, number> {
+    const have: Record<string, number> = {};
+    const pots = this.tradablePotions();
+    for (const c of r.learnCost ?? []) have[c.recipe] = pots.filter((f) => f.potion!.recipeId === c.recipe).length;
+    return have;
+  }
+
+  canTeach(r: RecipeDef): boolean {
+    const have = this.haveFor(r);
+    return (r.learnCost ?? []).every((c) => (have[c.recipe] ?? 0) >= c.count);
+  }
+
+  /** Hand over the potions and learn the recipe. */
+  teach(id: string): boolean {
+    const ctx = this.ctx;
+    const r = RECIPE_MAP[id];
+    if (!r || !r.learnCost || ctx.state.knowsRecipe(id)) return false;
+    if (!this.canTeach(r)) {
+      ctx.audio.play('denied', {});
+      ctx.bus.emit('toast', { text: t('merchant.needPotions'), kind: 'warn' });
+      return false;
+    }
+    const pots = this.tradablePotions();
+    for (const c of r.learnCost) {
+      // The weakest ones go first – he is a fair trader, not a generous one.
+      const pay = pots
+        .filter((f) => f.potion!.recipeId === c.recipe)
+        .sort((a, b) => a.potion!.tier - b.potion!.tier)
+        .slice(0, c.count);
+      for (const f of pay) ctx.world.remove(f);
+    }
+    ctx.state.learnRecipe(id);
+    ctx.state.count('recipesLearned');
+    ctx.audio.play('discovery', {});
+    ctx.bus.emit('recipe:learned', { id, source: 'merchant' });
+    ctx.bus.emit('toast', { text: t('merchant.learned', { name: tr(r.name) }), kind: 'quest' });
+    this.npc?.say(ctx, t('merchant.teachLine'), 4);
+    ctx.bus.emit('save:request', {});
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
 
   update(dt: number): void {
     void dt;
     const ctx = this.ctx;
     if (ctx.paused) return;
     const s = ctx.state;
-    const due = isMerchantDay(s.day) && s.hour >= MERCHANT_HOURS[0] && s.hour < MERCHANT_HOURS[1] && s.shopOpen;
+    const today = isMerchantDay(s.day) || this.forceDay === s.day;
+    const due = today && (s.hour >= MERCHANT_HOURS[0] || this.forceDay === s.day) && s.hour < MERCHANT_HOURS[1] + (this.forceDay === s.day ? 4 : 0) && s.shopOpen;
     if (due && !this.npc) this.arrive();
     else if (!due && this.present) this.leave();
   }
@@ -273,7 +335,7 @@ export class TravelingMerchant implements GameSystem {
     ctx.bus.emit('toast', { text: t('merchant.arrived'), kind: 'quest' });
     ctx.bus.emit('merchant:arrived', {});
     this.buildStall();
-    npc.walk([a.doorInside, new THREE.Vector3(2.4, 0, -0.3), new THREE.Vector3(1.0, 0, 1.75), this.spot.clone().add(new THREE.Vector3(0.45, 0, -0.05))], () => {
+    npc.walk([a.doorInside, new THREE.Vector3(2.4, 0, -0.3), new THREE.Vector3(1.05, 0, 1.4), this.spot.clone().add(new THREE.Vector3(0.45, 0, -0.05))], () => {
       npc.sprite.facing = -1;
       npc.say(ctx, t('merchant.greet'), 5);
     });
@@ -289,7 +351,7 @@ export class TravelingMerchant implements GameSystem {
     const a = ctx.shop.anchors;
     ctx.later(1.5, () => {
       this.removeStall();
-      npc.walk([new THREE.Vector3(1.0, 0, 1.75), new THREE.Vector3(2.4, 0, -0.3), a.doorInside, a.doorOutside], () => {
+      npc.walk([new THREE.Vector3(1.05, 0, 1.4), new THREE.Vector3(2.4, 0, -0.3), a.doorInside, a.doorOutside], () => {
         ctx.world.remove(npc);
         if (this.npc === npc) this.npc = null;
       });

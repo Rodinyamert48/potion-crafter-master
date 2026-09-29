@@ -14,7 +14,7 @@ export function installTheme(): void {
   root.setProperty('--cursor-glove', gloveCursorCSS());
 }
 
-/** Retro mode dresses the UI as 16-bit fantasy RPG menus (see styles.css). */
+/** Dark Fantasy mode dresses the UI in blackened iron and gold (see styles.css). */
 export function setRetroTheme(on: boolean): void {
   document.documentElement.classList.toggle('retro', on);
 }

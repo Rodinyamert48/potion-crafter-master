@@ -46,8 +46,9 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 | Tekerlek / `+` `-` · `Q`/`E` | Yakınlaştır · kamerayı döndür (önünde kalan duvar alçalır) |
 | `1`–`5` | Kamera: dükkân, kazan, masa, raflar, tezgâh |
 | Vincin krank kolunu daire çizerek çevir | Kazanı ateşten kaldır / indir |
-| Kediye sol tık · sağ tık | Sev · özelleştirme paneli |
+| Kediye, tezgâh balçığına, ustanın köpeğine sol tık · sağ tık | Sev · özelleştirme paneli |
 | `B` · `C` · `I` · `M` · `K` · `H` · `Esc` | İksir kitabı · pazar · envanter · keşif haritası · başarımlar · yardım · menü |
+| `"` / `` ` `` (Esc'nin altındaki tuş) | Admin menüsü (şifre: `4884`) |
 
 **Dokunmatik (telefon, tablet, akıllı tahta):** tek parmakla eşyaları sürükle,
 boş zemini sürükleyerek kamerayı kaydır, iki parmakla yakınlaştır ve çevirerek
@@ -87,9 +88,14 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   nadiren vadide bulunur. Bölgeler gün ve itibarla açılır.
 - **Gün döngüsü:** sabah/öğle/akşam/gece; Ay Çiçeği yalnızca geceleri açar.
   Gece tabelayla dükkânı kapat, gün özetini gör.
-- **Keşif:** bilinmeyen iksirler kitapta `???` olarak durur; ilk kez
-  şişelenince sayfası senin notlarınla dolar. Kitapta iksirler, malzemeler,
-  özler, deney günlüğü ve görevler bulunur.
+- **Keşif ve tarifler:** temel iksirlerin tarifi (malzemeler, sıcaklık,
+  karıştırma) baştan kitapta yazılıdır. Gizli tarifler kitapta `???` ve 🔒
+  olarak durur; Gezgin Tüccar bunları birkaç iksir karşılığında öğretir
+  (ör. Dev Gücü İksiri için 3 Güç + 2 Şifa İksiri) – tüccarın "Gizli tarifler"
+  sekmesinden dükkândaki iksirlerle takas edilir. Ünlü konukların özel
+  iksirleri sipariş verdiklerinde kitaba yazılır. Deneyerek ilk kez
+  şişelenen her iksirin sayfası senin notlarınla da dolar. Kitapta iksirler,
+  malzemeler, özler, deney günlüğü ve görevler bulunur.
 - **Görevler:** kuzeydeki kurtlar (Gece Görüşü), şövalye turnuvası (Güç),
   goblin yarışı, devin kayası, vampir balosu – her biri yeni bir mekanik öğretir.
 - **Ekonomi ve gelişim:** malzeme/şişe/odun siparişi, pirinç körük, gelişmiş ve
@@ -114,10 +120,42 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   İksiri* (ejderha pulu + ezilmemiş kurbağa gözü, sıcak), Keanu Reeves →
   *Nefes Kesici İksir* (Ay Çiçeği + buz kristali, 50°C altında). Her birinin
   girişi, bekleme şakaları ve iksiri içince kendi gösterisi var; iksirini
-  alana kadar başka günlerde yeniden gelirler. (Bu karakterler sevgi dolu
-  parodi/cameo niteliğindedir; kişilerle bir bağlantı ya da onay yoktur.)
-- **Başarımlar:** 27 başarım (bazıları gizli) ilerleme çubuklarıyla; açılınca
-  fanfar ve bildirim çıkar, kupa panelinden (K) izlenir.
+  alana kadar başka günlerde yeniden gelirler. Sonra gelenler: Cristiano
+  Ronaldo → *SIUUU İksiri* (ejderha pulu + Ay Çiçeği, 85°C+, sert
+  karıştırma; içince havada dönüp "SIUUU!"), Gordon Ramsay → *Tam Kıvamında
+  İksir* (dilimlenmiş mantar + buz kristali, 60–75°C, sakin – "çiğse
+  anlarım"), Recep İvedik → *Asabi Ayran İksiri* (kurutulmuş yarasa kanadı +
+  buz kristali, 50°C altı), CZN Burak → *Dev Porsiyon İksiri* (en az 3 L su,
+  ejderha pulu + mantar), Nasreddin Hoca → *Ya Tutarsa İksiri* (3,2 L+ su,
+  ezilmiş mantar, ılık – dükkâna ters yürüyerek girer), Temel → *Hamsi
+  İksiri* (kurbağa gözü + buz kristali, 60°C altı) ve Keloğlan → *Gür Saç
+  Toniği* (kurutulmuş yarasa kanadı + Ay Çiçeği, 40–90°C; içince saçı çıkar).
+  Bekleyen konuklar sırayla gelir; 5. günden sonra aynı gün iki ünlü de
+  uğrayabilir. (Bu karakterler sevgi dolu parodi/cameo ve halk hikâyesi
+  karakterleridir; gerçek kişilerle bir bağlantı ya da onay yoktur.)
+- **Mobilya:** Pazar → Mobilya sekmesinden dükkândaki 6 boş yere (2 alçak
+  zemin, 2 uzun zemin, 2 duvar) mobilya alınır: kadife koltuk, dev eğrelti,
+  dönen kâşif küresi, ışık saçan demir şamdan, fal söyleyen kristal küre, bal
+  kabağı feneri, ipucu veren kitaplık, tıngırdayan zırh, saati gösterip
+  çalan dede saati, tablolar, kalkan, sihirli ayna, sancak. Kaldırınca yarı
+  fiyatı geri alınır; hepsi kayda girer.
+- **Evcil hayvanlar:** ustanın kucağında beyaz bir Lagotto Romagnolo (Pamuk)
+  uyuklar; sevilince kuyruk sallar, müşterilere ara sıra, hırsıza her zaman
+  havlar. Sağ tıkla adı, tüy rengi (beyaz, kırık beyaz, kahve, kahve kır,
+  turuncu, lekeli) ve tasması değiştirilir. Tezgâh balçığı Pıtırcık'ın da adı
+  ve rengi (7 renk) değiştirilebilir.
+- **Cüce Nobert:** çok nadiren (4. günden sonra, günde ~%6, en az 5 gün
+  arayla) kapıdan süzülen bir cüce hırsız. Rastgele bir eşya türünün hepsini
+  çuvalına atar – bütün boş şişeler, bütün odunlar, bir malzemenin bütün
+  stoğu ya da raftaki bütün iksirler – ve kaçar. Kaçmadan üstüne tıklarsan
+  her şeyi bırakıp kaçar.
+- **Başarımlar:** 38 başarım (bazıları gizli) ilerleme çubuklarıyla; açılınca
+  fanfar ve bildirim çıkar, kupa panelinden (K) izlenir. Bir tanesi tamamen
+  şansa bağlı: dükkândan ara sıra bir dört yapraklı yonca süzülür.
+- **Admin menüsü:** Esc'nin altındaki tuş (`"` ya da `` ` ``), şifre `4884`.
+  Para, itibar, gün/saat, zaman hızı, stoklar, tarifler, müşteri/ünlü/tüccar/
+  Nobert çağırma, kazan suyu/sıcaklığı/ateş, iksir ve malzeme oluşturma,
+  başarımlar, mobilya ve kayıt buradan ayarlanır.
 - **Kolay taşıma:** taşınan eşya diğer eşyalara ve insanlara takılmaz, altında
   bir iniş işareti görünür. Doğru yere yaklaşınca mıknatıs gibi yerine çekilir,
   parlayan bir halka ve ipucu çıkar: malzemeler kazana, tahtaya ya da havana,
@@ -130,15 +168,22 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   duvarlar yer değiştirir.
 - **Kayıt Kristali:** dükkânın arka köşesinde, parlayan bir rün çemberinin
   üstünde dönen kristal. Dokununca ilerleme kaydedilir.
-- **PS1 Korku grafik modu:** Ayarlar → Grafik: Otomatik / PS1 Korku / Yüksek.
-  PS1 modu 240 satırlık çözünürlük, titreyen köşeler (vertex snapping),
-  perspektifsiz kayan dokular, 15-bit renk ve dither, karanlık sis, gren,
-  tarama çizgileri, titreyen lambalar ve tekinsiz bir ortam sesiyle oynar;
-  aynı zamanda en hafif grafik modudur.
-- **Retro mod:** Ayarlar → Retro palet açıkken sahne 16-bit fantastik RPG
-  paletine (indigo gölgeler, titreşimli/dither renk geçişleri) geçer; arayüz
-  mavi gradyanlı, beyaz çerçeveli pencerelere ve beyaz eldiven imlecine
-  bürünür. Tüm yazılar retro VT323 fontuyla (Türkçe karakter destekli).
+- **Grafik ayarları:** Otomatik / PS1 / Düşük / Orta / Yüksek. PS1 modu 240
+  satırlık çözünürlük, titreyen köşeler (vertex snapping), perspektifsiz
+  kayan dokular, 15-bit renk ve dither, kısa görüş mesafesi ve hafif tarama
+  çizgileriyle klasik PlayStation görünümüdür (en hafif mod). Yüksek kalite
+  daha fazla piksel, 2048'lik yumuşak gölgeler ve daha geniş ışıma kullanır.
+- **Dark Fantasy modu:** Ayarlar → Dark Fantasy açıkken sahne karanlık
+  fantastik bir paletle (soğuk çelik gölgeler, mum ışığı altın vurgular,
+  kan kırmızısı ve cadı ateşi) boyanır, oda loşlaşıp alevler öne çıkar,
+  arkada kısık bir rüzgâr/uğultu sesi çalar; arayüz karartılmış demir,
+  eskimiş altın ve kızıl çerçevelere, gotik piksel başlıklara (Jacquard 24)
+  ve çelik eldiven imlecine bürünür. Tüm yazılar retro VT323 fontuyla
+  (Türkçe karakter destekli).
+- **Düşen aletler:** çekiç ya da bıçak yere, masanın altına düşerse kısa
+  süre sonra kendiliğinden süzülerek masadaki yerine döner; elde taşınan
+  bir eşya masa kenarına takılırsa içinden geçip imlece ulaşır. Aleti
+  yerine yaklaştırınca mıknatısla yerine oturur.
 - **Kayıt:** para, gün, itibar, envanter, keşifler, görevler, geliştirmeler,
   kazandaki iksir, ocak durumu ve yerdeki eşyalar LocalStorage'a otomatik
   kaydedilir; ayarlar ayrı saklanır.
@@ -197,8 +242,8 @@ Sabit zaman adımı, havuzlanmış parçacıklar (2 çizim çağrısı), paylaş
 geometri/materyaller, kademeli gölge haritası güncellemesi ve düşük
 çözünürlüklü render. Varsayılan "Otomatik" kalite yüksek başlar ve kare hızı
 düşerse kendiliğinden orta/düşük seviyeye iner (telefonlarda orta
-başlar); ayarlardan Otomatik, PS1 Korku ya da Yüksek, piksel boyutu ve retro
-mod elle de seçilebilir.
+başlar); ayarlardan Otomatik, PS1, Düşük, Orta ya da Yüksek, piksel boyutu
+ve Dark Fantasy modu elle de seçilebilir.
 
 ## Genişletme fikirleri
 

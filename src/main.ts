@@ -2,6 +2,8 @@
 
 import '@fontsource/vt323/latin-400.css';
 import '@fontsource/vt323/latin-ext-400.css';
+import '@fontsource/jacquard-24/latin-400.css';
+import '@fontsource/jacquard-24/latin-ext-400.css';
 import './ui/styles.css';
 import { Game } from './core/Game';
 import { App } from './App';

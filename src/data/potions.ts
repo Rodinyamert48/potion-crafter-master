@@ -90,6 +90,7 @@ export const RECIPES: RecipeDef[] = [
       en: 'Lavender-white and perfectly still. One sip and even the loudest streamer whispers ✌️ – for about ten seconds.',
       tr: 'Lavanta beyazı ve kıpırtısız. Bir yudum ve en gürültülü yayıncı bile fısıldar ✌️ – yaklaşık on saniye.',
     },
+    special: true,
     kind: 'potion',
     tags: ['peace'],
     priority: 735,
@@ -118,6 +119,7 @@ export const RECIPES: RecipeDef[] = [
       en: 'A sizzling dragon-scale brew finished with a flourish of powdered frost crystal, sprinkled from above. Elbow optional.',
       tr: 'Cızırdayan ejderha pulu iksiri, yukarıdan serpilen toz buz kristaliyle bitirilir. Dirsek isteğe bağlı.',
     },
+    special: true,
     kind: 'potion',
     tags: ['salt'],
     priority: 734,
@@ -145,6 +147,7 @@ export const RECIPES: RecipeDef[] = [
       en: 'Liquid gold that glitters in the flask. Whoever drinks it feels an urgent need to give money away.',
       tr: 'Şişede parıldayan sıvı altın. İçen kişi acilen para dağıtma ihtiyacı hisseder.',
     },
+    special: true,
     kind: 'potion',
     tags: ['gold'],
     priority: 733,
@@ -173,6 +176,7 @@ export const RECIPES: RecipeDef[] = [
       en: 'Muscle and suspicion in a bottle. The drinker raises one eyebrow so hard the room goes quiet. 🤨',
       tr: 'Şişede kas ve şüphe. İçen kişi tek kaşını öyle bir kaldırır ki oda susar. 🤨',
     },
+    special: true,
     kind: 'potion',
     tags: ['eyebrow'],
     priority: 732,
@@ -199,6 +203,7 @@ export const RECIPES: RecipeDef[] = [
       en: 'A cold, starlit shimmer. Your breath fogs just looking at it. You are breathtaking!',
       tr: 'Soğuk, yıldızlı bir parıltı. Sadece bakınca nefesin buğulanır. Sen nefes kesicisin!',
     },
+    special: true,
     kind: 'potion',
     tags: ['breathtaking'],
     priority: 731,
@@ -216,6 +221,197 @@ export const RECIPES: RecipeDef[] = [
       tr: 'Ay altında buğulu nefes: serin bir iksirde Ay Çiçeği ve buz kristali, asla 50°C üstüne ısıtma.',
     },
     drink: 'breathtaking',
+  },
+
+  {
+    id: 'siuuu',
+    name: { en: 'SIUUU Elixir', tr: 'SIUUU İksiri' },
+    description: {
+      en: 'Red, green and gold, and it will not sit still. The drinker leaps, spins in mid-air and lands with a roar: SIUUU!',
+      tr: 'Kırmızı, yeşil ve altın; yerinde duramıyor. İçen kişi zıplar, havada döner ve bir kükremeyle yere iner: SIUUU!',
+    },
+    special: true,
+    kind: 'potion',
+    tags: ['siuuu'],
+    priority: 730,
+    color: '#e43b44',
+    color2: '#3e8948',
+    price: 110,
+    bottle: 'tall',
+    primary: ['power', 'strength'],
+    shares: { shadow: { max: 0.08 }, chaos: { max: 0.06 }, poison: { max: 0.05 } },
+    requires: ['dragon_scale', 'moon_flower'],
+    brewTemp: { min: 85 },
+    agitation: { min: 0.3 },
+    potencyMul: 0.8,
+    hint: {
+      en: 'Champion’s fuel: dragon scale and a moon flower, boiled hot (85°C+) and stirred HARD like extra time in a final.',
+      tr: 'Şampiyon yakıtı: ejderha pulu ve Ay Çiçeği, sıcak kaynat (85°C+) ve finalde uzatmalar gibi SERTÇE karıştır.',
+    },
+    drink: 'siuuu',
+  },
+  {
+    id: 'perfect_bite',
+    name: { en: 'Perfectly Cooked Elixir', tr: 'Tam Kıvamında İksir' },
+    description: {
+      en: 'Golden, silky and seasoned to perfection. Not raw. NOT RAW. Finally, some good potion.',
+      tr: 'Altın rengi, ipeksi ve tam kıvamında. Çiğ değil. ÇİĞ DEĞİL. Nihayet, düzgün bir iksir.',
+    },
+    special: true,
+    kind: 'potion',
+    tags: ['perfect'],
+    priority: 729,
+    color: '#feae34',
+    color2: '#fff4dc',
+    price: 100,
+    bottle: 'round',
+    primary: ['healing', 'frost'],
+    shares: { shadow: { max: 0.06 }, chaos: { max: 0.05 }, poison: { max: 0.04 } },
+    requires: ['glowing_mushroom', 'frost_crystal'],
+    states: { glowing_mushroom: ['sliced'] },
+    brewTemp: { min: 58, max: 78 },
+    stability: { min: 0.7 },
+    potencyMul: 0.85,
+    hint: {
+      en: 'SLICED mushroom and a frost crystal, cooked at exactly 60–75°C – not raw, not burnt – and stirred calm and stable.',
+      tr: 'DİLİMLENMİŞ mantar ve buz kristali, tam 60–75°C’de pişir – çiğ değil, yanık değil – ve sakin, dengeli karıştır.',
+    },
+    drink: 'chefkiss',
+  },
+  {
+    id: 'grumpy_ayran',
+    name: { en: 'Grumpy Ayran Elixir', tr: 'Asabi Ayran İksiri' },
+    description: {
+      en: 'Ice-cold, frothy and a little bit rude. One gulp and the drinker lets out a mighty "Ohh be!"',
+      tr: 'Buz gibi, köpüklü ve biraz kaba. Bir yudumda içen kişi koca bir "Ohh be!" çeker.',
+    },
+    special: true,
+    kind: 'potion',
+    tags: ['ayran'],
+    priority: 728,
+    color: '#f4f4f4',
+    color2: '#c0cbdc',
+    price: 75,
+    bottle: 'tall',
+    primary: ['frost', 'shadow'],
+    shares: { fire: { max: 0.05 }, chaos: { max: 0.06 } },
+    requires: ['bat_wing', 'frost_crystal'],
+    states: { bat_wing: ['dried', 'crumbled', 'ground'] },
+    brewTemp: { max: 50 },
+    potencyMul: 0.75,
+    hint: {
+      en: 'A DRIED bat wing for the attitude and a frost crystal to make it ice-cold. Never warmer than 50°C.',
+      tr: 'Tavır için KURUTULMUŞ yarasa kanadı, buz gibi olsun diye buz kristali. Asla 50°C’den sıcak olmasın.',
+    },
+    drink: 'ayran',
+  },
+  {
+    id: 'giant_portion',
+    name: { en: 'Giant Portion Potion', tr: 'Dev Porsiyon İksiri' },
+    description: {
+      en: 'A cauldron-sized helping of dragon fire and mushroom goodness, served with the widest smile in the world.',
+      tr: 'Kazan boyutunda bir porsiyon ejderha ateşi ve mantar lezzeti, dünyanın en kocaman gülümsemesiyle servis edilir.',
+    },
+    special: true,
+    kind: 'potion',
+    tags: ['portion'],
+    priority: 745,
+    color: '#be4a2f',
+    color2: '#feae34',
+    price: 105,
+    bottle: 'flask',
+    primary: ['healing', 'power'],
+    shares: { shadow: { max: 0.08 }, chaos: { max: 0.06 } },
+    requires: ['dragon_scale', 'glowing_mushroom'],
+    water: { min: 3.0 },
+    brewTemp: { min: 50, max: 98 },
+    potencyMul: 1.15,
+    hint: {
+      en: 'Go BIG: at least 3 litres of water, a dragon scale and a mushroom, simmered at 50–95°C.',
+      tr: 'BÜYÜK düşün: en az 3 litre su, bir ejderha pulu ve bir mantar, 50–95°C’de pişir.',
+    },
+    drink: 'bigsmile',
+  },
+  {
+    id: 'ya_tutarsa',
+    name: { en: 'What-If-It-Works Potion', tr: 'Ya Tutarsa İksiri' },
+    description: {
+      en: 'Mostly lake water with a spoonful of mashed mushroom, like yeast for a whole lake. It probably won’t work. But what if it does?',
+      tr: 'Çoğu göl suyu, içinde bir kaşık ezilmiş mantar – koca göle maya çalar gibi. Muhtemelen tutmaz. Ama ya tutarsa?',
+    },
+    special: true,
+    kind: 'potion',
+    tags: ['maya'],
+    priority: 727,
+    color: '#e8f0f8',
+    color2: '#8fb8de',
+    price: 60,
+    bottle: 'round',
+    primary: ['healing', 'glow'],
+    shares: { fire: { max: 0.05 }, shadow: { max: 0.06 }, chaos: { max: 0.08 } },
+    requires: ['glowing_mushroom'],
+    states: { glowing_mushroom: ['mashed'] },
+    water: { min: 3.2 },
+    brewTemp: { max: 45 },
+    potencyMul: 1.5,
+    hint: {
+      en: 'Like yeasting a lake: lots of water (3.2 L or more), a MASHED mushroom, only lukewarm (below 45°C).',
+      tr: 'Göle maya çalar gibi: bolca su (3,2 L ya da fazla), EZİLMİŞ bir mantar, sadece ılık (45°C altı).',
+    },
+    drink: 'yatutarsa',
+  },
+  {
+    id: 'hamsi',
+    name: { en: 'Anchovy Potion', tr: 'Hamsi İksiri' },
+    description: {
+      en: 'Cold, silvery and smelling faintly of the Black Sea. Tiny fish leap out of the bottle when you uncork it.',
+      tr: 'Soğuk, gümüşi ve hafiften Karadeniz kokulu. Mantarını açınca şişeden minik balıklar fırlar.',
+    },
+    special: true,
+    kind: 'potion',
+    tags: ['hamsi'],
+    priority: 726,
+    color: '#8b9bb4',
+    color2: '#2ce8f5',
+    price: 80,
+    bottle: 'vial',
+    primary: ['frost', 'vision'],
+    shares: { fire: { max: 0.05 }, shadow: { max: 0.08 } },
+    requires: ['frost_crystal', 'bog_toad_eye'],
+    brewTemp: { max: 60 },
+    potencyMul: 0.8,
+    hint: {
+      en: 'Something from the sea and something cold: a bog toad eye and a frost crystal, kept below 60°C.',
+      tr: 'Denizden bir şey ve soğuk bir şey: bataklık kurbağası gözü ve buz kristali, 60°C altında tut.',
+    },
+    drink: 'hamsi',
+  },
+  {
+    id: 'thick_hair',
+    name: { en: 'Thick Hair Tonic', tr: 'Gür Saç Toniği' },
+    description: {
+      en: 'Dark as a moonless night and just as bushy. A few drops and even the shiniest head sprouts a mop of curls.',
+      tr: 'Aysız bir gece kadar karanlık ve bir o kadar gür. Birkaç damla ve en parlak kafada bile kıvırcık saçlar biter.',
+    },
+    special: true,
+    kind: 'potion',
+    tags: ['hair'],
+    priority: 725,
+    color: '#3e2731',
+    color2: '#c9d6ff',
+    price: 85,
+    bottle: 'skull',
+    primary: ['night', 'shadow'],
+    shares: { poison: { max: 0.05 }, fire: { max: 0.08 }, chaos: { max: 0.09 } },
+    requires: ['bat_wing', 'moon_flower'],
+    states: { bat_wing: ['dried', 'crumbled', 'ground'] },
+    brewTemp: { min: 40, max: 90 },
+    potencyMul: 0.9,
+    hint: {
+      en: 'Night on night: a DRIED bat wing and a moon flower, warm to hot (40–90°C). Fresh wings are poison – for hair too.',
+      tr: 'Gece üstüne gece: KURUTULMUŞ yarasa kanadı ve Ay Çiçeği, ılıktan sıcağa (40–90°C). Taze kanat zehirlidir – saç için de.',
+    },
+    drink: 'hair',
   },
 
   // ------------------------------------------------------------------------
@@ -634,6 +830,90 @@ export const RECIPES: RecipeDef[] = [
     drink: 'sludge',
   },
 ];
+
+// Which recipes are known from the start, which are secrets the wandering
+// merchant teaches (for a few potions) and which are the famous guests'
+// specials (learned when they order them).
+const SECRETS: Record<string, Array<{ recipe: string; count: number }>> = {
+  greater_healing: [
+    { recipe: 'healing_potion', count: 2 },
+    { recipe: 'strength', count: 1 },
+  ],
+  fire_healing: [
+    { recipe: 'healing_potion', count: 2 },
+    { recipe: 'strength', count: 2 },
+  ],
+  giant_strength: [
+    { recipe: 'strength', count: 3 },
+    { recipe: 'healing_potion', count: 2 },
+  ],
+  swiftness: [
+    { recipe: 'shadow_draught', count: 2 },
+    { recipe: 'strength', count: 1 },
+  ],
+  blood_tonic: [
+    { recipe: 'shadow_draught', count: 2 },
+    { recipe: 'healing_potion', count: 2 },
+  ],
+  dragons_breath: [{ recipe: 'strength', count: 3 }],
+  farsight_draught: [{ recipe: 'night_vision', count: 2 }],
+  moonlight_elixir: [
+    { recipe: 'night_vision', count: 2 },
+    { recipe: 'luminous_tonic', count: 1 },
+  ],
+  phoenix_elixir: [
+    { recipe: 'greater_healing', count: 2 },
+    { recipe: 'strength', count: 2 },
+  ],
+  frog_brew: [
+    { recipe: 'nightshade_poison', count: 1 },
+    { recipe: 'luminous_tonic', count: 1 },
+    { recipe: 'shadow_draught', count: 1 },
+  ],
+};
+for (const r of RECIPES) {
+  if (SECRETS[r.id]) {
+    r.secret = true;
+    r.learnCost = SECRETS[r.id];
+  }
+}
+
+// Ingredient lists for the book page where the conditions do not name them.
+const BOOK: Record<string, string[]> = {
+  strength: ['dragon_scale:shards/ground'],
+  dragons_breath: ['dragon_scale'],
+  luminous_tonic: ['glowing_mushroom:dried'],
+  shadow_draught: ['bat_wing:dried'],
+  nightshade_poison: ['bat_wing:whole'],
+  frost_tonic: ['frost_crystal'],
+  frog_brew: ['glowing_mushroom', 'bat_wing'],
+  blood_tonic: ['glowing_mushroom', 'bat_wing:dried', 'dragon_scale'],
+  swiftness: ['dragon_scale', 'bat_wing:dried'],
+  night_vision: ['bat_wing:dried', 'glowing_mushroom'],
+  farsight_draught: ['bog_toad_eye:whole'],
+  healing_potion: ['glowing_mushroom'],
+};
+
+/** Ingredients of a recipe as the book lists them: "id" or "id:state/state". */
+export function bookIngredients(r: RecipeDef): string[] {
+  if (r.book) return r.book;
+  if (BOOK[r.id]) return BOOK[r.id];
+  const ids: string[] = [];
+  const add = (id: string) => {
+    if (!ids.includes(id)) ids.push(id);
+  };
+  for (const [a, b] of r.order ?? []) {
+    add(a);
+    add(b);
+  }
+  for (const id of r.requires ?? []) add(id);
+  for (const id of Object.keys(r.states ?? {})) add(id);
+  for (const id of Object.keys(r.ingredientTemp ?? {})) add(id);
+  return ids.map((id) => (r.states?.[id] ? `${id}:${r.states[id].join('/')}` : id));
+}
+
+/** Recipes every apprentice knows from day one. */
+export const BASIC_RECIPES = RECIPES.filter((r) => r.kind === 'potion' && !r.secret && !r.special).map((r) => r.id);
 
 export const RECIPE_MAP: Record<string, RecipeDef> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 

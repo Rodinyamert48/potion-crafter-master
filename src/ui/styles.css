@@ -318,6 +318,10 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-potion-art { width: 64px; height: 80px; margin: 6px auto; display: block; image-rendering: pixelated; }
 .wb-stamp { display: inline-block; padding: 2px 8px; font-size: 15px; color: #fff4dc; background: #a22633; transform: rotate(-4deg); box-shadow: 0 0 0 2px #3e2731; }
 .wb-stamp.ok { background: #3e8948; }
+.wb-stamp.learned { background: #3a4466; }
+.wb-entry.learned .name { color: #3a4466; font-style: italic; }
+.wb-method { padding: 4px 8px; margin: 2px 0 6px; background: #f4e6c8aa; box-shadow: inset 0 0 0 2px #c28569; }
+.wb-method p { margin: 3px 0; }
 
 /* --------------------------------------------------------------- catalog */
 .wb-catalog { width: min(900px, 94vw); max-height: 86vh; overflow: hidden; display: flex; flex-direction: column; padding: 4px 6px; }
@@ -448,40 +452,53 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-swatch-eye::after { content: ''; position: absolute; left: 50%; top: 5px; width: 6px; height: 20px; margin-left: -3px; background: #181425; border-radius: 3px; }
 .wb-cat-choice { font-size: 16px; color: var(--gold); min-height: 16px; }
 
-/* ------------------------------------------------ retro mode (16-bit RPG)
-   Settings → Retro palette: blue gradient windows with white bevelled
-   borders, white shadowed text and a pointing-glove menu cursor. */
+/* ------------------------------------------------ Dark Fantasy mode
+   Settings → Dark Fantasy: blackened iron windows with tarnished gold and
+   blood-red trim, bone-coloured text, blackletter headings and a steel
+   gauntlet for a menu cursor. */
 :root.retro {
-  --text: #f8f8ff;
-  --muted: #c0c8f0;
-  --gold-hi: #fff080;
+  --text: #e8dcc0;
+  --muted: #a89c8c;
+  --gold: #c89a3a;
+  --gold-hi: #f0cc78;
+  --ink: #07060a;
   --cursor-point: var(--cursor-glove) !important;
-  --rpg-win: linear-gradient(180deg, #5878f0 0%, #2c44c0 38%, #101870 100%);
-  --rpg-edge: 0 0 0 2px #0a0a28, inset 0 0 0 2px #f0f0f8, inset 0 0 0 3px #b8b8d0, inset 0 0 0 4px #0a0a28;
+  --df-font: 'Jacquard 24', 'VT323', serif;
+  --rpg-win: linear-gradient(180deg, #221c26 0%, #15111a 45%, #0b090e 100%);
+  --rpg-edge: 0 0 0 2px #050407, inset 0 0 0 2px #8a6a2a, inset 0 0 0 3px #3a2a14, inset 0 0 0 4px #5a1016;
 }
+.retro, .retro body { background: #07060a; }
 .retro .wb-frame-wood, .retro .wb-frame-dark, .retro .wb-frame-gold { border-image-source: var(--frame-retro); color: var(--text); }
+.retro .wb-frame-parchment, .retro .wb-frame-note { filter: sepia(0.35) brightness(0.86) contrast(1.08); }
 .retro .wb-frame-wood, .retro .wb-frame-dark, .retro .wb-frame-gold,
-.retro .wb-bubble, .retro .wb-toast, .retro .wb-hint, .retro .wb-btn, .retro .wb-tab, .retro .wb-seg button, .retro .wb-station-btn { text-shadow: 2px 2px 0 #0a0a28; }
+.retro .wb-bubble, .retro .wb-toast, .retro .wb-hint, .retro .wb-btn, .retro .wb-tab, .retro .wb-seg button, .retro .wb-station-btn { text-shadow: 2px 2px 0 #050407; }
+.retro h1, .retro h2, .retro .wb-logo, .retro .wb-bubble-name, .retro .wb-tip-title, .retro .wb-ach-name, .retro .boot-title {
+  font-family: var(--df-font); letter-spacing: 1px;
+}
+.retro h2 { color: var(--gold-hi); text-shadow: 2px 2px 0 #3a0a0e; }
+/* On parchment (book pages, market, merchant) the titles are dark ink. */
+.retro .wb-page h2, .retro .wb-frame-parchment h2, .retro .wb-frame-note h2 { color: #5a1016; text-shadow: 1px 1px 0 #f4e6c8; }
 .retro .wb-hint, .retro .wb-toast, .retro .wb-toast-bad, .retro .wb-toast-quest, .retro .wb-toast-discovery {
-  background: var(--rpg-win); box-shadow: var(--rpg-edge); border-radius: 6px; padding-left: 18px; padding-right: 18px;
+  background: var(--rpg-win); box-shadow: var(--rpg-edge); border-radius: 2px; padding-left: 18px; padding-right: 18px;
 }
-.retro .wb-toast-discovery { box-shadow: var(--rpg-edge), 0 0 24px #4a7bd8aa; }
-.retro .wb-bubble { background: var(--rpg-win); color: var(--text); box-shadow: var(--rpg-edge), 4px 4px 0 2px #0a0a2855; border-radius: 6px; padding: 9px 13px 10px; }
-.retro .wb-bubble-name { color: var(--gold-hi); }
-.retro .wb-bubble-tail { background: #101870; box-shadow: 2px 2px 0 0 #f0f0f8, 4px 4px 0 0 #0a0a28; }
+.retro .wb-toast-bad { box-shadow: var(--rpg-edge), 0 0 18px #a8282a99; }
+.retro .wb-toast-discovery { box-shadow: var(--rpg-edge), 0 0 24px #6e3a8aaa; }
+.retro .wb-bubble { background: var(--rpg-win); color: var(--text); box-shadow: var(--rpg-edge), 4px 4px 0 2px #05040788; border-radius: 2px; padding: 9px 13px 10px; }
+.retro .wb-bubble-name { color: var(--gold-hi); font-size: 18px; text-transform: none; }
+.retro .wb-bubble-tail { background: #0b090e; box-shadow: 2px 2px 0 0 #8a6a2a, 4px 4px 0 0 #050407; }
 .retro .wb-mood-angry, .retro .wb-mood-happy, .retro .wb-mood-worried, .retro .wb-mood-mentor { background: var(--rpg-win); }
-.retro .wb-mood-angry .wb-bubble-tail, .retro .wb-mood-happy .wb-bubble-tail, .retro .wb-mood-worried .wb-bubble-tail, .retro .wb-mood-mentor .wb-bubble-tail { background: #101870; }
-.retro .wb-mood-angry .wb-bubble-name { color: #ff9080; }
-.retro .wb-mood-happy .wb-bubble-name { color: #a0f080; }
-.retro .wb-mood-worried .wb-bubble-name { color: #ffd860; }
-.retro .wb-mood-mentor .wb-bubble-name { color: #e0b0ff; }
+.retro .wb-mood-angry .wb-bubble-tail, .retro .wb-mood-happy .wb-bubble-tail, .retro .wb-mood-worried .wb-bubble-tail, .retro .wb-mood-mentor .wb-bubble-tail { background: #0b090e; }
+.retro .wb-mood-angry .wb-bubble-name { color: #ff7a60; }
+.retro .wb-mood-happy .wb-bubble-name { color: #a8d070; }
+.retro .wb-mood-worried .wb-bubble-name { color: #f0cc78; }
+.retro .wb-mood-mentor .wb-bubble-name { color: #c8a0e8; }
 .retro .wb-btn, .retro .wb-btn.primary, .retro .wb-btn-go {
-  position: relative; color: var(--text); background: #1c2c98; border-radius: 4px;
-  box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #8aa0f0, inset 0 -3px 0 #101870;
+  position: relative; color: var(--text); background: #1f1a24; border-radius: 1px;
+  box-shadow: 0 0 0 2px #050407, inset 0 0 0 1px #6b5a3a, inset 0 -3px 0 #0b090e;
 }
-.retro .wb-btn.primary, .retro .wb-btn-go { background: #2f4fd0; }
-.retro .wb-btn:hover, .retro .wb-btn.primary:hover, .retro .wb-btn-go:hover { background: #3a5ce0; color: #ffffff; }
-.retro .wb-btn[disabled], .retro .wb-btn-go:disabled { background: #3a3f6a; color: #9098c0; }
+.retro .wb-btn.primary, .retro .wb-btn-go { background: #5a1016; box-shadow: 0 0 0 2px #050407, inset 0 0 0 1px #c89a3a, inset 0 -3px 0 #2a0a0e; }
+.retro .wb-btn:hover, .retro .wb-btn.primary:hover, .retro .wb-btn-go:hover { background: #761a20; color: #fff4dc; }
+.retro .wb-btn[disabled], .retro .wb-btn-go:disabled { background: #1a1520; color: #6b6168; }
 .retro .wb-btn:not([disabled]):hover::before, .retro .wb-seg button:hover::before, .retro .wb-tab:hover::before {
   content: ''; position: absolute; left: -38px; top: 50%; width: 32px; height: 22px; margin-top: -11px;
   background: var(--glove) no-repeat center / contain; image-rendering: pixelated; pointer-events: none;
@@ -489,24 +506,44 @@ img, .wb-icon { image-rendering: pixelated; }
 }
 .retro .wb-close:hover::before { display: none; }
 @keyframes gloveNudge { 0% { transform: translateX(0); } 100% { transform: translateX(4px); } }
-.retro .wb-seg button { position: relative; background: #141f70; color: var(--muted); border-radius: 3px; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #5068c8; }
-.retro .wb-seg button.on { background: #3a5ce0; color: var(--gold-hi); }
-.retro .wb-tab { position: relative; background: #1c2c98; color: var(--text); border-radius: 4px 4px 0 0; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #8aa0f0; }
-.retro .wb-tab.active { background: #5878f0; color: #ffffff; }
-.retro .wb-station-btn, .retro .wb-btn-icon { background: #141f70cc; border-radius: 4px; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #5068c8; }
-.retro .wb-logo { color: #ffffff; text-shadow: 4px 4px 0 #2c44c0, 8px 8px 0 #101870, 0 0 44px #4a7bd8cc; }
-.retro .wb-logo small { color: #fff080; }
-.retro .wb-bar { background: #0a0a28; box-shadow: 0 0 0 1px #8aa0f0; }
+.retro .wb-seg button { position: relative; background: #15111a; color: var(--muted); border-radius: 1px; box-shadow: 0 0 0 2px #050407, inset 0 0 0 1px #4d4550; }
+.retro .wb-seg button.on { background: #4a1016; color: var(--gold-hi); box-shadow: 0 0 0 2px #050407, inset 0 0 0 1px #c89a3a; }
+.retro .wb-tab { position: relative; background: #1f1a24; color: var(--text); border-radius: 2px 2px 0 0; box-shadow: 0 0 0 2px #050407, inset 0 0 0 1px #6b5a3a; }
+.retro .wb-tab.active { background: #5a1016; color: var(--gold-hi); }
+.retro .wb-station-btn, .retro .wb-btn-icon { background: #15111acc; border-radius: 1px; box-shadow: 0 0 0 2px #050407, inset 0 0 0 1px #6b5a3a; }
+.retro .wb-logo { color: #f0cc78; text-shadow: 3px 3px 0 #5a1016, 6px 6px 0 #1a0508, 0 0 44px #a8282a99; }
+.retro .wb-logo small { color: #c8b8a0; font-family: var(--font); }
+.retro .wb-bar { background: #050407; box-shadow: 0 0 0 1px #6b5a3a; }
+.retro .wb-bar-fill { background: #a8282a; }
 .retro .wb-btn.wb-close { position: absolute; }
-/* Coloured status lines stay readable on the blue windows. */
-.retro .wb-tip-label { filter: brightness(1.45) saturate(0.85); }
-.retro .wb-mentor-card .who { color: #ffb0f0; }
+/* Coloured status lines stay readable on the dark windows. */
+.retro .wb-tip-label { filter: brightness(1.3) saturate(0.8); }
+.retro .wb-mentor-card .who { color: #c8a0e8; }
+.retro #boot-screen { background: radial-gradient(circle at 50% 45%, #2a0a0e 0%, #07060a 70%); }
+.retro .wb-ach-card { background: #15111a99; }
+.retro .wb-ach-card.done { background: #2a0a0e99; box-shadow: 0 0 0 2px #050407, inset 0 0 0 2px #c89a3a; }
 
 /* ------------------------------------------------------------- merchant */
 .wb-merchant-sub { margin: -2px 0 8px; font-size: 17px; color: #733e39; }
 .wb-merchant-empty { font-size: 19px; color: #733e39; padding: 12px; }
+.wb-merchant-empty:has(+ .wb-card) { grid-column: 1 / -1; padding: 2px 4px 6px; font-size: 17px; }
+.wb-recipe-cost { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.wb-recipe-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 2px; font-size: 15px; background: #e4a67233; box-shadow: inset 0 0 0 2px #a22633; color: #a22633; }
+.wb-recipe-chip.ok { box-shadow: inset 0 0 0 2px #3e8948; color: #265c42; }
+.wb-recipe-chip img { width: 18px; height: 18px; image-rendering: pixelated; }
 .wb-card.deal { box-shadow: 0 0 0 2px #feae34, 0 0 0 4px #c28569; }
 .wb-card.owned { opacity: 0.6; }
+
+/* -------------------------------------------------------------- furniture */
+.wb-furn-spots { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 3px; padding: 4px 6px; background: #e4a67233; box-shadow: inset 0 0 0 2px #c28569; }
+.wb-furn-head { font-size: 19px; color: #733e39; }
+.wb-furn-spot { display: flex; align-items: center; gap: 8px; font-size: 17px; color: #3e2731; }
+.wb-furn-spot .wb-btn { margin-left: auto; font-size: 15px; padding: 2px 8px; }
+.wb-furn-kind { flex: 0 0 96px; font-size: 14px; color: #8a6a4a; }
+.wb-furn-slot { flex: 0 0 auto; min-width: 150px; }
+.wb-furn-item { color: #265c42; }
+.wb-furn-item.empty { color: #a08a6a; }
+.wb-furn-select { font-family: var(--font); font-size: 16px; margin: 4px 0; padding: 2px 4px; width: 100%; background: #f4e6c8; color: #3e2731; border: none; box-shadow: 0 0 0 2px #c28569; cursor: var(--cursor-point, pointer); }
 
 /* ---------------------------------------------------------- achievements */
 .wb-ach { width: min(820px, 94vw); max-height: 86vh; display: flex; flex-direction: column; padding: 4px 10px 8px; }
@@ -524,7 +561,30 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-ach-bar { height: 6px; margin-top: 4px; background: #181425; box-shadow: 0 0 0 1px #3a4466; }
 .wb-ach-bar span { display: block; height: 100%; background: var(--gold); }
 .wb-toast-achievement { color: #fee761; font-size: 22px; padding: 9px 20px; background: #3e2731; box-shadow: 0 0 0 2px #181425, 0 0 0 4px #feae34, 0 0 22px #feae3488; }
-.retro .wb-toast-achievement { background: var(--rpg-win); box-shadow: var(--rpg-edge), 0 0 22px #fee76188; }
+.retro .wb-toast-achievement { background: var(--rpg-win); box-shadow: var(--rpg-edge), 0 0 22px #c89a3a88; }
+
+/* ----------------------------------------------------------------- admin */
+.wb-admin { width: min(1080px, 96vw); max-height: 90vh; display: flex; flex-direction: column; padding: 4px 10px 8px; }
+.wb-admin h2 { margin: 0 0 6px; color: var(--gold-hi); font-size: 28px; }
+.wb-admin-lock { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 12px 12px; font-size: 20px; }
+.wb-admin-lock.shake { animation: adminShake 0.35s steps(6); }
+@keyframes adminShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.wb-admin-pin { width: 160px; text-align: center; font-size: 28px !important; letter-spacing: 8px; }
+.wb-admin-msg { color: var(--bad); min-height: 22px; margin: 0; }
+.wb-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 8px; overflow-y: auto; padding: 2px; touch-action: pan-y; overscroll-behavior: contain; }
+.wb-admin-sec { padding: 4px 8px 6px; background: #181425aa; box-shadow: 0 0 0 2px #3a4466; }
+.wb-admin-sec h3 { margin: 0 0 4px; color: var(--gold); font-size: 20px; }
+.wb-admin-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin: 3px 0; }
+.wb-admin-label { flex: 0 0 110px; font-size: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wb-admin-label:empty { display: none; }
+.wb-admin-row .wb-btn { font-size: 15px; padding: 2px 8px; }
+.wb-admin-row .wb-btn.on { box-shadow: 0 0 0 2px var(--gold-hi); }
+.wb-admin-input {
+  font-family: var(--font); font-size: 17px; width: 76px; padding: 2px 4px; color: var(--text); background: #0d0b16; border: none;
+  box-shadow: 0 0 0 2px #3a4466; outline: none; user-select: text; -webkit-user-select: text;
+}
+select.wb-admin-input { width: auto; max-width: 170px; cursor: var(--cursor-point, pointer); }
+.wb-admin-input:focus { box-shadow: 0 0 0 2px var(--gold); }
 
 /* ---------------------------------------------------------------- touch */
 html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
@@ -546,7 +606,7 @@ html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap
 .wb-touch-btn.down { background: #68386c; transform: translateY(2px); }
 .wb-touch-btn.action { width: 96px; height: 96px; font-size: 46px; background: #733e39e6; box-shadow: 0 0 0 2px #181425, 0 0 0 5px #feae34aa, inset 0 -5px 0 #3e2731; }
 .wb-touch-btn.action.idle { opacity: 0.4; box-shadow: 0 0 0 2px #181425, inset 0 -5px 0 #3e2731; }
-.retro .wb-touch-btn { background: #1c2c98d9; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 2px #f0f0f8, inset 0 0 0 3px #b8b8d0; }
+.retro .wb-touch-btn { background: #15111ad9; box-shadow: 0 0 0 2px #050407, inset 0 0 0 2px #8a6a2a, inset 0 0 0 3px #5a1016; }
 .wb-portrait-hint {
   position: absolute; top: calc(92px * var(--ui-scale, 1)); left: 50%; transform: translateX(-50%);
   max-width: 86vw; padding: 8px 14px; font-size: 18px; text-align: center; z-index: 36;
@@ -565,9 +625,9 @@ html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap
   .wb-mentor-card { top: calc(200px * var(--ui-scale, 1)); max-width: 86vw; }
 }
 
-/* ------------------------------------------------------ PS1 horror mode */
+/* -------------------------------------------------------------- PS1 mode */
 .psx #viewport::after {
   content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
-  background: repeating-linear-gradient(0deg, #0000 0 2px, #00000026 2px 3px);
+  background: repeating-linear-gradient(0deg, #0000 0 2px, #00000014 2px 3px);
   mix-blend-mode: multiply;
 }

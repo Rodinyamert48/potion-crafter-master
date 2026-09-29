@@ -138,6 +138,15 @@ export function pottedPlant(color = '#3e8948', potColor = '#b86f50'): THREE.Grou
   return g;
 }
 
+/** One leafy frond (a pixel leaf sprite on a quad, pivoting at its base). */
+export function leafSpriteModel(color: string, size = 0.4): THREE.Object3D {
+  const pivot = new THREE.Group();
+  const q = quad(size, size * 1.4, toon({ map: leafSprite(color), alphaTest: 0.5, side: THREE.DoubleSide }));
+  q.position.y = size * 0.7;
+  pivot.add(q);
+  return pivot;
+}
+
 export function herbBundle(color: string): THREE.Group {
   const g = new THREE.Group();
   const stringM = toon({ map: straw() });

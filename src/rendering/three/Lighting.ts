@@ -99,6 +99,13 @@ export class Lighting {
     return light;
   }
 
+  removeCandle(light: THREE.PointLight): void {
+    const i = this.candles.findIndex((c) => c.light === light);
+    if (i >= 0) this.candles.splice(i, 1);
+    light.removeFromParent();
+    light.dispose();
+  }
+
   /** 'off' · 'sun' (directional only) · 'all' (sun + hearth cube shadow). */
   setShadows(mode: 'off' | 'sun' | 'all'): void {
     this.sun.castShadow = mode !== 'off';
@@ -142,8 +149,16 @@ export class Lighting {
     return 0;
   }
 
-  /** PS1 horror mode: darker room, sickly flickering lamps. */
-  psx = false;
+  /** Dark Fantasy mood: a dimmer, colder room lit mostly by warm flames. */
+  darkFantasy = false;
+
+  setShadowDetail(size: number): void {
+    if (this.sun.shadow.mapSize.x === size) return;
+    this.sun.shadow.mapSize.set(size, size);
+    this.sun.shadow.map?.dispose();
+    this.sun.shadow.map = null as unknown as THREE.WebGLRenderTarget;
+    this.sun.shadow.needsUpdate = true;
+  }
 
   update(dt: number): void {
     this.time += dt;
@@ -160,10 +175,13 @@ export class Lighting {
     this.sun.intensity = lerp(a.sunI, b.sunI, t) * gloom;
     this.hemi.color.copy(this.tmpA.set(a.sky)).lerp(this.tmpB.set(b.sky), t);
     this.hemi.groundColor.copy(this.tmpA.set(a.ground)).lerp(this.tmpB.set(b.ground), t);
-    const dread = this.psx ? 0.68 : 1;
-    this.hemi.intensity = lerp(a.hemiI, b.hemiI, t) * gloom * chaosDim * dread;
-    this.ambient.intensity = lerp(a.ambient, b.ambient, t) * gloom * dread;
-    if (this.psx) this.sun.intensity *= 0.75;
+    const mood = this.darkFantasy ? 0.72 : 1;
+    this.hemi.intensity = lerp(a.hemiI, b.hemiI, t) * gloom * chaosDim * mood;
+    this.ambient.intensity = lerp(a.ambient, b.ambient, t) * gloom * mood;
+    if (this.darkFantasy) {
+      this.sun.intensity *= 0.8;
+      this.hemi.color.lerp(this.tmpA.set('#7a8aa8'), 0.35);
+    }
 
     // Sun travels across the window during the day; the moon sits high at night.
     const dayT = clamp((h - 6) / 15, 0, 1);
@@ -175,7 +193,7 @@ export class Lighting {
     // Soft knee: a roaring, over-stoked fire gets brighter but never floods the room.
     const lvl = this.hearthLevel;
     const fire = Math.min(lvl, 0.9) + Math.max(0, lvl - 0.9) * 0.35;
-    this.hearth.intensity = fire * (6.5 + 4.5 * f) * (this.chaos > 0.2 ? 0.7 + 0.6 * noise1(this.time * 25, 3) : 1);
+    this.hearth.intensity = fire * (6.5 + 4.5 * f) * (this.chaos > 0.2 ? 0.7 + 0.6 * noise1(this.time * 25, 3) : 1) * (this.darkFantasy ? 1.2 : 1);
     this.hearth.color.setRGB(1, 0.5 + 0.12 * f, 0.22);
 
     // Potion glow breathes softly.
@@ -186,9 +204,7 @@ export class Lighting {
       const n = noise1(this.time * c.speed, c.seed) * 0.7 + noise1(this.time * c.speed * 2.7, c.seed + 9) * 0.3;
       let k = 0.78 + 0.34 * n;
       if (this.chaos > 0.1) k *= 1 - this.chaos * 0.8 * (noise1(this.time * 30, c.seed + 3) > 0.55 ? 1 : 0);
-      // Horror mode: lamps stutter now and then.
-      if (this.psx && noise1(this.time * 3.1, c.seed + 11) > 0.78) k *= noise1(this.time * 40, c.seed + 5) > 0.5 ? 0.15 : 0.6;
-      c.light.intensity = c.base * k * (0.45 + 0.55 * Math.max(night, 0.2));
+      c.light.intensity = c.base * k * (0.45 + 0.55 * Math.max(night, 0.2)) * (this.darkFantasy ? 1.25 : 1);
       if (c.flame) c.flame.scale.setScalar(0.85 + 0.3 * n);
     }
   }

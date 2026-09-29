@@ -11,8 +11,10 @@ import { UPGRADES, UPGRADE_MAP, SUPPLIES } from '../data/upgrades';
 import { iconURL, ingredientIconURL } from './pixelArt';
 import { t, tr } from '../core/i18n';
 import { daysUntilMerchant } from '../gameplay/shop/TravelingMerchant';
+import type { FurnitureSystem } from '../gameplay/shop/Furniture';
+import { FURNITURE, FURNITURE_MAP, FURNITURE_SLOTS } from '../data/furniture';
 
-type Tab = 'supplies' | 'upgrades' | 'decor';
+type Tab = 'supplies' | 'upgrades' | 'decor' | 'furniture';
 
 export class CatalogPanel implements Panel {
   readonly el: HTMLElement;
@@ -23,9 +25,13 @@ export class CatalogPanel implements Panel {
   private readonly title: HTMLElement;
   private readonly note: HTMLElement;
 
+  /** Chosen spot per furniture piece in the market list. */
+  private readonly chosenSlot: Record<string, string> = {};
+
   constructor(
     private readonly ctx: GameContext,
     private readonly shop: ShopSystem,
+    private readonly furniture: FurnitureSystem,
   ) {
     this.el = h('div', 'wb-overlay wb-interactive');
     this.el.hidden = true;
@@ -68,6 +74,7 @@ export class CatalogPanel implements Panel {
       ['supplies', t('catalog.supplies')],
       ['upgrades', t('catalog.upgrades')],
       ['decor', t('catalog.decor')],
+      ['furniture', t('catalog.furniture')],
     ] as Array<[Tab, string]>) {
       const b = h('button', id === this.tab ? 'on' : '', label);
       b.addEventListener('click', () => {
@@ -79,7 +86,54 @@ export class CatalogPanel implements Panel {
     }
     this.body.innerHTML = '';
     if (this.tab === 'supplies') this.renderSupplies();
+    else if (this.tab === 'furniture') this.renderFurniture();
     else this.renderUpgrades(this.tab === 'decor');
+  }
+
+  private renderFurniture(): void {
+    const s = this.ctx.state;
+    // The spots and what stands there now
+    const spots = h('div', 'wb-furn-spots');
+    spots.appendChild(h('div', 'wb-furn-head', t('furn.spots')));
+    for (const slot of FURNITURE_SLOTS) {
+      const id = s.furniture[slot.id];
+      const def = id ? FURNITURE_MAP[id] : null;
+      const row = h('div', 'wb-furn-spot');
+      row.appendChild(h('span', 'wb-furn-kind', t(`furn.kind.${slot.kind}`)));
+      row.appendChild(h('span', 'wb-furn-slot', tr(slot.name)));
+      row.appendChild(h('span', `wb-furn-item${def ? '' : ' empty'}`, def ? tr(def.name) : t('furn.empty')));
+      if (def) {
+        const rm = h('button', 'wb-btn', t('furn.remove', { n: Math.floor(def.price / 2) })) as HTMLButtonElement;
+        rm.addEventListener('click', () => {
+          this.furniture.remove(slot.id);
+          this.render();
+        });
+        row.appendChild(rm);
+      }
+      spots.appendChild(row);
+    }
+    this.body.appendChild(spots);
+    for (const def of FURNITURE) {
+      const slots = this.furniture.slotsFor(def);
+      const free = slots.find((sl) => !s.furniture[sl.id]) ?? slots[0];
+      if (!this.chosenSlot[def.id] || !slots.some((sl) => sl.id === this.chosenSlot[def.id])) this.chosenSlot[def.id] = free.id;
+      const placedAt = FURNITURE_SLOTS.filter((sl) => s.furniture[sl.id] === def.id);
+      const c = this.card(iconURL(def.kind === 'wall' ? 'scroll' : def.kind === 'tall' ? 'book' : 'heart'), tr(def.name), tr(def.description), def.price, 'buy', () => {
+        this.furniture.buy(def.id, this.chosenSlot[def.id]);
+      }, placedAt.length ? `✓ ${placedAt.map((sl) => tr(sl.name)).join(', ')}` : t(`furn.kind.${def.kind}`));
+      const sel = h('select', 'wb-furn-select') as HTMLSelectElement;
+      for (const sl of slots) {
+        const o = h('option', undefined, `${tr(sl.name)}${s.furniture[sl.id] ? ` (${tr(FURNITURE_MAP[s.furniture[sl.id]].name)})` : ''}`) as HTMLOptionElement;
+        o.value = sl.id;
+        sel.appendChild(o);
+      }
+      sel.value = this.chosenSlot[def.id];
+      sel.addEventListener('change', () => (this.chosenSlot[def.id] = sel.value));
+      c.insertBefore(sel, c.lastElementChild);
+      const btn = c.querySelector('button.primary') as HTMLButtonElement | null;
+      if (btn) btn.textContent = t('furn.buyPlace');
+      this.body.appendChild(c);
+    }
   }
 
   private card(icon: string, title: string, desc: string, price: number, state: 'buy' | 'owned' | 'locked', onBuy: () => void, extra?: string): HTMLElement {

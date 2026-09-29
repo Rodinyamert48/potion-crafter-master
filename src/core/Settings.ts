@@ -11,6 +11,7 @@ export interface Settings {
   /** 'auto' starts high and steps down if the frame rate suffers. */
   quality: Quality | 'auto';
   shake: boolean;
+  /** Dark Fantasy mode (palette, grade and UI theme). */
   retro: boolean;
 }
 
@@ -30,11 +31,7 @@ export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
-      const s = { ...defaults, ...(JSON.parse(raw) as Partial<Settings>) };
-      // Low / Medium are no longer offered in the menu (the automatic mode
-      // still uses them); older saves fall back to automatic.
-      if (s.quality === 'low' || s.quality === 'medium') s.quality = 'auto';
-      return s;
+      return { ...defaults, ...(JSON.parse(raw) as Partial<Settings>) };
     }
   } catch {
     /* ignore */

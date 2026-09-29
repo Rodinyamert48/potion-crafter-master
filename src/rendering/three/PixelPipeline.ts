@@ -114,17 +114,21 @@ const COMPOSITE_FRAG = /* glsl */ `
     col = mix(col, uFlashColor, clamp(uFlash, 0.0, 1.0));
     col = clamp(col, 0.0, 1.0);
 
-    if (uPsx > 0.5) {
-      // PS1 horror grade: washed-out, cold-green and grimy, crushed blacks,
-      // a heavy vignette and film grain that crawls.
-      float lp = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(vec3(lp), col, 0.68);
-      col *= vec3(0.9, 1.0, 0.88);
-      col = pow(max(col, 0.0), vec3(1.06)) * 1.05;
-      vec2 qq = vUv - 0.5;
-      col *= 1.0 - dot(qq, qq) * 0.8;
-      float grain = fract(sin(dot(floor(gl_FragCoord.xy) + fract(uTime * 7.0) * 91.0, vec2(12.9898, 78.233))) * 43758.5453);
-      col += (grain - 0.5) * 0.03;
+    if (uRetro > 0.5) {
+      // Dark Fantasy grade: cold steel shadows, candle-gold highlights,
+      // muted midtones that let reds and witch-fire glow stand out, and a
+      // heavy vignette like a torch-lit crypt.
+      float lr = dot(col, vec3(0.299, 0.587, 0.114));
+      float warm = smoothstep(0.35, 0.95, lr);
+      vec3 muted = mix(vec3(lr), col, 0.72);
+      // Keep the strong hues (blood, fire, magic) saturated.
+      float chroma = max(col.r, max(col.g, col.b)) - min(col.r, min(col.g, col.b));
+      col = mix(muted, col, smoothstep(0.25, 0.6, chroma));
+      col = mix(col * vec3(0.72, 0.8, 1.02), col, smoothstep(0.02, 0.4, lr));
+      col = mix(col, col * vec3(1.12, 0.98, 0.78), warm);
+      col = pow(max(col, 0.0), vec3(1.12));
+      vec2 qr = vUv - 0.5;
+      col *= 1.0 - dot(qr, qr) * 0.55;
       col = clamp(col, 0.0, 1.0);
     }
 
@@ -135,18 +139,14 @@ const COMPOSITE_FRAG = /* glsl */ `
     s = clamp(floor(s * levels + 0.5 + b * (uPsx > 0.5 ? 1.15 : 0.9)) / levels, 0.0, 1.0);
 
     if (uRetro > 0.5) {
-      // 16-bit fantasy RPG look: shadows sink into indigo, colours get
-      // richer, then an ordered dither between the nearest palette colours.
-      float lum = dot(s, vec3(0.299, 0.587, 0.114));
-      vec3 g = mix(vec3(lum), s, 1.25);
-      g = mix(g * vec3(0.78, 0.8, 1.18) + vec3(0.015, 0.0, 0.05), g, smoothstep(0.08, 0.55, lum));
-      g = mix(g, g * vec3(1.06, 1.0, 0.9), smoothstep(0.6, 1.0, lum));
-      g = clamp(g + b * 0.075, 0.0, 1.0);
+      // Snap to the Dark Fantasy palette with an ordered dither between
+      // the nearest colours.
+      vec3 g = clamp(s + b * 0.07, 0.0, 1.0);
       float best = 1e9;
       vec3 pick = g;
       for (int i = 0; i < 32; i++) {
         vec3 d = g - uPalette[i];
-        float dd = dot(d, d * vec3(0.9, 1.2, 0.7));
+        float dd = dot(d, d * vec3(1.0, 1.25, 0.75));
         if (dd < best) { best = dd; pick = uPalette[i]; }
       }
       s = mix(s, pick, uRetro);
@@ -176,6 +176,9 @@ export class PixelPipeline {
   private readonly blurMat: THREE.ShaderMaterial;
   private readonly compositeMat: THREE.ShaderMaterial;
   bloomEnabled = true;
+  /** Blur iterations of the bloom (wider glow on high quality). */
+  bloomPasses = 2;
+  bloomStrength = 0.8;
   readonly grade: GradeState = {
     tint: new THREE.Color(1, 1, 1),
     flash: 0,
@@ -312,8 +315,8 @@ export class PixelPipeline {
       const bw = this.rtBloomA.width;
       const bh = this.rtBloomA.height;
       const dir = this.blurMat.uniforms.uDir.value as THREE.Vector2;
-      for (let i = 0; i < 2; i++) {
-        const spread = i === 0 ? 1 : 2;
+      for (let i = 0; i < this.bloomPasses; i++) {
+        const spread = i === 0 ? 1 : i === 1 ? 2 : 3.5;
         this.blurMat.uniforms.tInput.value = this.rtBloomA.texture;
         dir.set(spread / bw, 0);
         this.pass(this.blurMat, this.rtBloomB);
@@ -322,7 +325,7 @@ export class PixelPipeline {
         this.pass(this.blurMat, this.rtBloomA);
       }
       u.tBloom.value = this.rtBloomA.texture;
-      u.uBloom.value = 0.8;
+      u.uBloom.value = this.bloomStrength;
     } else {
       u.tBloom.value = this.rtBloomA.texture;
       u.uBloom.value = 0;

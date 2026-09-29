@@ -9,6 +9,8 @@ import { UPGRADE_MAP } from '../data/upgrades';
 import { INGREDIENTS } from '../data/ingredients';
 import { clamp } from '../core/math';
 import { defaultCat, type CatLook } from '../data/cat';
+import { BASIC_RECIPES } from '../data/potions';
+import { defaultPets, type PetsState } from '../data/pets';
 
 export interface DiscoveryEntry {
   day: number;
@@ -83,6 +85,12 @@ export class GameState {
   celebsServed: string[] = [];
   /** What was bought from the wandering merchant on his current visit. */
   merchant: { day: number; bought: Record<string, number> } = { day: 0, bought: {} };
+  /** Recipes the apprentice knows how to brew (shown in the book). */
+  learned: string[] = [...BASIC_RECIPES];
+  /** Furniture on the shop's free spots (slot id → piece id). */
+  furniture: Record<string, string> = {};
+  /** The jar slime's and the dog's names and colours. */
+  pets: PetsState = defaultPets();
   /** Unlocked achievements (id → day). */
   achievements: Record<string, number> = {};
   /** Misc. counters the achievements look at (cat pets, trades, regions…). */
@@ -93,6 +101,16 @@ export class GameState {
   // -------------------------------------------------------------------------
   // Economy
   // -------------------------------------------------------------------------
+
+  knowsRecipe(id: string): boolean {
+    return this.learned.includes(id) || !!this.discovered[id];
+  }
+
+  learnRecipe(id: string): boolean {
+    if (this.learned.includes(id)) return false;
+    this.learned.push(id);
+    return true;
+  }
 
   /** Bump one of the achievement counters. */
   count(key: string, n = 1): void {
@@ -264,6 +282,9 @@ export class GameState {
       merchant: this.merchant,
       achievements: this.achievements,
       counters: this.counters,
+      learned: this.learned,
+      furniture: this.furniture,
+      pets: this.pets,
     };
   }
 
@@ -294,6 +315,10 @@ export class GameState {
     this.merchant = g.merchant ?? { day: 0, bought: {} };
     this.achievements = g.achievements ?? {};
     this.counters = g.counters ?? {};
+    this.learned = [...new Set([...BASIC_RECIPES, ...(g.learned ?? [])])];
+    this.furniture = g.furniture ?? {};
+    const pets = defaultPets();
+    this.pets = { slime: { ...pets.slime, ...(g.pets?.slime ?? {}) }, dog: { ...pets.dog, ...(g.pets?.dog ?? {}) } };
   }
 }
 

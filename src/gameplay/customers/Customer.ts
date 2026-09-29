@@ -185,7 +185,8 @@ export class Customer extends Entity {
         p.x += (dx / d) * step;
         p.z += (dz / d) * step;
         this.sprite.play('walk');
-        if (Math.abs(dx) > 0.05) this.sprite.facing = dx > 0 ? 1 : -1;
+        // (Nasreddin Hodja rides – and walks – backwards.)
+        if (Math.abs(dx) > 0.05) this.sprite.facing = (dx > 0 ? 1 : -1) * (this.def.backwards ? -1 : 1);
         // footsteps
         ctx.vfx.rate(`steps${this.uid}`, 3.5, dt, () => ctx.audio.play('footstep', { x: p.x, volume: 0.5, pitch: 0.8 + this.def.height * 0.1, minGap: 0.05 }));
       }

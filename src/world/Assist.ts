@@ -89,6 +89,16 @@ export function defaultAssistTargets(): AssistTarget[] {
       drop: dropStraight,
     },
     {
+      // Tools go back to their own spot on the workbench.
+      id: 'toolHome',
+      accepts: (_ctx, e) => e.kind === 'knife' || e.kind === 'hammer',
+      point: (_ctx, e) => (e as unknown as { home: THREE.Vector3 }).home.clone(),
+      radius: 0.35,
+      hover: 0.06,
+      hint: 'assist.toolHome',
+      drop: dropStraight,
+    },
+    {
       id: 'shelf',
       accepts: (_ctx, e) => e.kind === 'flask' && !!(e as unknown as { potion: unknown }).potion,
       point: (ctx, e) => {

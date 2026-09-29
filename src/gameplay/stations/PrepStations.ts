@@ -60,6 +60,9 @@ abstract class Tool extends Entity {
   readonly home: THREE.Vector3;
   readonly homeYaw: number;
   private homeTimer = 0;
+  /** Flying back to its place on the table. */
+  private returning = false;
+  private returnT = 0;
 
   constructor(
     ctx: GameContext,
@@ -95,6 +98,8 @@ abstract class Tool extends Entity {
 
   override onPicked(): void {
     // While held, pass through ingredients (so the blade can go through them).
+    this.returning = false;
+    this.homeTimer = 0;
     this.body?.setCollisionFilter(CG.TOOL, CG.STATIC);
   }
 
@@ -143,17 +148,55 @@ abstract class Tool extends Entity {
   protected swingVisual(_s: number): void {}
 
   override update(ctx: GameContext, dt: number): void {
-    // Tools that fall off the table float back home after a while.
     const p = this.object.position;
-    if (!this.held && (p.y < 0.3 || p.y < -1)) {
+    const body = this.body;
+    if (this.returning && body && !this.held) {
+      this.flyHome(ctx, dt);
+      return;
+    }
+    // Tools that fall on the floor (or under the table) fly back to their
+    // place on the table after a moment.
+    const away = p.distanceTo(this.home) > 0.9;
+    if (!this.held && (p.y < 0.45 || p.y < -1 || (away && p.y < 0.75))) {
       this.homeTimer += dt;
-      if (this.homeTimer > 6 || p.y < -1) {
+      if (p.y < -1) {
         this.homeTimer = 0;
-        this.body?.teleport(this.home, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.homeYaw));
-        if (this.body) ctx.sync.snap(this.body);
-        ctx.vfx.magic(this.home, '#b55088', 8);
+        body?.teleport(this.home, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.homeYaw));
+        if (body) ctx.sync.snap(body);
+      } else if (this.homeTimer > 1.6 && body) {
+        this.homeTimer = 0;
+        this.returning = true;
+        this.returnT = 0;
+        body.setCollisionFilter(CG.TOOL, 0);
+        body.setGravityFactor(0);
+        ctx.audio.play('sparkle', { x: p.x, volume: 0.6 });
       }
     } else this.homeTimer = 0;
+  }
+
+  /** Float up out of wherever it fell, then glide onto its spot. */
+  private flyHome(ctx: GameContext, dt: number): void {
+    const body = this.body!;
+    const p = this.object.position;
+    this.returnT += dt;
+    const lift = this.home.y + 0.45;
+    const horiz = Math.hypot(this.home.x - p.x, this.home.z - p.z);
+    const goal = new THREE.Vector3(this.home.x, horiz > 0.15 ? Math.max(lift, p.y) : this.home.y + 0.02, this.home.z);
+    if (horiz > 0.15 && p.y < lift - 0.1) goal.set(p.x, lift, p.z);
+    const v = goal.sub(p).multiplyScalar(5);
+    if (v.length() > 4.5) v.setLength(4.5);
+    body.setLinearVelocity(v);
+    body.setAngularVelocity({ x: 0, y: 0, z: 0 });
+    ctx.vfx.rate(`toolTrail${this.id}`, 14, dt, () => ctx.vfx.magic(p.clone(), '#b55088', 1));
+    if ((horiz < 0.04 && Math.abs(p.y - this.home.y) < 0.06) || this.returnT > 4) {
+      this.returning = false;
+      body.teleport(this.home, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.homeYaw));
+      ctx.sync.snap(body);
+      body.setLinearVelocity({ x: 0, y: 0, z: 0 });
+      body.setGravityFactor(1);
+      body.setCollisionFilter(CG.TOOL, CG.STATIC | CG.ITEM);
+      ctx.vfx.magic(this.home, '#b55088', 8);
+    }
   }
 }
 

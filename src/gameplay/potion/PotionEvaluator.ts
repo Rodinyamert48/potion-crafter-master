@@ -84,6 +84,7 @@ export function recipeMismatch(recipe: RecipeDef, snap: BrewSnapshot): string | 
     }
   }
   if (!inRange(snap.brewTemp, recipe.brewTemp)) return `brewTemp=${snap.brewTemp.toFixed(1)}`;
+  if (!inRange(snap.water, recipe.water)) return `water=${snap.water.toFixed(2)}`;
   if (recipe.ingredientTemp) {
     for (const [id, cond] of Object.entries(recipe.ingredientTemp)) {
       const t = snap.ingredientTemps[id];

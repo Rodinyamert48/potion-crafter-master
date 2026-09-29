@@ -35,7 +35,7 @@ export interface UIHooks {
   readonly panelOpen: boolean;
 }
 
-export type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat' | 'merchant' | 'achievements';
+export type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat' | 'merchant' | 'achievements' | 'pet' | 'admin';
 
 export interface Bounds {
   minX: number;

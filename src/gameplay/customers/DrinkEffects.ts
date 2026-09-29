@@ -8,7 +8,8 @@ import type { DrinkEffectId } from '../../data/types';
 import type { Customer } from './Customer';
 import type { Judgement } from './Economy';
 import { rng } from '../../core/Random';
-import { cameraPunch, goldRain, sprinkleSalt } from './Celebrity';
+import { cameraPunch, fishJump, goldRain, siuuuJump, sprinkleSalt } from './Celebrity';
+import { hairTuft } from '../../rendering/three/models/hairTuft';
 
 export interface DrinkEffect {
   update(ctx: GameContext, c: Customer, dt: number): void;
@@ -29,16 +30,22 @@ class TimedEffect implements DrinkEffect {
     private readonly finish: ((ctx: GameContext, c: Customer) => void) | null = null,
   ) {}
   update(ctx: GameContext, c: Customer, dt: number): void {
-    if (this.done) return;
-    this.t += dt;
-    this.step(ctx, c, this.t, dt, this);
-    if (!this.spoke && this.t > 0.6 && this.speak) {
-      this.spoke = true;
-      this.speak(ctx, c);
-    }
-    if (this.t >= this.duration) {
-      this.done = true;
-      this.finish?.(ctx, c);
+    // Small sub-steps so the short timing windows of the effects (t < 0.05,
+    // 0.8 < t < 0.85…) are never skipped on a slow frame.
+    let left = dt;
+    while (left > 1e-6 && !this.done) {
+      const d = Math.min(0.03, left);
+      left -= d;
+      this.t += d;
+      this.step(ctx, c, this.t, d, this);
+      if (!this.spoke && this.t > 0.6 && this.speak) {
+        this.spoke = true;
+        this.speak(ctx, c);
+      }
+      if (this.t >= this.duration) {
+        this.done = true;
+        this.finish?.(ctx, c);
+      }
     }
   }
 }
@@ -338,6 +345,105 @@ export function createDrinkEffect(ctx: GameContext, c: Customer, drink: DrinkEff
         },
         speak,
       );
+    case 'siuuu':
+      return new TimedEffect(
+        3.2,
+        (cx, cu, t) => {
+          if (t < 0.05) {
+            mat.emissive.set('#e43b44');
+            siuuuJump(cx, cu);
+            cx.vfx.stars(head(), '#fee761', 24);
+          }
+          mat.emissiveIntensity = t < 1.6 ? 0.35 : 0.12;
+        },
+        speak,
+        restore,
+      );
+    case 'chefkiss':
+      return new TimedEffect(
+        3,
+        (cx, cu, t) => {
+          if (t < 0.05) cu.sprite.play('surprised');
+          if (t > 0.8 && t < 0.85) {
+            cu.sprite.play('happy');
+            cx.vfx.stars(head(), '#fee761', 18);
+            cx.audio.play('sparkle', { x: cu.object.position.x });
+            cu.say(cx, '👨‍🍳💋', 'happy', 1.5);
+          }
+        },
+        speak,
+      );
+    case 'ayran':
+      return new TimedEffect(
+        3,
+        (cx, cu, t) => {
+          // A white foam moustache…
+          if (t < 0.05) cx.vfx.puff(head().add(new THREE.Vector3(cu.sprite.facing * 0.1, -0.12, 0.1)), '#ffffff', 10, 0.4);
+          // …and a mighty burp.
+          if (t > 1.1 && t < 1.15) {
+            cx.audio.play('frogCroak', { x: cu.object.position.x, pitch: 0.45, volume: 0.7 });
+            cu.say(cx, 'OHH BE!', 'happy', 1.6);
+            cx.bus.emit('shake', { amount: 0.06 });
+          }
+        },
+        speak,
+      );
+    case 'bigsmile':
+      return new TimedEffect(
+        3.2,
+        (cx, cu, t, dt) => {
+          if (t < 0.05) {
+            cu.sprite.play('happy');
+            cx.audio.play('cheer', { x: cu.object.position.x, volume: 0.6 });
+          }
+          if (t < 2.4) cx.vfx.rate(`smile${cu.uid}`, 3, dt, () => cx.vfx.heartBurst(head(), '#feae34'));
+        },
+        speak,
+      );
+    case 'yatutarsa':
+      return new TimedEffect(
+        3.4,
+        (cx, cu, t) => {
+          if (t < 0.05) {
+            cx.vfx.runes(cu.object.position.clone().setY(0.05), '#8fb8de', 6, 0.9);
+            cx.audio.play('splash', { x: cu.object.position.x, amount: 0.5 });
+          }
+          // He turns around… and around again. Did it work?
+          if ((t > 0.9 && t < 0.95) || (t > 1.8 && t < 1.85)) cu.sprite.facing = -cu.sprite.facing;
+          if (t > 1.2 && t < 1.25) cu.say(cx, '…?', 'neutral', 1.2);
+        },
+        speak,
+      );
+    case 'hamsi':
+      return new TimedEffect(
+        3,
+        (cx, cu, t) => {
+          if (t < 0.05) {
+            fishJump(cx, head().add(new THREE.Vector3(0, -0.2, 0.15)), 12);
+            cx.audio.play('splash', { x: cu.object.position.x, amount: 0.6 });
+          }
+          if (t > 0.9 && t < 0.95) cu.say(cx, 'HAMSİİİ! 🐟', 'happy', 1.6);
+        },
+        speak,
+      );
+    case 'hair': {
+      let tuft: THREE.Object3D | null = null;
+      return new TimedEffect(
+        3.2,
+        (cx, cu, t) => {
+          if (!tuft) {
+            // Top of the head: the sprite frames leave ~20% headroom above it.
+            tuft = hairTuft('#3e2731', cu.sprite.heightM * 0.8);
+            tuft.scale.setScalar(0.01);
+            cu.object.add(tuft);
+            cx.audio.play('magic', { x: cu.object.position.x, pitch: 1.3 });
+            cx.vfx.magic(head(), '#c9d6ff', 12);
+          }
+          if (tuft) tuft.scale.setScalar(Math.max(0.01, Math.min(1, t / 1.2)) * (1 + 0.08 * Math.sin(t * 9)));
+        },
+        speak,
+      );
+    }
     case 'sludge':
     case 'scorched':
     case 'water':

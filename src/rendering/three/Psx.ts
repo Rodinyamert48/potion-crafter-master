@@ -1,4 +1,4 @@
-// PS1 / PSX style for the "PS1 Horror" graphics setting: vertices snap to a
+// PS1 / PSX style for the "PS1" graphics setting: vertices snap to a
 // coarse screen grid (the famous wobble) and textures are mapped affinely
 // (without perspective correction, so they swim and warp like on the
 // original hardware). Implemented as a global shader patch on every

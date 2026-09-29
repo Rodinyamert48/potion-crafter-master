@@ -231,4 +231,54 @@ describe('celebrity specials are reachable', () => {
     const sim = new BrewSim().water(2).fire(0.3).heatTo(30).add('moon_flower', 'whole').add('frost_crystal', 'whole').stirAt(1.3).run(60);
     expectRecipe(sim, 'breathtaking', 2);
   });
+
+  it('SIUUU: dragon scale + moon flower, boiling hot and stirred hard', () => {
+    const sim = new BrewSim().water(2).fire(1).heatTo(90).add('dragon_scale', 'shards', 3, 1 / 3).add('moon_flower', 'whole').stirAt(2.6).run(50);
+    expectRecipe(sim, 'siuuu', 2);
+  });
+
+  it('…a lazy stir is no SIUUU', () => {
+    const sim = new BrewSim().water(2).fire(1).heatTo(90).add('dragon_scale', 'shards', 3, 1 / 3).add('moon_flower', 'whole').stirAt(1.5).run(50);
+    expect(sim.result().recipeId).not.toBe('siuuu');
+  });
+
+  it('Perfectly Cooked: sliced mushroom + frost crystal at 60–75°C, calm', () => {
+    const sim = new BrewSim().water(2).fire(0.65).heatTo(65).addPieces('glowing_mushroom', 'sliced', 1, 3).add('frost_crystal', 'whole').stirAt(1.3).run(60);
+    expectRecipe(sim, 'perfect_bite', 2);
+  });
+
+  it('…raw (cold) is not perfectly cooked', () => {
+    const sim = new BrewSim().water(2).fire(0.3).heatTo(30).addPieces('glowing_mushroom', 'sliced', 1, 3).add('frost_crystal', 'whole').stirAt(1.3).run(60);
+    expect(sim.result().recipeId).not.toBe('perfect_bite');
+  });
+
+  it('Grumpy Ayran: dried bat wing + frost crystal, ice-cold', () => {
+    const sim = new BrewSim().water(2).fire(0.3).heatTo(30).add('bat_wing', 'dried').add('frost_crystal', 'whole').stirAt(1.3).run(60);
+    expectRecipe(sim, 'grumpy_ayran', 2);
+  });
+
+  it('Giant Portion: 3+ litres, dragon scale + mushroom, simmered', () => {
+    const sim = new BrewSim().water(3.5).fire(0.8).heatTo(75).add('dragon_scale', 'ground').addPieces('glowing_mushroom', 'sliced', 1, 3).stirAt(1.5).run(60);
+    expectRecipe(sim, 'giant_portion', 2);
+  });
+
+  it('What If It Works: lots of water and a mashed mushroom, lukewarm', () => {
+    const sim = new BrewSim().water(3.5).fire(0.35).heatTo(35).add('glowing_mushroom', 'mashed').stirAt(1.3).run(60);
+    expectRecipe(sim, 'ya_tutarsa', 2);
+  });
+
+  it('…a normal amount of water just makes a Healing Potion', () => {
+    const sim = new BrewSim().water(2).fire(0.55).heatTo(40).add('glowing_mushroom', 'mashed').stirAt(1.3).run(60);
+    expect(sim.result().recipeId).not.toBe('ya_tutarsa');
+  });
+
+  it('Anchovy Potion: bog toad eye + frost crystal, cold', () => {
+    const sim = new BrewSim().water(2).fire(0.35).heatTo(35).add('bog_toad_eye', 'whole').add('frost_crystal', 'whole').stirAt(1.3).run(60);
+    expectRecipe(sim, 'hamsi', 2);
+  });
+
+  it('Thick Hair Tonic: dried bat wing + moon flower, warm', () => {
+    const sim = new BrewSim().water(2).fire(0.6).heatTo(55).add('bat_wing', 'dried').add('moon_flower', 'whole').stirAt(1.3).run(60);
+    expectRecipe(sim, 'thick_hair', 2);
+  });
 });

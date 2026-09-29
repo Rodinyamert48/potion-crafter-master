@@ -7,6 +7,7 @@ import type { GameState } from '../gameplay/GameState';
 import { RECIPES } from './potions';
 import { REGIONS } from './regions';
 import { CUSTOMERS } from './customers';
+import { FURNITURE_SLOTS } from './furniture';
 
 export interface AchievementDef {
   id: string;
@@ -25,6 +26,8 @@ const c = (s: GameState, k: string) => s.counters[k] ?? 0;
 const discoveredPotions = (s: GameState) => RECIPES.filter((r) => r.kind === 'potion' && s.discovered[r.id]).length;
 const ALL_POTIONS = RECIPES.filter((r) => r.kind === 'potion').length;
 const CELEBS = Object.values(CUSTOMERS).filter((d) => d.celebrity).map((d) => d.id);
+const TURKISH = ['celeb_recep', 'celeb_burak', 'celeb_nasreddin', 'celeb_temel', 'celeb_keloglan'];
+const SECRET_IDS = RECIPES.filter((r) => r.secret).map((r) => r.id);
 
 export const ACHIEVEMENTS: AchievementDef[] = [
   {
@@ -226,11 +229,99 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'celeb_all',
     name: { en: 'Celebrity Club', tr: 'Ünlüler Kulübü' },
-    description: { en: 'Serve all five famous guests.', tr: 'Beş ünlü konuğun hepsine hizmet et.' },
+    description: { en: 'Serve every famous guest the potion they came for.', tr: 'Bütün ünlü konuklara istedikleri iksiri ver.' },
     icon: 'star',
     check: (s) => CELEBS.every((id) => s.celebsServed.includes(id)),
     progress: (s) => [s.celebsServed.filter((id) => CELEBS.includes(id)).length, CELEBS.length],
   },
 ];
+
+ACHIEVEMENTS.push(
+  {
+    id: 'secret_student',
+    name: { en: 'Secret Student', tr: 'Gizli Öğrenci' },
+    description: { en: 'Learn a secret recipe from the wandering merchant.', tr: 'Gezgin tüccardan bir gizli tarif öğren.' },
+    icon: 'book',
+    check: (s) => c(s, 'recipesLearned') >= 1,
+  },
+  {
+    id: 'all_secrets',
+    name: { en: 'Keeper of Secrets', tr: 'Sırların Bekçisi' },
+    description: { en: 'Learn every secret recipe.', tr: 'Bütün gizli tarifleri öğren.' },
+    icon: 'book',
+    check: (s) => SECRET_IDS.every((id) => s.knowsRecipe(id)),
+    progress: (s) => [SECRET_IDS.filter((id) => s.knowsRecipe(id)).length, SECRET_IDS.length],
+  },
+  {
+    id: 'decorator',
+    name: { en: 'Home Sweet Shop', tr: 'Yuva Gibi Dükkân' },
+    description: { en: 'Place a piece of furniture.', tr: 'Bir mobilya yerleştir.' },
+    icon: 'gear',
+    check: (s) => Object.keys(s.furniture).length >= 1,
+  },
+  {
+    id: 'interior',
+    name: { en: 'Interior Wizard', tr: 'İç Mimar Büyücü' },
+    description: { en: 'Fill every furniture spot in the shop.', tr: 'Dükkândaki bütün mobilya yerlerini doldur.' },
+    icon: 'gear',
+    check: (s) => Object.keys(s.furniture).length >= FURNITURE_SLOTS.length,
+    progress: (s) => [Object.keys(s.furniture).length, FURNITURE_SLOTS.length],
+  },
+  {
+    id: 'pet_friends',
+    name: { en: 'Best Friends', tr: 'Can Dostlar' },
+    description: { en: 'Pet the cat, the slime and the dog.', tr: 'Kediyi, balçığı ve köpeği sev.' },
+    icon: 'heart',
+    check: (s) => c(s, 'catPets') >= 1 && c(s, 'slimePets') >= 1 && c(s, 'dogPets') >= 1,
+  },
+  {
+    id: 'dog_friend',
+    name: { en: 'Good Boy!', tr: 'Aferin Oğluma!' },
+    description: { en: 'Pet the master’s dog 20 times.', tr: 'Ustanın köpeğini 20 kez sev.' },
+    icon: 'heart',
+    check: (s) => c(s, 'dogPets') >= 20,
+    progress: (s) => [c(s, 'dogPets'), 20],
+  },
+  {
+    id: 'siuuu',
+    name: { en: 'SIUUU!', tr: 'SIUUU!' },
+    description: { en: 'Make Cristiano Ronaldo celebrate.', tr: 'Cristiano Ronaldo’yu sevince boğ.' },
+    icon: 'star',
+    secret: true,
+    check: (s) => s.celebsServed.includes('celeb_ronaldo'),
+  },
+  {
+    id: 'turkish_legends',
+    name: { en: 'Legends of Anatolia', tr: 'Anadolu Efsaneleri' },
+    description: { en: 'Serve Recep, Burak, the Hodja, Temel and Keloğlan.', tr: 'Recep, Burak, Hoca, Temel ve Keloğlan’a hizmet et.' },
+    icon: 'star',
+    check: (s) => TURKISH.every((id) => s.celebsServed.includes(id)),
+    progress: (s) => [TURKISH.filter((id) => s.celebsServed.includes(id)).length, TURKISH.length],
+  },
+  {
+    id: 'lucky_clover',
+    name: { en: 'Four-Leaf Clover', tr: 'Dört Yapraklı Yonca' },
+    description: { en: 'Pure luck: a lucky clover drifted through your shop.', tr: 'Tamamen şans: dükkânından bir şans yoncası süzüldü.' },
+    icon: 'star',
+    secret: true,
+    check: (s) => c(s, 'lucky') >= 1,
+  },
+  {
+    id: 'nobert_caught',
+    name: { en: 'Stop, Thief!', tr: 'Dur, Hırsız!' },
+    description: { en: 'Catch Nobert the dwarf in the act.', tr: 'Cüce Nobert’i suçüstü yakala.' },
+    icon: 'bell',
+    secret: true,
+    check: (s) => c(s, 'nobertCaught') >= 1,
+  },
+  {
+    id: 'nobert_robbed',
+    name: { en: 'Where Did Everything Go?', tr: 'Her Şey Nereye Gitti?' },
+    description: { en: 'Get robbed by Nobert.', tr: 'Nobert tarafından soyul.' },
+    icon: 'bag',
+    secret: true,
+    check: (s) => c(s, 'nobertRobbed') >= 1,
+  },
+);
 
 export const ACHIEVEMENT_MAP: Record<string, AchievementDef> = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));

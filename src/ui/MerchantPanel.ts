@@ -11,7 +11,7 @@ import { iconURL, ingredientIconURL, potionArtURL } from './pixelArt';
 import { t, tr } from '../core/i18n';
 import { stars } from '../gameplay/potion/FlaskItem';
 
-type Tab = 'buy' | 'sell';
+type Tab = 'buy' | 'sell' | 'recipes';
 
 export class MerchantPanel implements Panel {
   readonly el: HTMLElement;
@@ -65,6 +65,7 @@ export class MerchantPanel implements Panel {
     for (const [id, label] of [
       ['buy', t('merchant.tabBuy')],
       ['sell', t('merchant.tabSell')],
+      ['recipes', t('merchant.tabRecipes')],
     ] as Array<[Tab, string]>) {
       const b = h('button', id === this.tab ? 'on' : '', label);
       b.addEventListener('click', () => {
@@ -76,7 +77,51 @@ export class MerchantPanel implements Panel {
     }
     this.body.innerHTML = '';
     if (this.tab === 'buy') for (const w of this.merchant.stock()) this.body.appendChild(this.wareCard(w));
-    else this.renderSell();
+    else if (this.tab === 'sell') this.renderSell();
+    else this.renderRecipes();
+  }
+
+  private renderRecipes(): void {
+    const offers = this.merchant.recipeOffers();
+    if (offers.length === 0) {
+      this.body.appendChild(h('p', 'wb-merchant-empty', t('merchant.allRecipes')));
+      return;
+    }
+    this.body.appendChild(h('p', 'wb-merchant-empty', t('merchant.recipesSub')));
+    for (const r of offers) {
+      const have = this.merchant.haveFor(r);
+      const c = h('div', 'wb-card wb-recipe-card');
+      const tt = h('div', 'title');
+      const img = h('img') as HTMLImageElement;
+      img.src = potionArtURL(r.bottle, r.color, r.color2, true);
+      tt.append(img, h('span', undefined, `🔒 ${tr(r.name)}`));
+      c.appendChild(tt);
+      c.appendChild(h('div', 'desc', tr(r.hint)));
+      const cost = h('div', 'wb-recipe-cost');
+      for (const need of r.learnCost ?? []) {
+        const nr = RECIPE_MAP[need.recipe];
+        const n = have[need.recipe] ?? 0;
+        const chip = h('span', `wb-recipe-chip${n >= need.count ? ' ok' : ''}`);
+        const pi = h('img') as HTMLImageElement;
+        pi.src = potionArtURL(nr.bottle, nr.color, nr.color2);
+        chip.append(pi, h('span', undefined, `${Math.min(n, need.count)}/${need.count} ${tr(nr.name)}`));
+        cost.appendChild(chip);
+      }
+      c.appendChild(cost);
+      const row = h('div', 'row');
+      row.appendChild(h('span', 'desc', `${t('book.price')}: ${r.price}`));
+      const ok = this.merchant.canTeach(r);
+      const btn = h('button', 'wb-btn primary', t('merchant.trade')) as HTMLButtonElement;
+      btn.disabled = !ok;
+      btn.title = ok ? '' : t('merchant.needPotions');
+      btn.addEventListener('click', () => {
+        this.merchant.teach(r.id);
+        this.render();
+      });
+      row.appendChild(btn);
+      c.appendChild(row);
+      this.body.appendChild(c);
+    }
   }
 
   private wareCard(w: Ware): HTMLElement {

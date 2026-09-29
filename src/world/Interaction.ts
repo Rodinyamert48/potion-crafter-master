@@ -126,6 +126,10 @@ export class PhysicsGrab implements Grab {
   private smoothY: number | null = null;
   private released = false;
   private readonly filter: { group: number; mask: number } | null = null;
+  /** Seconds the item has been blocked on its way to the cursor. */
+  private stuckT = 0;
+  /** Collision mask to restore after squeezing past an obstacle. */
+  private unstickMask: number | null = null;
 
   constructor(
     readonly entity: Entity,
@@ -251,6 +255,7 @@ export class PhysicsGrab implements Grab {
     }
     const max = 9 * Math.max(1, this.stiffness * 0.8);
     if (this.vel.length() > max) this.vel.setLength(max);
+    this.unstick(body, goal, pos, _dt);
     body.getLinearVelocity(tmpV2);
     tmpV2.lerp(this.vel, 0.8);
     body.setLinearVelocity(tmpV2);
@@ -276,11 +281,40 @@ export class PhysicsGrab implements Grab {
     }
   }
 
+  /** Something (a table edge, the underside of a shelf) keeps the item from
+   *  reaching the cursor: let it slip through the furniture until it is back
+   *  where it should be, then make it solid again. */
+  private unstick(body: NonNullable<Entity['body']>, goal: THREE.Vector3, pos: THREE.Vector3, dt: number): void {
+    const dist = goal.distanceTo(pos);
+    if (this.unstickMask !== null) {
+      if (dist < 0.1 || this.stuckT > 2.5) {
+        body.setCollisionFilter(body.group, this.unstickMask);
+        this.unstickMask = null;
+        this.stuckT = 0;
+      } else this.stuckT += dt;
+      return;
+    }
+    body.getLinearVelocity(tmpV2);
+    // Only when it is held back on its way up or across – pressing an item
+    // down onto something (a knife on the board) must stay solid.
+    const blocked = dist > 0.22 && tmpV2.length() < 0.35 && goal.y > pos.y - 0.05;
+    this.stuckT = blocked ? this.stuckT + dt : Math.max(0, this.stuckT - dt * 2);
+    if (this.stuckT > 0.3) {
+      this.unstickMask = body.mask;
+      this.stuckT = 0;
+      body.setCollisionFilter(body.group, 0);
+    }
+  }
+
   release(ctx: GameContext): void {
     if (this.released) return;
     this.released = true;
     const body = this.entity.body;
     this.entity.held = false;
+    if (body && body.alive && this.unstickMask !== null) {
+      body.setCollisionFilter(body.group, this.unstickMask);
+      this.unstickMask = null;
+    }
     if (this.entity.ghostWhenHeld) this.entity.object.scale.setScalar(1);
     if (body && body.alive) {
       if (this.filter) body.setCollisionFilter(this.filter.group, this.filter.mask);

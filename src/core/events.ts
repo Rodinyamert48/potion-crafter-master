@@ -24,6 +24,11 @@ export interface GameEvents {
   'merchant:arrived': Record<string, never>;
   'merchant:trade': { kind: 'buy' | 'sell'; amount: number };
   'cat:customized': Record<string, never>;
+  'pet:petted': { kind: 'slime' | 'dog'; count: number };
+  'pet:open': { kind: 'slime' | 'dog' };
+  'pet:customized': { kind: 'slime' | 'dog' };
+  'nobert:arrived': Record<string, never>;
+  'recipe:learned': { id: string; source: 'merchant' | 'guest' | 'admin' };
   'trip:done': { region: string };
   achievement: { id: string };
 
@@ -62,7 +67,7 @@ export interface GameEvents {
   chaos: { amount: number };
   shake: { amount: number };
   flash: { amount: number; color?: string };
-  purchase: { id: string; kind: 'supply' | 'upgrade' };
+  purchase: { id: string; kind: 'supply' | 'upgrade' | 'furniture' };
   'bell:rung': Record<string, never>;
   'sign:clicked': Record<string, never>;
   'ui:panel': { panel: string | null };

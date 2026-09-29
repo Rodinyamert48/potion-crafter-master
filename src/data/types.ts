@@ -161,7 +161,14 @@ export type DrinkEffectId =
   | 'salt'
   | 'goldrain'
   | 'eyebrow'
-  | 'breathtaking';
+  | 'breathtaking'
+  | 'siuuu'
+  | 'chefkiss'
+  | 'ayran'
+  | 'bigsmile'
+  | 'yatutarsa'
+  | 'hamsi'
+  | 'hair';
 
 export type BottleShape = 'round' | 'tall' | 'flask' | 'vial' | 'heart' | 'skull';
 
@@ -204,13 +211,23 @@ export interface RecipeDef {
   maxTier?: 1 | 2 | 3 | 4;
   hint: LocalizedText;
   drink: DrinkEffectId;
+  /** Not known at the start: learned by trading potions with the merchant. */
+  secret?: boolean;
+  /** Potions the wandering merchant wants in exchange for this recipe. */
+  learnCost?: Array<{ recipe: string; count: number }>;
+  /** A famous guest's special: learned when they order it. */
+  special?: boolean;
+  /** Required amount of liquid in litres. */
+  water?: ShareCondition;
+  /** Ingredients shown on the book page ("id" or "id:state/state"). */
+  book?: string[];
 }
 
 // ---------------------------------------------------------------------------
 // Characters
 // ---------------------------------------------------------------------------
 
-export type Archetype = 'witch' | 'knight' | 'giant' | 'elf' | 'goblin' | 'vampire' | 'villager' | 'guard' | 'wizard' | 'celeb' | 'strongman';
+export type Archetype = 'witch' | 'knight' | 'giant' | 'elf' | 'goblin' | 'vampire' | 'villager' | 'guard' | 'wizard' | 'celeb' | 'strongman' | 'dwarf';
 
 export interface CharacterLook {
   skin: string;
@@ -274,9 +291,11 @@ export interface CustomerDef {
   celebrity?: CelebId;
   /** Walking speed multiplier. */
   walkSpeed?: number;
+  /** Walks backwards (faces away from where he is going). */
+  backwards?: boolean;
 }
 
-export type CelebId = 'speed' | 'saltbae' | 'beast' | 'rock' | 'keanu';
+export type CelebId = 'speed' | 'saltbae' | 'beast' | 'rock' | 'keanu' | 'ronaldo' | 'gordon' | 'recep' | 'burak' | 'nasreddin' | 'temel' | 'keloglan';
 
 // ---------------------------------------------------------------------------
 // Quests

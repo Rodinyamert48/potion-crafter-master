@@ -173,19 +173,29 @@ export class CustomerSystem implements GameSystem {
     }
     const guest = day > 1 ? this.pickCelebrity(day) : null;
     if (guest) visits.push(guest);
+    // From day 5 on a second famous guest sometimes turns up the same day.
+    if (guest && day >= 5 && this.rng.chance(0.4)) {
+      const second = this.pickCelebrity(day, guest.customerId);
+      if (second && Math.abs(second.hour - guest.hour) > 1.5) visits.push(second);
+    }
     for (const e of extra) visits.push(e);
     visits.sort((a, b) => a.hour - b.hour);
     this.visits = visits;
   }
 
-  /** At most one famous guest a day: whoever is still waiting for their
-   *  potion comes (again), otherwise now and then someone drops by. */
-  private pickCelebrity(day: number): Visit | null {
+  /** Famous guests: the ones still waiting for their potion take turns
+   *  (whoever was here longest ago comes first), otherwise now and then
+   *  someone drops by again. */
+  private pickCelebrity(day: number, except?: string): Visit | null {
     const state = this.ctx.state;
-    const celebs = Object.values(CUSTOMERS).filter((c) => c.celebrity && c.minDay <= day);
-    const unserved = celebs.filter((c) => !state.celebsServed.includes(c.id)).sort((a, b) => a.minDay - b.minDay);
+    const celebs = Object.values(CUSTOMERS).filter((c) => c.celebrity && c.minDay <= day && c.id !== except);
+    const lastVisit = (id: string) => state.counters[`visit_${id}`] ?? 0;
+    const unserved = celebs
+      .filter((c) => !state.celebsServed.includes(c.id))
+      .sort((a, b) => lastVisit(a.id) - lastVisit(b.id) || a.minDay - b.minDay);
     const def = unserved[0] ?? (celebs.length > 0 && this.rng.chance(0.3) ? this.rng.pick(celebs) : undefined);
     if (!def) return null;
+    state.counters[`visit_${def.id}`] = day;
     const ranges: Record<DayPhase, [number, number]> = { morning: [8.2, 10.4], afternoon: [11.5, 15.5], evening: [17.2, 19.8], night: [21, 21] };
     const phase = this.rng.pick(def.phases.filter((p) => p !== 'night'));
     const [a, b] = ranges[phase ?? 'afternoon'];
@@ -316,6 +326,14 @@ export class CustomerSystem implements GameSystem {
       // Hearing what customers want reveals hints in the Potion Book.
       for (const r of Object.values(RECIPE_MAP)) {
         if (r.kind === 'potion' && c.request.tags.every((tag) => r.tags.includes(tag)) && !ctx.state.hinted.includes(r.id)) ctx.state.hinted.push(r.id);
+      }
+      // A famous guest explains their special – it goes straight into the book.
+      for (const id of c.request.anyOf ?? []) {
+        const r = RECIPE_MAP[id];
+        if (r?.special && ctx.state.learnRecipe(id)) {
+          ctx.later(1.2, () => ctx.bus.emit('toast', { text: t('celeb.learned', { name: tr(r.name), who: c.name }), kind: 'discovery' }));
+          ctx.bus.emit('recipe:learned', { id, source: 'guest' });
+        }
       }
       ctx.bus.emit('customer:ordered', { uid: c.uid, customerId: c.def.id, requestId: c.request.id });
     });

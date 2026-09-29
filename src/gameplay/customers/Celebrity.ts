@@ -52,6 +52,35 @@ export function celebEntrance(ctx: GameContext, c: Customer): void {
     case 'keanu':
       ctx.vfx.magic(head, '#9fe8ff', 8, 0.3, 0.2);
       break;
+    case 'ronaldo':
+      ctx.later(0.6, () => c.alive && siuuuJump(ctx, c));
+      break;
+    case 'gordon':
+      ctx.audio.play('metalClang', { x: p.x, delay: 0.3, volume: 0.5 });
+      ctx.later(1.2, () => c.alive && c.say(ctx, t('celeb.gordonLook'), 'angry', 2.4));
+      break;
+    case 'recep':
+      c.sprite.play('angry');
+      ctx.bus.emit('shake', { amount: 0.08 });
+      ctx.audio.play('angry', { x: p.x, delay: 0.2 });
+      break;
+    case 'burak':
+      c.sprite.play('happy');
+      ctx.vfx.heartBurst(head, '#feae34');
+      ctx.audio.play('happy', { x: p.x, pitch: 0.8 });
+      break;
+    case 'nasreddin':
+      ctx.vfx.magic(head, '#f4f4f4', 6, 0.3, 0.3);
+      break;
+    case 'temel':
+      ctx.vfx.splash(head.clone().add(new THREE.Vector3(0, -1.2, 0.2)), '#2ce8f5', 10, 0.6);
+      ctx.audio.play('splash', { x: p.x, amount: 0.3 });
+      break;
+    case 'keloglan':
+      // The sun glints off his head.
+      ctx.vfx.stars(head.clone().add(new THREE.Vector3(0, 0.12, 0)), '#fee761', 8);
+      ctx.audio.play('sparkle', { x: p.x });
+      break;
   }
   ctx.bus.emit('toast', { text: t('celeb.arrived', { name: c.name }), kind: 'quest' });
 }
@@ -72,9 +101,77 @@ export function celebIdle(ctx: GameContext, c: Customer, dt: number): void {
     case 'saltbae':
       ctx.vfx.rate(`saltGag${c.uid}`, 0.05, dt, () => sprinkleSalt(ctx, c, 1.2));
       break;
+    case 'ronaldo':
+      ctx.vfx.rate(`siuGag${c.uid}`, 0.045, dt, () => siuuuJump(ctx, c));
+      break;
+    case 'gordon':
+      ctx.vfx.rate(`gordonGag${c.uid}`, 0.05, dt, () => {
+        c.sprite.play('angry');
+        c.say(ctx, t(rng.chance(0.5) ? 'celeb.gordonGag1' : 'celeb.gordonGag2'), 'angry', 2);
+      });
+      break;
+    case 'recep':
+      ctx.vfx.rate(`recepGag${c.uid}`, 0.04, dt, () => c.say(ctx, t(rng.chance(0.5) ? 'celeb.recepGag1' : 'celeb.recepGag2'), 'angry', 2));
+      break;
+    case 'burak':
+      ctx.vfx.rate(`burakGag${c.uid}`, 0.06, dt, () => {
+        c.sprite.play('happy');
+        c.say(ctx, '😁', 'happy', 1.4);
+      });
+      break;
     default:
       break;
   }
+}
+
+/** Ronaldo's celebration: a leap, a half turn in the air and a roar. */
+export function siuuuJump(ctx: GameContext, c: Customer): void {
+  const p = c.object.position;
+  c.sprite.play('happy');
+  let tt = 0;
+  const step = 1 / 30;
+  const tick = () => {
+    if (!c.alive) return;
+    tt += step;
+    const k = Math.min(1, tt / 0.7);
+    c.sprite.hop = Math.sin(k * Math.PI) * 0.55;
+    if (tt > 0.3 && tt - step <= 0.3) c.sprite.facing = -c.sprite.facing;
+    if (k < 1) ctx.later(step, tick);
+    else {
+      c.sprite.hop = 0;
+      c.sprite.squash = 0.25;
+      ctx.later(0.15, () => (c.sprite.squash = 0));
+      ctx.audio.play('boom', { x: p.x, volume: 0.5 });
+      ctx.bus.emit('shake', { amount: 0.1 });
+      ctx.vfx.dust(p.clone(), '#b8a88a', 10);
+    }
+  };
+  tick();
+  c.say(ctx, 'SIUUUUU!', 'happy', 1.8);
+  ctx.audio.play('cheer', { x: p.x, volume: 0.5, delay: 0.5 });
+}
+
+/** Little silver fish leaping in arcs (the anchovy potion). */
+export function fishJump(ctx: GameContext, at: THREE.Vector3, count = 10): void {
+  for (let i = 0; i < count; i++)
+    ctx.later(i * 0.12, () =>
+      ctx.vfx.particles.spawn({
+        x: at.x + rng.range(-0.25, 0.25),
+        y: at.y,
+        z: at.z + rng.range(-0.15, 0.25),
+        vx: rng.range(-0.8, 0.8),
+        vy: rng.range(1.8, 2.6),
+        vz: rng.range(-0.2, 0.4),
+        gravity: 6,
+        life: rng.range(0.7, 0.95),
+        size0: 0.06,
+        size1: 0.05,
+        color0: new THREE.Color('#c0cbdc'),
+        color1: new THREE.Color('#8b9bb4'),
+        alpha0: 1,
+        alpha1: 1,
+      }),
+    );
 }
 
 export function sprinkleSalt(ctx: GameContext, c: Customer, seconds: number): void {

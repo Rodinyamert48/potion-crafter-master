@@ -70,6 +70,8 @@ const BUILDS: Record<Archetype, Build> = {
   // Present-day guests (the celebrity cameos): plain clothes, see extras.
   celeb: { w: 40, h: 76, scale: 1, headR: 7.5, bodyW: 14, legLen: 16, skirt: false, bulky: false },
   strongman: { w: 46, h: 80, scale: 1, headR: 7.5, bodyW: 20, legLen: 16, skirt: false, bulky: true },
+  // Short, broad and bearded (Nobert the thief).
+  dwarf: { w: 40, h: 58, scale: 0.78, headR: 8, bodyW: 18, legLen: 8, skirt: false, bulky: true },
 };
 
 const ANIMS: Record<string, { poses: Pose[]; fps: number; loop: boolean }> = {
@@ -322,6 +324,47 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
     p.line(cx - 4 + lean, torsoTop, cx - 1 + lean, torsoTop + 9, mainL);
     p.line(cx + 4 + lean, torsoTop, cx + 1 + lean, torsoTop + 9, mainL);
   }
+  if (extra.has('belly')) {
+    // A proud round belly pushing the shirt forward.
+    p.ellipse(cx + 1 + lean, hipY - 6, bw / 2 + 2, 6, main);
+    p.ellipse(cx + 3 + lean, hipY - 7, bw / 2 - 2, 3.5, mainL, 0.5);
+  }
+  if (extra.has('tracksuit')) {
+    // Tracksuit top: white side stripes and a zip.
+    p.vline(tx0, torsoTop + 1, torsoBot - 1, '#f4f4f4');
+    p.vline(tx0 + bw - 1, torsoTop + 1, torsoBot - 1, '#f4f4f4');
+    p.vline(cx + lean, torsoTop + 1, hipY - 1, accent);
+    p.hline(cx - 3 + lean, cx + 3 + lean, torsoTop, mainL);
+  }
+  if (extra.has('chefcoat')) {
+    // Double-breasted chef's jacket: two rows of buttons and a stand collar.
+    p.hline(cx - 3 + lean, cx + 3 + lean, torsoTop, shadeHex(main, -0.18));
+    for (let i = 0; i < 3; i++) {
+      p.px(cx - 3 + lean, torsoTop + 3 + i * 4, accent);
+      p.px(cx + 2 + lean, torsoTop + 3 + i * 4, accent);
+    }
+    p.vline(cx + 4 + lean, torsoTop + 1, torsoBot - 2, mainD);
+  }
+  if (extra.has('vest')) {
+    // A knitted fisherman's vest over the shirt.
+    p.rect(tx0, torsoTop, 4, torsoBot - torsoTop, second);
+    p.rect(tx0 + bw - 4, torsoTop, 4, torsoBot - torsoTop, second);
+    for (let y = torsoTop + 2; y < torsoBot; y += 3) p.px(tx0 + 1, y, shadeHex(second, 0.3));
+  }
+  if (extra.has('patched')) {
+    // Patched-up village clothes.
+    p.rect(tx0 + 2, torsoTop + 5, 4, 4, accent);
+    p.px(tx0 + 3, torsoTop + 6, shadeHex(accent, -0.3));
+    p.px(tx0 + 5, torsoTop + 8, shadeHex(accent, -0.3));
+    p.rect(tx0 + bw - 7, hipY - 7, 4, 3, '#feae34');
+    p.px(tx0 + bw - 6, hipY - 6, '#b86f50');
+  }
+  if (extra.has('sack')) {
+    // A bulging thief's sack slung over the shoulder.
+    p.ellipse(tx0 + bw + 2, torsoTop + 2, 7, 8, '#a08050');
+    p.ellipse(tx0 + bw + 3, torsoTop + 4, 5, 5, '#8f6e40', 0.6);
+    p.rect(tx0 + bw - 1, torsoTop - 7, 3, 3, '#733e39');
+  }
   if (extra.has('tank')) {
     // Tank top: bare shoulders, straps
     p.rect(tx0, torsoTop, 3, 4, skin);
@@ -348,8 +391,13 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
     p.rect(cx - 2 + lean, torsoTop, 4, 8, '#ffffff');
     p.rect(cx - 1 + lean, torsoTop + 1, 2, 2, '#a22633');
   }
-  if (arch === 'wizard') {
+  if (arch === 'wizard' && !extra.has('kavuk')) {
     for (let i = 0; i < 3; i++) p.px(tx0 + 3 + i * 4, torsoTop + 10 + i * 5, '#fee761');
+  }
+  if (extra.has('kavuk')) {
+    // A long robe (cübbe) with a sash.
+    p.rect(cx - 1 + lean, torsoTop + 2, 2, torsoBot - torsoTop, second);
+    p.rect(tx0, hipY - 3, bw, 3, accent);
   }
   if (arch === 'elf') {
     p.rect(cx - 1 + lean, torsoTop, 2, torsoBot - torsoTop, second);
@@ -477,10 +525,10 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
   p.ellipse(hx, headCY, hr, hr * (arch === 'goblin' ? 0.85 : 1), skin);
   p.ellipse(hx + hr * 0.45, headCY + 1, hr * 0.55, hr * 0.8, skinD, 0.35);
   // Beard (giant / wizard)
-  if (extra.has('beard') || extra.has('stubble') || arch === 'wizard') {
+  if (extra.has('beard') || extra.has('stubble') || arch === 'wizard' || arch === 'dwarf') {
     // Stubble is a shadow on the jaw (skin mixed with hair), a beard is hair.
     const beardC = arch === 'wizard' ? '#f4f4f4' : extra.has('stubble') ? mixHex(skin, hair, 0.55) : hair;
-    const beardLen = arch === 'wizard' ? 12 : extra.has('stubble') ? 1 : 6;
+    const beardLen = arch === 'wizard' ? 12 : arch === 'dwarf' ? 10 : extra.has('stubble') ? 1 : 6;
     p.poly(
       [
         [hx - hr + 1, headCY + 1],
@@ -497,6 +545,11 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
   if (extra.has('bignose')) {
     p.ellipse(hx + 2, headCY + 2, 3, 2, skinD);
   } else p.px(hx + 1, headCY + 1, skinD);
+  if (extra.has('mustache')) {
+    p.rect(hx - 3, headCY + 3, 7, 2, hair);
+    p.px(hx - 4, headCY + 4, hair);
+    p.px(hx + 4, headCY + 4, hair);
+  }
 
   // Eyes
   const ey = headCY - 1;
@@ -557,7 +610,14 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
 
   // Mouth
   const my = headCY + Math.round(hr * 0.5);
-  switch (pose.mouth) {
+  switch (extra.has('bigsmile') && pose.mouth !== 'open' && pose.mouth !== 'o' ? 'bigsmile' : pose.mouth) {
+    case 'bigsmile':
+      // The widest smile in the world.
+      p.rect(hx - 3, my, 7, 2, '#3e2731');
+      p.hline(hx - 2, hx + 2, my, '#ffffff');
+      p.px(hx - 4, my - 1, '#3e2731');
+      p.px(hx + 4, my - 1, '#3e2731');
+      break;
     case 'open':
       p.rect(hx - 1, my, 3, 2, '#3e2731');
       break;
@@ -588,7 +648,48 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
 
   // Hair / headwear
   const top = headCY - hr;
-  if (extra.has('helmet')) {
+  if (extra.has('kavuk')) {
+    // Nasreddin Hodja's great round turban.
+    p.ellipse(hx, top + 1, hr + 4, hr * 0.8, '#f4f4f4');
+    p.ellipse(hx + 2, top + 2, hr + 1, hr * 0.5, '#d8d8e0', 0.6);
+    for (let i = -1; i <= 1; i++) p.line(hx - hr - 2, top + 2 + i * 2, hx + hr + 2, top - 1 + i * 2, '#c0cbdc');
+    p.ellipse(hx, top - 4, 3, 2.5, '#3e8948');
+    p.rect(hx - hr, top + 5, 2, 4, hair);
+  } else if (extra.has('kasket')) {
+    // Flat cap with the peak toward the face.
+    p.ellipse(hx, top + 2, hr + 1, 3.5, look.second);
+    p.rect(hx, top + 4, hr + 3, 2, shadeHex(look.second, 0.2));
+    p.rect(hx - hr, top + 5, 2, 3, hair);
+  } else if (extra.has('spiky')) {
+    // Short, spiky blond hair.
+    p.ellipse(hx, top + 2, hr, 3, hair);
+    for (let i = -2; i <= 2; i++)
+      p.poly(
+        [
+          [hx + i * 3 - 1, top + 2],
+          [hx + i * 3 + 2, top + 2],
+          [hx + i * 3 + 1, top - 2],
+        ],
+        hair,
+      );
+    p.rect(hx - hr, top + 2, 2, 3, shadeHex(hair, -0.15));
+  } else if (extra.has('dwarfhood')) {
+    // A pointed thief's hood pulled low.
+    p.ellipse(hx, headCY - 2, hr + 1.5, hr, look.second);
+    p.poly(
+      [
+        [hx - hr, top + 1],
+        [hx + hr, top + 1],
+        [hx - 3, top - 10],
+      ],
+      look.second,
+    );
+    p.px(hx - 3, top - 10, look.accent);
+    p.ellipse(hx + 1, headCY + 1, hr - 2, hr - 2.5, skin);
+    drawEye(ex0);
+    drawEye(ex1);
+    p.ellipse(hx + 2, headCY + 2, 2.5, 2, skinD);
+  } else if (extra.has('helmet')) {
     p.ellipse(hx, headCY - 1, hr + 1, hr + 1, '#8b9bb4');
     p.rect(hx - hr - 1, headCY - 1, hr * 2 + 2, 3, '#5a6988');
     p.hline(hx - hr + 2, hx + hr - 2, ey, OUTLINE);
@@ -954,17 +1055,17 @@ export const PX_PER_M = 40;
 // Shelf critters: a jar slime and a little spider
 // ---------------------------------------------------------------------------
 
-export function slimeSheet(): SpriteSheet {
-  const key = 'slime';
+export function slimeSheet(color = '#63c74d'): SpriteSheet {
+  const key = `slime:${color}`;
   const c = sheetCache.get(key);
   if (c) return c;
   const fw = 18;
   const fh = 16;
   const frames = 6;
   const p = new Painter(fw * frames, fh, 11);
-  const body = '#63c74d';
-  const dark = '#3e8948';
-  const hi = '#b6f59a';
+  const body = color;
+  const dark = shadeHex(color, -0.3);
+  const hi = mixHex(color, '#ffffff', 0.55);
   // (squash: wider/flatter, stretch: taller/narrower)
   const draw = (i: number, w: number, h: number, lift: number, eyes: 'open' | 'shut' | 'wide') => {
     const ox = i * fw;
@@ -1004,6 +1105,139 @@ export function slimeSheet(): SpriteSheet {
       idle: { frames: [0, 1, 0, 5, 0, 1], fps: 3, loop: true },
       hop: { frames: [1, 2, 3, 3, 2, 1], fps: 12, loop: false },
       hide: { frames: [4], fps: 1, loop: true },
+    },
+    pivotY: fh - 1,
+  };
+  sheetCache.set(key, sheet);
+  return sheet;
+}
+
+export interface DogSheetLook {
+  coat: string;
+  /** Patches (white Lagottos with brown or orange spots). */
+  patch?: string;
+  nose: string;
+  collar: string;
+}
+
+/** A Lagotto Romagnolo sitting in profile: a woolly, curly coat, a round
+ *  head with a curly topknot, drop ears, a bearded muzzle and a short tail.
+ *  Frames: sit, wag, pant, blink, sleep (curled up) and happy. */
+export function dogSheet(look: DogSheetLook): SpriteSheet {
+  const key = `dog:${look.coat}:${look.patch ?? ''}:${look.nose}:${look.collar}`;
+  const c = sheetCache.get(key);
+  if (c) return c;
+  const fw = 30;
+  const fh = 24;
+  const frames = 9;
+  const p = new Painter(fw * frames, fh, 17);
+  const coat = look.coat;
+  const light = shadeHex(coat, 0.12);
+  const dark = shadeHex(coat, -0.11);
+  const deep = shadeHex(coat, -0.36);
+  const eye = '#2a1a14';
+  // Wool: little curls in a staggered pattern over a filled shape.
+  const curls = (cx: number, cy: number, rx: number, ry: number, col = coat) => {
+    p.ellipse(cx, cy, rx, ry, col);
+    const d = col === coat ? dark : shadeHex(col, -0.2);
+    const l = col === coat ? light : shadeHex(col, 0.15);
+    for (let y = Math.floor(cy - ry) + 1; y < cy + ry - 0.5; y += 2) {
+      for (let x = Math.floor(cx - rx) + ((y >> 1) % 2) + 1; x < cx + rx - 0.5; x += 3) {
+        const nx = (x - cx) / rx;
+        const ny = (y - cy) / ry;
+        if (nx * nx + ny * ny > 0.8) continue;
+        p.px(x, y, d);
+        p.px(x + 1, y - 1, l, 0.8);
+      }
+    }
+  };
+  type Mode = 'sit' | 'pant' | 'blink' | 'sleep' | 'happy';
+  const draw = (i: number, mode: Mode, tail: number, breathe = 0) => {
+    p.clip = [i * fw, 0, i * fw + fw, fh];
+    const ox = i * fw;
+    if (mode === 'sleep') {
+      // Curled up in a woolly ball, nose tucked on the paws.
+      curls(ox + 17, 18.5 - breathe * 0.5, 11, 5 + breathe * 0.5);
+      if (look.patch) curls(ox + 20, 17, 4, 2.5, look.patch);
+      p.thickLine(ox + 27, 20, ox + 22, 22, 2, dark);
+      curls(ox + 8, 18.5, 5.5, 4);
+      p.ellipse(ox + 10, 17.5, 2.2, 3.4, look.patch ?? dark);
+      p.hline(ox + 5, ox + 7, 17, deep);
+      p.rect(ox + 2, 19, 2, 2, look.nose);
+      p.ellipse(ox + 4, 21, 2.5, 1.3, light);
+      p.rect(ox + 11, 20, 3, 1, look.collar);
+      p.hline(ox + 6, ox + 25, 23, deep, 0.6);
+      return;
+    }
+    // tail (short, curled) behind the body
+    const ty = tail > 0 ? 8 : 12;
+    p.thickLine(ox + 25, 15, ox + 27, ty, 3, coat);
+    p.disc(ox + 27, ty, 1.5, light);
+    // haunch and chest (sitting)
+    curls(ox + 20, 17.5, 6.5, 5.5);
+    curls(ox + 14, 14.5, 5.5, 6);
+    if (look.patch) {
+      curls(ox + 21, 15, 3.5, 3, look.patch);
+      curls(ox + 16, 11, 2, 2, look.patch);
+    }
+    // legs and paws
+    p.rect(ox + 11, 17, 3, 6, coat);
+    p.rect(ox + 15, 17, 3, 6, dark);
+    p.rect(ox + 10, 22, 4, 1, light);
+    p.rect(ox + 15, 22, 4, 1, coat);
+    p.ellipse(ox + 22, 22, 3.5, 1.4, coat);
+    p.hline(ox + 9, ox + 26, 23, deep, 0.5);
+    // head with a curly topknot, bearded muzzle and a drop ear
+    curls(ox + 9, 8.5, 5.5, 5);
+    curls(ox + 9.5, 4.2, 4, 2.4);
+    curls(ox + 4, 10.5, 3.4, 2.6);
+    p.ellipse(ox + 4, 12.6, 2.6, 1.6, light);
+    p.rect(ox + 1, 9, 2, 2, look.nose);
+    p.px(ox + 1, 9, shadeHex(look.nose, 0.3));
+    curls(ox + 12.5, 10.5, 2.4, 4.2, look.patch ?? dark);
+    // eye
+    if (mode === 'blink') p.hline(ox + 6, ox + 7, 8, deep);
+    else if (mode === 'happy') {
+      p.px(ox + 6, 8, eye);
+      p.px(ox + 7, 7, eye);
+      p.px(ox + 8, 8, eye);
+    } else {
+      p.rect(ox + 6, 7, 2, 2, eye);
+      p.px(ox + 6, 7, '#ffffff');
+    }
+    // mouth / tongue
+    if (mode === 'pant' || mode === 'happy') {
+      p.rect(ox + 2, 12, 3, 1, deep);
+      p.rect(ox + 3, 13, 2, 2, '#e05a6a');
+      p.px(ox + 3, 14, '#f6757a');
+    }
+    // collar with a little gold tag
+    p.rect(ox + 10, 13, 5, 2, look.collar);
+    p.px(ox + 12, 15, '#fee761');
+  };
+  draw(0, 'sit', 0);
+  draw(1, 'sit', 1);
+  draw(2, 'pant', 0);
+  draw(3, 'pant', 1);
+  draw(4, 'blink', 0);
+  draw(5, 'sleep', 0, 0);
+  draw(6, 'sleep', 0, 1);
+  draw(7, 'happy', 1);
+  draw(8, 'happy', 0);
+  p.clip = null;
+  p.outline(OUTLINE);
+  p.commit();
+  const sheet: SpriteSheet = {
+    canvas: p.canvas,
+    frameW: fw,
+    frameH: fh,
+    cols: frames,
+    rows: 1,
+    anims: {
+      idle: { frames: [0, 0, 0, 4, 0, 0, 1, 0], fps: 2.5, loop: true },
+      pant: { frames: [2, 2, 3, 2, 2, 4], fps: 4, loop: true },
+      wag: { frames: [7, 8, 7, 8, 7, 8], fps: 9, loop: true },
+      sleep: { frames: [5, 6], fps: 1.2, loop: true },
     },
     pivotY: fh - 1,
   };

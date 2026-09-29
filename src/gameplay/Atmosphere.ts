@@ -148,7 +148,7 @@ export class Atmosphere implements GameSystem {
       music.setDanger(clamp(this.chaos, 0, 1));
     }
     ctx.audio.loop('ambience', ambienceLoop)?.set(1, lighting.nightness);
-    ctx.audio.loop('horror', horrorLoop)?.set(ctx.renderer.quality === 'ps1' ? 1 : 0);
+    ctx.audio.loop('darkfantasy', horrorLoop)?.set(ctx.settings.retro ? 0.45 : 0);
 
     // Faint magic glimmers drifting up all over the shop
     if (ctx.state && !ctx.paused)

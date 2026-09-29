@@ -149,7 +149,7 @@ export class Game {
     const q = s.quality === 'auto' ? this.autoQuality : s.quality;
     this.renderer.setPixelPreset(s.pixel);
     this.renderer.setQuality(q);
-    this.renderer.pipeline.retro = s.retro ? 1 : 0;
+    this.renderer.setDarkFantasy(s.retro);
     setRetroTheme(s.retro);
     this.particles.density = q === 'low' ? 0.5 : q === 'medium' ? 0.8 : 1;
     this.babylonSim.density = this.particles.density;

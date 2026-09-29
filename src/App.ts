@@ -15,6 +15,12 @@ import { AchievementsPanel } from './ui/AchievementsPanel';
 import { TouchControls } from './ui/TouchControls';
 import { Achievements } from './gameplay/Achievements';
 import { TravelingMerchant } from './gameplay/shop/TravelingMerchant';
+import { FurnitureSystem } from './gameplay/shop/Furniture';
+import { MentorDog } from './gameplay/Pets';
+import { PetPanel } from './ui/PetPanel';
+import { AdminPanel } from './ui/AdminPanel';
+import { NobertSystem } from './gameplay/Nobert';
+import * as THREE from 'three';
 import { t } from './core/i18n';
 import { ShopSystem } from './gameplay/shop/ShopSystem';
 import { Discovery } from './gameplay/potion/Discovery';
@@ -45,10 +51,13 @@ export class App {
   readonly atmosphere: Atmosphere;
   readonly shopSystem: ShopSystem;
   readonly merchant: TravelingMerchant;
+  readonly furniture: FurnitureSystem;
+  readonly nobert: NobertSystem;
   readonly achievements: Achievements;
   readonly touch: TouchControls;
   readonly save: SaveSystem;
   readonly mentor: Mentor;
+  readonly dog: MentorDog;
   readonly expedition: Expedition;
   readonly hud: HUD;
   readonly title: TitleScreen;
@@ -79,28 +88,59 @@ export class App {
     this.quests = new QuestSystem(ctx, this.customers);
     this.shopSystem = new ShopSystem(ctx);
     this.merchant = new TravelingMerchant(ctx, this.shopSystem);
+    this.furniture = new FurnitureSystem(ctx);
+    this.nobert = new NobertSystem(ctx);
     this.achievements = new Achievements(ctx);
     this.expedition = new Expedition(ctx, this.customers);
     new Discovery(ctx);
     this.save = new SaveSystem(ctx, this.customers);
     this.mentor = ctx.world.add(new Mentor(ctx, ctx.shop.anchors.mentorSeat), ctx);
     this.customers.mentor = this.mentor;
+    // The dog naps in the master's lap, a little in front of him.
+    this.dog = ctx.world.add(new MentorDog(ctx, ctx.shop.anchors.mentorSeat.clone().add(new THREE.Vector3(-0.12, 0.36, 0.16))), ctx);
 
     // Restore a saved game for the backdrop (and for "Continue").
     if (SaveSystem.hasSave()) this.loadedSave = this.save.load();
     this.shopSystem.apply();
+    this.furniture.sync();
     this.tutorial = new Tutorial(ctx);
     this.atmosphere = new Atmosphere(ctx);
 
     // UI
     const ui = game.ui;
     ui.registerPanel('book', new BookPanel(ctx));
-    ui.registerPanel('catalog', new CatalogPanel(ctx, this.shopSystem));
+    ui.registerPanel('catalog', new CatalogPanel(ctx, this.shopSystem, this.furniture));
     ui.registerPanel('inventory', new InventoryPanel(ctx));
     ui.registerPanel('map', new MapPanel(ctx, this.expedition));
     ui.registerPanel('cat', new CatPanel(ctx, this.atmosphere.cat));
     ui.registerPanel('merchant', new MerchantPanel(ctx, this.merchant));
     ui.registerPanel('achievements', new AchievementsPanel(ctx));
+    ui.registerPanel(
+      'admin',
+      new AdminPanel(ctx, {
+        day: this.day,
+        visit: (id) => this.debug.visit(id),
+        summonMerchant: () => {
+          this.merchant.forceDay = ctx.state.day;
+          ui.openPanel(null);
+        },
+        summonNobert: () => {
+          const ok = this.nobert.summon();
+          if (ok) ui.openPanel(null);
+          return ok;
+        },
+        luck: () => {
+          ui.openPanel(null);
+          this.achievements.luck();
+        },
+        save: () => this.save.save(),
+        spawnPotion: (id, tier) => this.debug.spawnPotion(id, tier, { x: 2.6 + Math.random() * 0.6, y: 1.25, z: 0.95 }),
+        spawnIngredient: (id, state) => this.debug.spawnIngredient(id, state, { x: -3.0 + Math.random() * 0.5, y: 1.1, z: 0.8 }),
+        syncFurniture: () => this.furniture.sync(),
+        endDay: () => this.day.endDay(),
+      }),
+    );
+    ui.registerPanel('pet', new PetPanel(ctx, (kind) => (kind === 'dog' ? this.dog.object : (ctx.world.ofKind('slime')[0]?.object ?? null))));
     ctx.bus.on('crystal:touched', () => {
       if (this.game.playing && this.save.save()) ctx.bus.emit('toast', { text: t('crystal.saved'), kind: 'good' });
     });
@@ -141,12 +181,13 @@ export class App {
     game.addSystem(this.day);
     game.addSystem(this.customers);
     game.addSystem(this.merchant);
+    game.addSystem(this.nobert);
     game.addSystem(this.achievements);
     game.addSystem(this.tutorial);
     game.addSystem(this.atmosphere);
     game.addSystem({ update: (dt) => this.frame(dt), always: true });
 
-    ctx.input.onKeyDown((code) => this.key(code));
+    ctx.input.onKeyDown((code, e) => this.key(code, e));
 
     if (sessionStorage.getItem(AUTOSTART) === 'new') {
       sessionStorage.removeItem(AUTOSTART);
@@ -202,6 +243,7 @@ export class App {
     const ctx = this.ctx;
     ctx.ui.openPanel(null);
     this.customers.clearAll();
+    this.nobert.dismiss();
     this.day.startNextDay();
     this.customers.planDay(ctx.state.day, this.quests.visitsFor(ctx.state.day));
     ctx.renderer.rig.setPreset(ctx.shop.presets.overview);
@@ -213,13 +255,19 @@ export class App {
     location.reload();
   }
 
-  private key(code: string): void {
+  private key(code: string, e?: KeyboardEvent): void {
     const ui = this.game.ui;
     if (!this.game.playing) {
       if (code === 'Escape') ui.closeAll();
       return;
     }
     if (this.summary.isOpen) return;
+    // The key under Esc (` on US, " on Turkish Q keyboards): admin menu.
+    if (code === 'Backquote' || e?.key === '"' || e?.key === '`' || e?.key === 'é') {
+      e?.preventDefault();
+      ui.togglePanel('admin');
+      return;
+    }
     if (code === 'Escape') {
       if (this.ctx.interaction.grab) {
         this.ctx.interaction.cancelGrab();

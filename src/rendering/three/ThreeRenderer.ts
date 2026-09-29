@@ -8,7 +8,8 @@ import { PixelPipeline } from './PixelPipeline';
 import { setPsx } from './Psx';
 
 export type PixelPreset = 'fine' | 'normal' | 'chunky';
-/** 'ps1' is the PS1 / PSX horror look (also the lightest mode). */
+/** 'ps1' is the PlayStation look: wobbling vertices, warped textures,
+ *  15-bit colour and no outlines (also the lightest mode). */
 export type Quality = 'low' | 'medium' | 'high' | 'ps1';
 
 const TARGET_HEIGHT: Record<PixelPreset, number> = { fine: 620, normal: 460, chunky: 340 };
@@ -22,6 +23,8 @@ export class ThreeRenderer {
   readonly canvas: HTMLCanvasElement;
   pixelPreset: PixelPreset = 'normal';
   quality: Quality = 'high';
+  /** Dark Fantasy mood (Settings → Dark Fantasy). */
+  darkFantasy = false;
   lowWidth = 1;
   lowHeight = 1;
   pixelScale = 2;
@@ -71,17 +74,14 @@ export class ThreeRenderer {
     const shadows = q !== 'low' && !psx;
     this.renderer.shadowMap.enabled = shadows;
     this.lighting.setShadows(q === 'high' ? 'all' : q === 'medium' ? 'sun' : 'off');
+    this.lighting.setShadowDetail(q === 'high' ? 2048 : 1024);
     this.pipeline.bloomEnabled = q !== 'low' && !psx;
+    this.pipeline.bloomPasses = q === 'high' ? 3 : 2;
+    this.pipeline.bloomStrength = q === 'high' ? 0.85 : 0.75;
     // The PS1 had no outlines; it had fog and a short draw distance.
     this.pipeline.outline = psx ? 0 : 1;
     this.pipeline.psx = psx ? 1 : 0;
-    this.lighting.psx = psx;
-    const fog = this.scene.fog as THREE.Fog;
-    fog.color.set(psx ? '#0d0c11' : '#181425');
-    fog.near = psx ? 8.5 : 18;
-    fog.far = psx ? 19 : 40;
-    (this.scene.background as THREE.Color).set(psx ? '#08080b' : '#181425');
-    this.renderer.setClearColor(psx ? '#08080b' : '#181425', 1);
+    this.applyMood();
     document.documentElement.classList.toggle('psx', psx);
     setPsx(this.scene, psx);
     this.scene.traverse((o) => {
@@ -90,6 +90,26 @@ export class ThreeRenderer {
       for (const mat of Array.isArray(m) ? m : [m]) mat.needsUpdate = true;
     });
     this.resize();
+  }
+
+  setDarkFantasy(on: boolean): void {
+    this.darkFantasy = on;
+    this.pipeline.retro = on ? 1 : 0;
+    this.lighting.darkFantasy = on;
+    this.applyMood();
+  }
+
+  /** Fog and background for the current quality and mood. */
+  private applyMood(): void {
+    const psx = this.quality === 'ps1';
+    const dark = this.darkFantasy;
+    const bg = dark ? '#07060a' : psx ? '#100e16' : '#181425';
+    const fog = this.scene.fog as THREE.Fog;
+    fog.color.set(dark ? '#0b0910' : bg);
+    fog.near = psx ? 11 : dark ? 13 : 18;
+    fog.far = psx ? 26 : dark ? 32 : 40;
+    (this.scene.background as THREE.Color).set(bg);
+    this.renderer.setClearColor(bg, 1);
   }
 
   resize(): void {
