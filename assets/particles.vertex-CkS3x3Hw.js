@@ -1,4 +1,4 @@
-import{E as e}from"./index-DizmdAhj.js";import{t}from"./logDepthDeclaration-BUiO3sUn.js";var n=`clipPlaneVertexDeclaration`,r=`#ifdef CLIPPLANE
+import{E as e}from"./index-29nrXs8i.js";import{t}from"./logDepthDeclaration-CwNJ1JMp.js";var n=`clipPlaneVertexDeclaration`,r=`#ifdef CLIPPLANE
 uniform vec4 vClipPlane;varying float fClipDistance;
 #endif
 #ifdef CLIPPLANE2

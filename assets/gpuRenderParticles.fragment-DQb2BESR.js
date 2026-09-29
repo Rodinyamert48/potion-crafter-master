@@ -1,4 +1,4 @@
-import{E as e}from"./index-DizmdAhj.js";import{a as t,c as n,d as r,i,l as a,n as o,o as s,r as c,s as l,t as u,u as d}from"./geometryRenderingFragment-C4GFU-c3.js";import{t as f}from"./logDepthDeclaration-BjygzdBd.js";import{t as p}from"./helperFunctions-BMZvlmSk.js";var m=`particlesPixelShader`,h=`varying vUV: vec2f;varying vColor: vec4f;uniform textureMask: vec4f;var diffuseSamplerSampler: sampler;var diffuseSampler: texture_2d<f32>;
+import{E as e}from"./index-29nrXs8i.js";import{a as t,c as n,d as r,i,l as a,n as o,o as s,r as c,s as l,t as u,u as d}from"./geometryRenderingFragment-BOHolrR_.js";import{t as f}from"./logDepthDeclaration-BeaU3Kpp.js";import{t as p}from"./helperFunctions-CvkIUhTt.js";var m=`gpuRenderParticlesPixelShader`,h=`var diffuseSamplerSampler: sampler;var diffuseSampler: texture_2d<f32>;varying vUV: vec2f;varying vColor: vec4f;
 #ifdef PREPASS
 uniform geometryZeroAlphaDiscard: f32;
 #ifdef PREPASS_POSITION
@@ -18,24 +18,16 @@ varying vGeometryNormalV: vec3f;
 #include<logDepthDeclaration>
 #include<helperFunctions>
 #include<imageProcessingFunctions>
-#ifdef RAMPGRADIENT
-varying remapRanges: vec4f;var rampSamplerSampler: sampler;var rampSampler: texture_2d<f32>;
-#endif
 #include<fogFragmentDeclaration>
-#define CUSTOM_FRAGMENT_DEFINITIONS
 @fragment
 fn main(input: FragmentInputs)->FragmentOutputs {
-#define CUSTOM_FRAGMENT_MAIN_BEGIN
 #include<clipPlaneFragment>
-var textureColor: vec4f=textureSample(diffuseSampler,diffuseSamplerSampler,input.vUV);var baseColor: vec4f=(textureColor*uniforms.textureMask+( vec4f(1.,1.,1.,1.)-uniforms.textureMask))*input.vColor;
+let textureColor: vec4f=textureSample(diffuseSampler,diffuseSamplerSampler,input.vUV);var baseColor: vec4f=textureColor*input.vColor;
 #ifdef PREPASS
 let geometryAlbedo: vec3f=toLinearSpaceVec3(baseColor.rgb);
 #endif
-#ifdef RAMPGRADIENT
-var alpha: f32=baseColor.a;var remappedColorIndex: f32=clamp((alpha-input.remapRanges.x)/input.remapRanges.y,0.0,1.0);var rampColor: vec4f=textureSample(rampSampler,rampSamplerSampler,vec2f(1.0-remappedColorIndex,0.));baseColor=vec4f(baseColor.rgb*rampColor.rgb,baseColor.a);var finalAlpha: f32=baseColor.a;baseColor.a=clamp((alpha*rampColor.a-input.remapRanges.z)/input.remapRanges.w,0.0,1.0);
-#endif
 #ifdef BLENDMULTIPLYMODE
-var sourceAlpha: f32=input.vColor.a*textureColor.a;baseColor=vec4f(baseColor.rgb*sourceAlpha+ vec3f(1.0)*(1.0-sourceAlpha),baseColor.a);
+let alpha: f32=input.vColor.a*textureColor.a;baseColor=vec4f(baseColor.rgb*alpha+vec3f(1.0)*(1.0-alpha),baseColor.a);
 #endif
 #include<logDepthFragment>
 #include<fogFragment>(color,baseColor)
@@ -70,5 +62,5 @@ let geometryNormalW: vec3f=normalize(input.vGeometryNormalW);
 #else
 fragmentOutputs.color=baseColor;
 #endif
-#define CUSTOM_FRAGMENT_MAIN_END
-}`;e.ShadersStoreWGSL[m]||(e.ShadersStoreWGSL[m]=h);var g=[r,d,a,n,f,p,l,s,t,i,c,o,u];for(let t of g)e.IncludesShadersStoreWGSL[t.name]||(e.IncludesShadersStoreWGSL[t.name]=t.shader);var _={name:m,shader:h};export{_ as particlesPixelShaderWGSL};
+}
+`;e.ShadersStoreWGSL[m]||(e.ShadersStoreWGSL[m]=h);var g=[r,d,a,n,f,p,l,s,t,i,c,o,u];for(let t of g)e.IncludesShadersStoreWGSL[t.name]||(e.IncludesShadersStoreWGSL[t.name]=t.shader);var _={name:m,shader:h};export{_ as gpuRenderParticlesPixelShaderWGSL};
