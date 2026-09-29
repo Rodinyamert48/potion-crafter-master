@@ -158,5 +158,7 @@ export class AssistVisuals {
 }
 
 export function assistHint(target: AssistTarget | null): string | null {
-  return target ? t(target.hint) : null;
+  if (!target) return null;
+  const touchKey = `${target.hint}Touch`;
+  return t(document.documentElement.classList.contains('touch') && t(touchKey) !== touchKey ? touchKey : target.hint);
 }

@@ -54,11 +54,12 @@ export class Input {
   private upFns: ButtonFn[] = [];
   private wheelFns: Array<(dy: number) => void> = [];
   private keyFns: Array<(code: string, e: KeyboardEvent) => void> = [];
-  private pinchFns: Array<(scale: number, panX: number, panY: number) => void> = [];
+  private pinchFns: Array<(scale: number, panX: number, panY: number, rotate: number) => void> = [];
   private touches = new Map<number, { x: number; y: number }>();
   private primaryTouchId: number | null = null;
   private lastPinchDist = 0;
   private lastPinchMid = { x: 0, y: 0 };
+  private lastPinchAngle = 0;
   private lastMoveTime = performance.now();
   private frameDx = 0;
   private frameDy = 0;
@@ -99,8 +100,20 @@ export class Input {
     this.keyFns.push(fn);
   }
 
-  onPinch(fn: (scale: number, panX: number, panY: number) => void): void {
+  onPinch(fn: (scale: number, panX: number, panY: number, rotate: number) => void): void {
     this.pinchFns.push(fn);
+  }
+
+  /** On-screen buttons (touch controls) press keys like the keyboard does. */
+  setVirtualKey(code: string, down: boolean): void {
+    if (down) {
+      if (!this.keys.has(code)) {
+        this.pressed.add(code);
+        const e = new KeyboardEvent('keydown', { code });
+        for (const fn of this.keyFns) fn(code, e);
+      }
+      this.keys.add(code);
+    } else this.keys.delete(code);
   }
 
   // -------------------------------------------------------------------------
@@ -278,18 +291,24 @@ export class Input {
     const pts = [...this.touches.values()];
     this.lastPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     this.lastPinchMid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+    this.lastPinchAngle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
   }
 
   private updatePinch(): void {
     const pts = [...this.touches.values()];
     const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
     const mid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+    const angle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
     const scale = this.lastPinchDist > 0 ? dist / this.lastPinchDist : 1;
     const px = mid.x - this.lastPinchMid.x;
     const py = mid.y - this.lastPinchMid.y;
+    let rot = angle - this.lastPinchAngle;
+    if (rot > Math.PI) rot -= Math.PI * 2;
+    if (rot < -Math.PI) rot += Math.PI * 2;
     this.lastPinchDist = dist;
     this.lastPinchMid = mid;
-    for (const fn of this.pinchFns) fn(scale, px, py);
+    this.lastPinchAngle = angle;
+    for (const fn of this.pinchFns) fn(scale, px, py, rot);
   }
 
   private resetAll(): void {

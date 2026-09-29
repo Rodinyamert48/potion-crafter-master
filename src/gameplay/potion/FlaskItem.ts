@@ -14,6 +14,7 @@ import { t, tr } from '../../core/i18n';
 import { clamp } from '../../core/math';
 import { rng } from '../../core/Random';
 import { toon } from '../../rendering/three/materials';
+import { isTouchUI } from '../../ui/TouchControls';
 
 const tmpV = new THREE.Vector3();
 
@@ -93,7 +94,7 @@ export class FlaskItem extends Entity {
     return {
       title: `${tr(r.name)} ${stars(this.potion.tier)}`,
       subtitle: `${tr(TIER_NAMES[this.potion.tier])} · ${this.potion.price} ${t('hud.money')}`,
-      hint: r.kind === 'failure' ? t('hint.pour') : t('hint.potion'),
+      hint: r.kind === 'failure' ? t(isTouchUI() ? 'hint.pourTouch' : 'hint.pour') : t('hint.potion'),
       lines: known ? [{ text: tr(r.description), color: '#ead4aa' }] : [],
     };
   }

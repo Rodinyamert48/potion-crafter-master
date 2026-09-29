@@ -387,6 +387,8 @@ export class Interaction {
     }
     if (button !== 0) return;
     const picked = this.pick();
+    // Pressing on empty floor lets a drag pan the camera (touch & mouse).
+    this.emptyPress = !picked;
     if (!picked) return;
     const input = this.ctx.input;
     // On touch screens a long press stands in for the right click.
@@ -402,11 +404,16 @@ export class Interaction {
 
   /** True while a right press was used by an entity (so it doesn't pan). */
   altConsumed = false;
+  /** The current left press started on nothing in particular. */
+  emptyPress = false;
   private longPress: { entity: Entity; t: number; x: number; y: number } | null = null;
 
   private pointerUp(button: number): void {
     if (button === 2) this.altConsumed = false;
-    if (button === 0) this.longPress = null;
+    if (button === 0) {
+      this.longPress = null;
+      this.emptyPress = false;
+    }
     if (button !== 0 || !this.grab) return;
     const g = this.grab;
     this.grab = null;

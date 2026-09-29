@@ -12,6 +12,7 @@ import { Atmosphere } from './gameplay/Atmosphere';
 import { CatPanel } from './ui/CatPanel';
 import { MerchantPanel } from './ui/MerchantPanel';
 import { AchievementsPanel } from './ui/AchievementsPanel';
+import { TouchControls } from './ui/TouchControls';
 import { Achievements } from './gameplay/Achievements';
 import { TravelingMerchant } from './gameplay/shop/TravelingMerchant';
 import { t } from './core/i18n';
@@ -45,6 +46,7 @@ export class App {
   readonly shopSystem: ShopSystem;
   readonly merchant: TravelingMerchant;
   readonly achievements: Achievements;
+  readonly touch: TouchControls;
   readonly save: SaveSystem;
   readonly mentor: Mentor;
   readonly expedition: Expedition;
@@ -118,6 +120,8 @@ export class App {
     ui.registerPanel('summary', this.summary);
     this.hud = new HUD(ctx, ui, this.customers, this.day, this.quests, this.tutorial);
     this.hud.visible = false;
+    this.touch = new TouchControls(ctx);
+    ui.root.append(this.touch.el, this.touch.portraitEl);
     this.title = new TitleScreen(ctx, {
       newGame: () => this.newGame(),
       continueGame: () => this.startPlaying(),
@@ -237,6 +241,7 @@ export class App {
   }
 
   private frame(dt: number): void {
+    this.touch.update(this.game.playing && !this.ctx.ui.panelOpen);
     if (this.game.playing) {
       this.hud.update();
       this.save.update(dt);

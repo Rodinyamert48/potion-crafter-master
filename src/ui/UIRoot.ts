@@ -68,7 +68,9 @@ export class UIRoot implements UIHooks {
     const rescale = () => {
       const w = viewport.clientWidth || window.innerWidth;
       const hgt = viewport.clientHeight || window.innerHeight;
-      this.uiScale = Math.round(Math.max(0.62, Math.min(1, w / 1100, hgt / 680)) * 100) / 100;
+      // Fingers need bigger targets than a mouse pointer.
+      const coarse = window.matchMedia?.('(pointer: coarse)').matches;
+      this.uiScale = Math.round(Math.max(coarse ? 0.78 : 0.62, Math.min(1, w / 1100, hgt / 680)) * 100) / 100;
       root.style.setProperty('--ui-scale', String(this.uiScale));
     };
     rescale();
@@ -185,6 +187,8 @@ export class UIRoot implements UIHooks {
     const r = this.tip.getBoundingClientRect();
     let px = x + 20;
     let py = y + 18;
+    // On touch screens keep it above the finger, not under it.
+    if (document.documentElement.classList.contains('touch')) py = y - r.height - 48;
     if (px + r.width > vw - 8) px = x - r.width - 14;
     if (py + r.height > vh - 8) py = vh - r.height - 8;
     this.tip.style.transform = `translate(${Math.max(4, px)}px, ${Math.max(4, py)}px) scale(${this.uiScale})`;

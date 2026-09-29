@@ -191,11 +191,13 @@ export class Game {
       if (ctx.interaction.grab instanceof PhysicsGrab) return;
       rig.zoom(dy * 0.0012);
     });
-    ctx.input.onPinch((scale, px, py) => {
-      if (!this.playing) return;
+    ctx.input.onPinch((scale, px, py, rot) => {
+      if (!this.playing || ctx.ui.panelOpen) return;
       rig.zoom(-(scale - 1) * 1.5);
       const k = rig.distance * 0.0016;
       rig.pan(-px * k, -py * k);
+      // Twisting two fingers turns the view.
+      if (Math.abs(rot) > 0.002) rig.rotate(rot * 0.8);
     });
     ctx.input.onKeyDown((code) => {
       if (!this.playing || ctx.ui.panelOpen) return;
@@ -222,11 +224,15 @@ export class Game {
     if (input.isDown('KeyW') || input.isDown('ArrowUp')) dz -= 1;
     if (input.isDown('KeyS') || input.isDown('ArrowDown')) dz += 1;
     if (dx || dz) rig.pan(dx * speed, dz * speed);
+    // Zoom with +/- (keyboard or the touch buttons).
+    if (input.isDown('Equal') || input.isDown('NumpadAdd')) rig.zoom(-dt * 1.2);
+    if (input.isDown('Minus') || input.isDown('NumpadSubtract')) rig.zoom(dt * 1.2);
     if (!holding) {
       if (input.isDown('KeyQ')) rig.rotate(dt * 0.9);
       if (input.isDown('KeyE')) rig.rotate(-dt * 0.9);
-      // Right/middle drag pans the view when nothing is held.
-      if ((input.pointer.down[2] || input.pointer.down[1]) && input.pointer.valid && !ctx.interaction.altConsumed) {
+      // Right/middle drag – or dragging from empty floor – pans the view.
+      const emptyDrag = input.pointer.down[0] && ctx.interaction.emptyPress;
+      if ((input.pointer.down[2] || input.pointer.down[1] || emptyDrag) && input.pointer.valid && !ctx.interaction.altConsumed) {
         const k = rig.distance * 0.0016;
         rig.pan(-input.pointer.dx * k, -input.pointer.dy * k);
       }

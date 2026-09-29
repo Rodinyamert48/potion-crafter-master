@@ -341,7 +341,7 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-seg { display: flex; gap: 3px; }
 .wb-seg button { font-family: var(--font); font-size: 16px; padding: 4px 8px; border: none; background: #262b44; color: var(--muted); box-shadow: 0 0 0 2px #181425; cursor: var(--cursor-point, pointer); }
 .wb-seg button.on { background: #68386c; color: var(--gold-hi); }
-.wb-help { max-width: 560px; white-space: pre-line; font-size: 18px; line-height: 1.4; color: var(--text); }
+.wb-help { max-width: 560px; max-height: 58vh; overflow-y: auto; white-space: pre-line; font-size: 18px; line-height: 1.4; color: var(--text); }
 
 /* ----------------------------------------------------------------- title */
 .wb-title-screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 70; background: radial-gradient(ellipse at 50% 40%, #18142500 0%, #181425aa 70%, #181425ee 100%); }
@@ -525,3 +525,42 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-ach-bar span { display: block; height: 100%; background: var(--gold); }
 .wb-toast-achievement { color: #fee761; font-size: 22px; padding: 9px 20px; background: #3e2731; box-shadow: 0 0 0 2px #181425, 0 0 0 4px #feae34, 0 0 22px #feae3488; }
 .retro .wb-toast-achievement { background: var(--rpg-win); box-shadow: var(--rpg-edge), 0 0 22px #fee76188; }
+
+/* ---------------------------------------------------------------- touch */
+html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+.wb-touch {
+  position: absolute; right: 12px; bottom: calc(50px * var(--ui-scale, 1)); z-index: 32;
+  display: flex; align-items: flex-end; gap: 12px;
+  transform: scale(var(--ui-scale, 1)); transform-origin: bottom right;
+}
+.wb-touch[hidden] { display: none; }
+.wb-touch-col { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+.wb-touch-row { display: flex; gap: 10px; align-items: center; }
+.wb-touch-btn {
+  width: 58px; height: 58px; padding: 0; border: none; border-radius: 50%;
+  font-family: var(--font); font-size: 30px; line-height: 1; color: var(--text);
+  background: #262b44d9; box-shadow: 0 0 0 2px #181425, inset 0 -4px 0 #181425, inset 0 2px 0 #5a6988;
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: var(--cursor-point, pointer);
+}
+.wb-touch-btn.small { width: 46px; height: 46px; font-size: 24px; }
+.wb-touch-btn.down { background: #68386c; transform: translateY(2px); }
+.wb-touch-btn.action { width: 96px; height: 96px; font-size: 46px; background: #733e39e6; box-shadow: 0 0 0 2px #181425, 0 0 0 5px #feae34aa, inset 0 -5px 0 #3e2731; }
+.wb-touch-btn.action.idle { opacity: 0.4; box-shadow: 0 0 0 2px #181425, inset 0 -5px 0 #3e2731; }
+.retro .wb-touch-btn { background: #1c2c98d9; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 2px #f0f0f8, inset 0 0 0 3px #b8b8d0; }
+.wb-portrait-hint {
+  position: absolute; top: calc(92px * var(--ui-scale, 1)); left: 50%; transform: translateX(-50%);
+  max-width: 86vw; padding: 8px 14px; font-size: 18px; text-align: center; z-index: 36;
+  color: var(--gold-hi); background: #181425e6; box-shadow: 0 0 0 2px #feae34;
+}
+.wb-portrait-hint[hidden] { display: none; }
+/* Finger-scrollable panels (the page itself never scrolls). */
+.wb-page, .wb-catalog-grid, .wb-map, .wb-ach-grid, .wb-help, .wb-inv { touch-action: pan-y; overscroll-behavior: contain; }
+/* Phones held upright: stack the HUD boxes on the left, keep the buttons clear. */
+@media (max-width: 640px) and (orientation: portrait) {
+  .wb-hud-center { left: 10px; top: calc(64px * var(--ui-scale, 1)); transform: scale(var(--ui-scale, 1)); transform-origin: top left; }
+  .wb-hud-right { left: 10px; right: auto; top: calc(128px * var(--ui-scale, 1)); align-items: flex-start; transform-origin: top left; }
+  .wb-hud-stations { display: none; }
+  .wb-touch { bottom: calc(100px * var(--ui-scale, 1)); }
+  .wb-portrait-hint { top: 34%; }
+  .wb-mentor-card { top: calc(200px * var(--ui-scale, 1)); max-width: 86vw; }
+}

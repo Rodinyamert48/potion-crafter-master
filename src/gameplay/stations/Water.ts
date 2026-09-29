@@ -13,6 +13,7 @@ import { CG, type ShapeDesc } from '../../physics/PhysicsTypes';
 import { t } from '../../core/i18n';
 import { pourLoop } from '../../audio/Sfx';
 import { rng } from '../../core/Random';
+import { isTouchUI } from '../../ui/TouchControls';
 
 export const BUCKET_CAPACITY = 2;
 
@@ -107,7 +108,7 @@ export class Bucket extends Entity {
   override hover(): HoverInfo {
     return {
       title: t('obj.bucket'),
-      hint: t('hint.pour'),
+      hint: t(isTouchUI() ? 'hint.pourTouch' : 'hint.pour'),
       lines: [{ text: t('misc.liters', { n: this.water.toFixed(1) }), color: '#0099db', bar: this.water / BUCKET_CAPACITY }],
     };
   }
