@@ -282,3 +282,52 @@ describe('celebrity specials are reachable', () => {
     expectRecipe(sim, 'thick_hair', 2);
   });
 });
+
+// The ladle's stirring modes stir at fixed speeds (see CauldronTools).
+const CALM = 1.6;
+const STRONG = 4.8;
+const WILD = 7.6;
+
+describe('stirring modes give the potions the hints promise', () => {
+  it('Calm: Healing Potion', () => {
+    const sim = new BrewSim().water(2).fire(0.55).heatTo(45).addPieces('glowing_mushroom', 'sliced', 1, 3).stirAt(CALM).run(50);
+    expectRecipe(sim, 'healing_potion', 2);
+  });
+
+  it('Calm: Night Vision', () => {
+    const sim = new BrewSim().water(2).fire(0.5).heatTo(55).add('bat_wing', 'dried').addPieces('glowing_mushroom', 'sliced', 1, 3).stirAt(CALM).run(70);
+    expectRecipe(sim, 'night_vision', 2);
+  });
+
+  it('Calm: Lâ Peace stays perfectly still', () => {
+    const sim = new BrewSim().water(2).fire(0.5).heatTo(45).add('moon_flower', 'dried').addPieces('glowing_mushroom', 'sliced', 1, 3).stirAt(CALM).run(70);
+    expectRecipe(sim, 'la_peace', 2);
+  });
+
+  it('Strong: SIUUU', () => {
+    const sim = new BrewSim().water(2).fire(1).heatTo(90).add('dragon_scale', 'shards', 3, 1 / 3).add('moon_flower', 'whole').stirAt(STRONG).run(50);
+    expectRecipe(sim, 'siuuu', 2);
+  });
+
+  it('Strong then Calm: Swiftness', () => {
+    const sim = new BrewSim().water(2).fire(1.1).heatTo(100).add('dragon_scale', 'ground').add('bat_wing', 'ground');
+    sim.stirAt(STRONG).run(35).stirAt(CALM).run(12);
+    expectRecipe(sim, 'swiftness');
+  });
+
+  it('Calm then Strong: Giant Strength', () => {
+    const sim = new BrewSim().water(3).fire(1).heatTo(98).add('dragon_scale', 'ground', 2).addPieces('glowing_mushroom', 'sliced', 1, 3);
+    sim.stirAt(CALM).run(25).stirAt(STRONG).run(25);
+    expectRecipe(sim, 'giant_strength');
+  });
+
+  it('Strong stirring for a long time does not make a brew unstable', () => {
+    const sim = new BrewSim().water(2).fire(0.95).heatTo(85).add('dragon_scale', 'shards', 3, 1 / 3).stirAt(STRONG).run(90);
+    expectRecipe(sim, 'strength', 2);
+  });
+
+  it('Wild stirring makes it unstable', () => {
+    const sim = new BrewSim().water(2).fire(0.55).heatTo(45).addPieces('glowing_mushroom', 'sliced', 1, 3).stirAt(WILD).run(20);
+    expect(sim.chem.stability).toBeLessThan(0.3);
+  });
+});

@@ -107,8 +107,8 @@ export const RECIPES: RecipeDef[] = [
     agitation: { max: 0.3 },
     potencyMul: 0.6,
     hint: {
-      en: 'Flower power: a DRIED moon flower and a mushroom, only warm, stirred so calmly the brew becomes perfectly still.',
-      tr: 'Çiçek gücü: KURUTULMUŞ bir Ay Çiçeği ve bir mantar, sadece ılık, iksir kıpırtısız olana dek çok sakin karıştır.',
+      en: 'A DRIED Moon Flower + a sliced Glowing Mushroom, warm 25–72°C. Stirring: Calm for a long time until perfectly still – never Strong.',
+      tr: 'KURUTULMUŞ Ay Çiçeği + dilimlenmiş Parlayan Mantar, ılık 25–72°C. Karıştırma: tamamen durulana kadar uzun süre Dengeli – asla Güçlü değil.',
     },
     drink: 'peace',
   },
@@ -135,8 +135,8 @@ export const RECIPES: RecipeDef[] = [
     ingredientTemp: { frost_crystal: { min: 70 } },
     potencyMul: 0.55,
     hint: {
-      en: 'Dragon scale first, sizzling hot – then sprinkle GROUND frost crystal over it like salt.',
-      tr: 'Önce cızırdayan sıcak ejderha pulu – sonra üstüne tuz gibi ÖĞÜTÜLMÜŞ buz kristali serp.',
+      en: 'First a ground Dragon Scale in a hot brew (70°C+); once it sizzles, add a GROUND Frost Crystal on top. Stirring: Calm.',
+      tr: 'Önce sıcak iksirde (70°C+) öğütülmüş Ejderha Pulu; cızırdayınca üstüne ÖĞÜTÜLMÜŞ Buz Kristali ekle. Karıştırma: Dengeli.',
     },
     drink: 'salt',
   },
@@ -164,8 +164,8 @@ export const RECIPES: RecipeDef[] = [
     stability: { min: 0.5 },
     potencyMul: 0.75,
     hint: {
-      en: 'Gold dust and dried sunshine: GROUND dragon scale with a DRIED mushroom, hot but not boiling over, stirred steadily.',
-      tr: 'Altın tozu ve kurutulmuş güneş ışığı: ÖĞÜTÜLMÜŞ ejderha pulu ve KURUTULMUŞ mantar, sıcak ama taşmadan, düzenli karıştır.',
+      en: 'A GROUND Dragon Scale + a DRIED Glowing Mushroom, hot 60–105°C. Stirring: Calm until stable.',
+      tr: 'ÖĞÜTÜLMÜŞ Ejderha Pulu + KURUTULMUŞ Parlayan Mantar, sıcak 60–105°C. Karıştırma: dengelenene kadar Dengeli.',
     },
     drink: 'goldrain',
   },
@@ -191,8 +191,8 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { min: 68, max: 115 },
     potencyMul: 0.5,
     hint: {
-      en: 'Strength that watches you: dragon scale and a bog toad eye (not mashed!) in a hot brew.',
-      tr: 'Seni izleyen kuvvet: sıcak bir iksirde ejderha pulu ve bir bataklık kurbağası gözü (ezmeden!).',
+      en: 'Dragon Scale (shards) + a WHOLE Bog Toad Eye (do not mash!), hot 68–115°C. Stirring: Calm.',
+      tr: 'Ejderha Pulu (parçalar) + BÜTÜN Bataklık Kurbağası Gözü (ezme!), sıcak 68–115°C. Karıştırma: Dengeli.',
     },
     drink: 'eyebrow',
   },
@@ -217,8 +217,8 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { max: 50 },
     potencyMul: 0.65,
     hint: {
-      en: 'Frosty breath under the moon: moon flower and frost crystal in a cool brew, never heated past 50°C.',
-      tr: 'Ay altında buğulu nefes: serin bir iksirde Ay Çiçeği ve buz kristali, asla 50°C üstüne ısıtma.',
+      en: 'A Moon Flower + a Frost Crystal, kept cool – never above 50°C (little or no fire). Stirring: Calm.',
+      tr: 'Ay Çiçeği + Buz Kristali, serin tut – asla 50°C üstü değil (az ya da hiç ateş). Karıştırma: Dengeli.',
     },
     drink: 'breathtaking',
   },
@@ -245,8 +245,8 @@ export const RECIPES: RecipeDef[] = [
     agitation: { min: 0.3 },
     potencyMul: 0.8,
     hint: {
-      en: 'Champion’s fuel: dragon scale and a moon flower, boiled hot (85°C+) and stirred HARD like extra time in a final.',
-      tr: 'Şampiyon yakıtı: ejderha pulu ve Ay Çiçeği, sıcak kaynat (85°C+) ve finalde uzatmalar gibi SERTÇE karıştır.',
+      en: 'Dragon Scale (shards) + a Moon Flower, boiling hot (85°C+). Stirring: STRONG.',
+      tr: 'Ejderha Pulu (parçalar) + Ay Çiçeği, kaynar sıcak (85°C+). Karıştırma: GÜÇLÜ.',
     },
     drink: 'siuuu',
   },
@@ -273,8 +273,8 @@ export const RECIPES: RecipeDef[] = [
     stability: { min: 0.7 },
     potencyMul: 0.85,
     hint: {
-      en: 'SLICED mushroom and a frost crystal, cooked at exactly 60–75°C – not raw, not burnt – and stirred calm and stable.',
-      tr: 'DİLİMLENMİŞ mantar ve buz kristali, tam 60–75°C’de pişir – çiğ değil, yanık değil – ve sakin, dengeli karıştır.',
+      en: 'A SLICED Glowing Mushroom + a Frost Crystal, cooked at exactly 60–75°C. Stirring: Calm until very stable.',
+      tr: 'DİLİMLENMİŞ Parlayan Mantar + Buz Kristali, tam 60–75°C\'de pişir. Karıştırma: çok dengeli olana kadar Dengeli.',
     },
     drink: 'chefkiss',
   },
@@ -300,8 +300,8 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { max: 50 },
     potencyMul: 0.75,
     hint: {
-      en: 'A DRIED bat wing for the attitude and a frost crystal to make it ice-cold. Never warmer than 50°C.',
-      tr: 'Tavır için KURUTULMUŞ yarasa kanadı, buz gibi olsun diye buz kristali. Asla 50°C’den sıcak olmasın.',
+      en: 'A DRIED Bat Wing + a Frost Crystal, ice-cold – never above 50°C. Stirring: Calm.',
+      tr: 'KURUTULMUŞ Yarasa Kanadı + Buz Kristali, buz gibi – asla 50°C üstü değil. Karıştırma: Dengeli.',
     },
     drink: 'ayran',
   },
@@ -327,8 +327,8 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { min: 50, max: 98 },
     potencyMul: 1.15,
     hint: {
-      en: 'Go BIG: at least 3 litres of water, a dragon scale and a mushroom, simmered at 50–95°C.',
-      tr: 'BÜYÜK düşün: en az 3 litre su, bir ejderha pulu ve bir mantar, 50–95°C’de pişir.',
+      en: 'At least 3 litres of water (two buckets), a Dragon Scale + a Glowing Mushroom, 50–95°C. Stirring: Calm.',
+      tr: 'En az 3 litre su (iki kova), Ejderha Pulu + Parlayan Mantar, 50–95°C. Karıştırma: Dengeli.',
     },
     drink: 'bigsmile',
   },
@@ -355,8 +355,8 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { max: 45 },
     potencyMul: 1.5,
     hint: {
-      en: 'Like yeasting a lake: lots of water (3.2 L or more), a MASHED mushroom, only lukewarm (below 45°C).',
-      tr: 'Göle maya çalar gibi: bolca su (3,2 L ya da fazla), EZİLMİŞ bir mantar, sadece ılık (45°C altı).',
+      en: 'Lots of water: 3.2 litres or more (two buckets), one MASHED Glowing Mushroom, only lukewarm – below 45°C. Stirring: Calm.',
+      tr: 'Bolca su: 3,2 litre ya da fazla (iki kova), bir EZİLMİŞ Parlayan Mantar, sadece ılık – 45°C altı. Karıştırma: Dengeli.',
     },
     drink: 'yatutarsa',
   },
@@ -381,8 +381,8 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { max: 60 },
     potencyMul: 0.8,
     hint: {
-      en: 'Something from the sea and something cold: a bog toad eye and a frost crystal, kept below 60°C.',
-      tr: 'Denizden bir şey ve soğuk bir şey: bataklık kurbağası gözü ve buz kristali, 60°C altında tut.',
+      en: 'A Bog Toad Eye + a Frost Crystal, cold – below 60°C. Stirring: Calm.',
+      tr: 'Bataklık Kurbağası Gözü + Buz Kristali, soğuk – 60°C altı. Karıştırma: Dengeli.',
     },
     drink: 'hamsi',
   },
@@ -408,8 +408,8 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { min: 40, max: 90 },
     potencyMul: 0.9,
     hint: {
-      en: 'Night on night: a DRIED bat wing and a moon flower, warm to hot (40–90°C). Fresh wings are poison – for hair too.',
-      tr: 'Gece üstüne gece: KURUTULMUŞ yarasa kanadı ve Ay Çiçeği, ılıktan sıcağa (40–90°C). Taze kanat zehirlidir – saç için de.',
+      en: 'A DRIED Bat Wing + a Moon Flower, warm 40–90°C. Stirring: Calm.',
+      tr: 'KURUTULMUŞ Yarasa Kanadı + Ay Çiçeği, ılık 40–90°C. Karıştırma: Dengeli.',
     },
     drink: 'hair',
   },
@@ -433,7 +433,10 @@ export const RECIPES: RecipeDef[] = [
     bottle: 'heart',
     primary: ['chaos'],
     shares: { chaos: { min: 0.09 } },
-    hint: { en: 'Light and shadow, clashing in a furious boil. Or a whirlpool of madness.', tr: 'Işık ve gölge, öfkeli bir kaynamada çarpışıyor. Ya da bir delilik girdabı.' },
+    hint: {
+      en: 'First a ground Bat Wing at a boil (100°C), then a sliced Glowing Mushroom – light and shadow clash. (A mashed Bog Toad Eye works too.) Stirring: Calm.',
+      tr: 'Önce kaynarken (100°C) öğütülmüş Yarasa Kanadı, sonra dilimlenmiş Parlayan Mantar – ışık ve gölge çarpışır. (Ezilmiş Bataklık Kurbağası Gözü de olur.) Karıştırma: Dengeli.',
+    },
     drink: 'frog',
   },
   {
@@ -453,7 +456,10 @@ export const RECIPES: RecipeDef[] = [
     primary: ['blood'],
     shares: { blood: { min: 0.06 }, chaos: { max: 0.08 } },
     potencyMul: 1.3,
-    hint: { en: 'Healing, shadow and fire together above 108°C – but keep the light out.', tr: '108°C üstünde şifa, gölge ve ateş bir arada – ama ışığı dışarıda tut.' },
+    hint: {
+      en: 'First a ground Dragon Scale at high heat, then a ground Glowing Mushroom + two ground Bat Wings; boil above 108°C. Stirring: Calm.',
+      tr: 'Önce yüksek ateşte öğütülmüş Ejderha Pulu, sonra öğütülmüş Parlayan Mantar + iki öğütülmüş Yarasa Kanadı; 108°C üstünde kaynat. Karıştırma: Dengeli.',
+    },
     drink: 'blood',
   },
   {
@@ -473,7 +479,11 @@ export const RECIPES: RecipeDef[] = [
     primary: ['speed'],
     shares: { speed: { min: 0.07 }, chaos: { max: 0.1 } },
     potencyMul: 1.6,
-    hint: { en: 'Fire and shadow, stirred hard at a boil.', tr: 'Ateş ve gölge, kaynarken sertçe karıştırılmış.' },
+    hint: {
+      en: 'A ground Dragon Scale + a ground dried Bat Wing at a boil (100°C+). Stirring: STRONG for about 30 seconds, then Calm.',
+      tr: 'Öğütülmüş Ejderha Pulu + öğütülmüş kuru Yarasa Kanadı, kaynarken (100°C+). Karıştırma: yaklaşık 30 saniye GÜÇLÜ, sonra Dengeli.',
+    },
+    stir: 'strong',
     drink: 'speed',
   },
   {
@@ -498,7 +508,10 @@ export const RECIPES: RecipeDef[] = [
     agitation: { min: 0.4 },
     minConcentration: 3.0,
     potencyMul: 1.1,
-    hint: { en: 'Lots of dragon scale, a touch of mushroom magic, a hard boil and a hard stir.', tr: 'Bolca ejderha pulu, bir tutam mantar büyüsü, sert bir kaynama ve sert bir karıştırma.' },
+    hint: {
+      en: '3 litres of water, two ground Dragon Scales + a sliced Glowing Mushroom, above 92°C. Stirring: Calm first, then STRONG for 25 seconds.',
+      tr: '3 litre su, iki öğütülmüş Ejderha Pulu + dilimlenmiş Parlayan Mantar, 92°C üstü. Karıştırma: önce Dengeli, sonra 25 saniye GÜÇLÜ.',
+    },
     drink: 'giant',
   },
   {
@@ -521,7 +534,10 @@ export const RECIPES: RecipeDef[] = [
     ingredientTemp: { glowing_mushroom: { min: 85 } },
     flags: { forbid: ['scorched'] },
     potencyMul: 1.45,
-    hint: { en: 'Dragon Scale + Mushroom + High Heat. Order matters!', tr: 'Ejderha Pulu + Mantar + Yüksek Isı. Sıra önemli!' },
+    hint: {
+      en: 'First a ground Dragon Scale at high heat; when the brew is above 85°C add a sliced Glowing Mushroom. Stirring: Calm.',
+      tr: 'Önce yüksek ateşte öğütülmüş Ejderha Pulu; iksir 85°C\'yi geçince dilimlenmiş Parlayan Mantar ekle. Karıştırma: Dengeli.',
+    },
     drink: 'fireheal',
   },
   {
@@ -545,7 +561,10 @@ export const RECIPES: RecipeDef[] = [
     stability: { min: 0.4 },
     flags: { forbid: ['scorched'] },
     potencyMul: 1.3,
-    hint: { en: 'Mushroom first, then Dragon Scale once it is hot. Stir it calm.', tr: 'Önce mantar, ısınınca Ejderha Pulu. Sakinleşene kadar karıştır.' },
+    hint: {
+      en: 'First a sliced Glowing Mushroom; when the brew is above 75°C add a Dragon Scale. Don\'t boil it past 95°C. Stirring: Calm until stable.',
+      tr: 'Önce dilimlenmiş Parlayan Mantar; iksir 75°C\'yi geçince Ejderha Pulu ekle. 95°C\'yi geçecek kadar kaynatma. Karıştırma: dengelenene kadar Dengeli.',
+    },
     drink: 'heal',
   },
   {
@@ -567,7 +586,10 @@ export const RECIPES: RecipeDef[] = [
     order: [['glowing_mushroom', 'dragon_scale']],
     ingredientTemp: { dragon_scale: { max: 74 } },
     maxTier: 1,
-    hint: { en: 'Mushroom + Dragon Scale + Low Heat.', tr: 'Mantar + Ejderha Pulu + Düşük Isı.' },
+    hint: {
+      en: 'First a sliced Glowing Mushroom, then a Dragon Scale while the brew is still cool (below 74°C, low fire). Stirring: Calm.',
+      tr: 'Önce dilimlenmiş Parlayan Mantar, sonra iksir henüz serinken (74°C altı, kısık ateş) Ejderha Pulu. Karıştırma: Dengeli.',
+    },
     drink: 'regen',
   },
   {
@@ -586,7 +608,10 @@ export const RECIPES: RecipeDef[] = [
     requires: ['moon_flower'],
     brewTemp: { max: 88 },
     potencyMul: 1.2,
-    hint: { en: 'A flower that blooms only at night, brewed gently.', tr: 'Yalnızca gece açan bir çiçek, nazikçe demlenmiş.' },
+    hint: {
+      en: 'A fresh Moon Flower, gently warm, below 88°C. Stirring: Calm.',
+      tr: 'Taze bir Ay Çiçeği, hafif ılık, 88°C altında. Karıştırma: Dengeli.',
+    },
     drink: 'nightvision',
   },
   {
@@ -605,7 +630,10 @@ export const RECIPES: RecipeDef[] = [
     requires: ['phoenix_feather'],
     brewTemp: { min: 90 },
     potencyMul: 1.5,
-    hint: { en: 'A legendary feather in a roaring boil.', tr: 'Kükreyen bir kaynamada efsanevi bir tüy.' },
+    hint: {
+      en: 'A Phoenix Feather boiled hot, above 90°C. Stirring: Calm.',
+      tr: 'Bir Anka Tüyü, 90°C üstünde kaynat. Karıştırma: Dengeli.',
+    },
     drink: 'fireheal',
   },
   {
@@ -628,7 +656,10 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { min: 32, max: 80 },
     stability: { min: 0.45 },
     potencyMul: 1.3,
-    hint: { en: 'Night and light in balance – warm, never hot. Fresh wings are poisonous.', tr: 'Dengede gece ve ışık – ılık, asla sıcak değil. Taze kanatlar zehirlidir.' },
+    hint: {
+      en: 'A DRIED Bat Wing (drying rack by the fire) + a sliced Glowing Mushroom, warm 32–80°C. Fresh wings are poisonous! Stirring: Calm until stable.',
+      tr: 'KURUTULMUŞ Yarasa Kanadı (ateşin yanındaki kurutma askısı) + dilimlenmiş Parlayan Mantar, ılık 32–80°C. Taze kanat zehirlidir! Karıştırma: dengelenene kadar Dengeli.',
+    },
     drink: 'nightvision',
   },
   {
@@ -651,7 +682,10 @@ export const RECIPES: RecipeDef[] = [
     brewTemp: { min: 30, max: 82 },
     stability: { min: 0.4 },
     potencyMul: 1.1,
-    hint: { en: 'A swamp eye – whole, never mashed – in a warm, calm brew.', tr: 'Bataklıktan bir göz – bütün, asla ezilmiş değil – ılık, sakin bir iksirde.' },
+    hint: {
+      en: 'A WHOLE Bog Toad Eye (do not mash it!), warm 30–82°C. Stirring: Calm until stable.',
+      tr: 'BÜTÜN bir Bataklık Kurbağası Gözü (ezme!), ılık 30–82°C. Karıştırma: dengelenene kadar Dengeli.',
+    },
     drink: 'nightvision',
   },
   {
@@ -667,7 +701,10 @@ export const RECIPES: RecipeDef[] = [
     bottle: 'vial',
     primary: ['frost'],
     shares: { frost: { min: 0.35 } },
-    hint: { en: 'Never-melting ice.', tr: 'Hiç erimeyen buz.' },
+    hint: {
+      en: 'One or two Frost Crystals in water. No heat needed. Stirring: Calm.',
+      tr: 'Suya bir iki Buz Kristali. Isıtmaya gerek yok. Karıştırma: Dengeli.',
+    },
     drink: 'water',
   },
   {
@@ -688,7 +725,10 @@ export const RECIPES: RecipeDef[] = [
     combined: [{ aspects: ['fire', 'heat'], min: 0.48 }],
     shares: { healing: { max: 0.08 } },
     brewTemp: { min: 116 },
-    hint: { en: 'Dragon Scale, boiled dangerously hot.', tr: 'Tehlikeli derecede sıcak kaynatılmış Ejderha Pulu.' },
+    hint: {
+      en: 'A ground Dragon Scale boiled very hot: above 116°C (pump the bellows). Stirring: Calm.',
+      tr: 'Öğütülmüş Ejderha Pulu, çok sıcakta kaynat: 116°C üstü (körüğü pompala). Karıştırma: Dengeli.',
+    },
     drink: 'firebreath',
   },
   {
@@ -709,7 +749,10 @@ export const RECIPES: RecipeDef[] = [
     combined: [{ aspects: ['strength', 'power'], min: 0.28 }],
     shares: { healing: { max: 0.12 }, shadow: { max: 0.1 }, chaos: { max: 0.06 } },
     brewTemp: { min: 70, max: 118 },
-    hint: { en: 'Dragon Scale in a hot – but not too hot – brew.', tr: 'Sıcak – ama fazla sıcak değil – bir iksirde Ejderha Pulu.' },
+    hint: {
+      en: 'Dragon Scale broken with the hammer (shards) or ground in the mortar, in a hot brew 70–118°C. Stirring: Calm.',
+      tr: 'Çekiçle kırılmış (parçalar) ya da havanda öğütülmüş Ejderha Pulu, 70–118°C sıcak iksirde. Karıştırma: Dengeli.',
+    },
     drink: 'strength',
   },
   {
@@ -730,7 +773,10 @@ export const RECIPES: RecipeDef[] = [
     combined: [{ aspects: ['light', 'glow'], min: 0.42 }],
     shares: { healing: { max: 0.2 }, shadow: { max: 0.08 } },
     flags: { forbid: ['scorched'] },
-    hint: { en: 'What if the mushroom lost its healing, but kept its shine?', tr: 'Ya mantar şifasını kaybedip parıltısını korursa?' },
+    hint: {
+      en: 'Two DRIED Glowing Mushrooms (drying rack), warm 40–70°C. Don\'t let it boil. Stirring: Calm.',
+      tr: 'İki KURUTULMUŞ Parlayan Mantar (kurutma askısı), ılık 40–70°C. Kaynatma. Karıştırma: Dengeli.',
+    },
     drink: 'glow',
   },
   {
@@ -751,7 +797,10 @@ export const RECIPES: RecipeDef[] = [
     combined: [{ aspects: ['shadow', 'darkness'], min: 0.44 }],
     shares: { light: { max: 0.06 }, poison: { max: 0.12 } },
     brewTemp: { max: 105 },
-    hint: { en: 'Pure shadow, with the poison drawn out.', tr: 'Saf gölge, zehri alınmış.' },
+    hint: {
+      en: 'Two DRIED (or dried and ground) Bat Wings, below 105°C. Stirring: Calm.',
+      tr: 'İki KURUTULMUŞ (ya da kurutup öğütülmüş) Yarasa Kanadı, 105°C altında. Karıştırma: Dengeli.',
+    },
     drink: 'shadow',
   },
   {
@@ -768,7 +817,10 @@ export const RECIPES: RecipeDef[] = [
     primary: ['poison'],
     shares: { poison: { min: 0.17 } },
     brewTemp: { min: 58 },
-    hint: { en: 'Fresh, undried wings. Boiled.', tr: 'Taze, kurutulmamış kanatlar. Kaynatılmış.' },
+    hint: {
+      en: 'FRESH Bat Wings (do NOT dry them), cut into strips with the knife, boiled above 60°C. Stirring: Calm.',
+      tr: 'TAZE Yarasa Kanatları (KURUTMA), bıçakla şerit şerit kes, 60°C üstünde kaynat. Karıştırma: Dengeli.',
+    },
     drink: 'poison',
   },
   {
@@ -790,7 +842,10 @@ export const RECIPES: RecipeDef[] = [
     requires: ['glowing_mushroom'],
     brewTemp: { min: 24, max: 100 },
     flags: { forbid: ['scorched'] },
-    hint: { en: 'Glowing mushroom in a warm brew.', tr: 'Ilık bir iksirde parlayan mantar.' },
+    hint: {
+      en: 'Glowing Mushroom (slice it on the board) in warm water, 25–95°C (medium fire). Stirring: Calm.',
+      tr: 'Parlayan Mantar (tahtada dilimle), ılık suda 25–95°C (orta ateş). Karıştırma: Dengeli.',
+    },
     drink: 'heal',
   },
   {

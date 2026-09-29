@@ -72,8 +72,9 @@ export class Customer extends Entity {
     super();
     this.def = def;
     this.request = request;
-    this.patience = def.patience;
-    this.patienceMax = def.patience;
+    // A little extra patience keeps the game relaxed.
+    this.patienceMax = def.patience * 1.3;
+    this.patience = this.patienceMax;
     this.speed *= def.walkSpeed ?? 1;
     const sheet = characterSheet(def.id, def.archetype, def.look);
     const heightPx = sheet.frameH;

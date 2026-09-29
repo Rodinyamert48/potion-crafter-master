@@ -216,6 +216,8 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-note-title { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: #733e39; margin-bottom: 2px; }
 .wb-note-body { color: #3e2731; }
 .wb-note-sub { color: #733e39; font-size: 15px; margin-top: 2px; }
+.wb-note-guide { color: #733e39; font-size: 15px; margin-top: 3px; line-height: 1.15; }
+.wb-note-guide.ready { color: #265c42; }
 .wb-patience { margin-top: 4px; height: 5px; background: #c28569; }
 .wb-patience > span { display: block; height: 100%; background: #3e8948; }
 .wb-hud-bottom { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px; transform: scale(var(--ui-scale, 1)); transform-origin: bottom left; }

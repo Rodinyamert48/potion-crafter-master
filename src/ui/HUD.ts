@@ -180,13 +180,19 @@ export class HUD {
 
     // Order note
     const c = this.customers.current;
-    const key = c ? `${c.uid}:${c.phase}:${Math.round((c.patience / c.patienceMax) * 20)}` : 'none';
+    const g = this.ctx.shop.cauldron.guide;
+    const guideText = g ? (g.ready ? t('guide.ready') : g.tips[0] ?? '') : '';
+    const key = c ? `${c.uid}:${c.phase}:${Math.round((c.patience / c.patienceMax) * 20)}:${guideText}` : 'none';
     if (key !== this.orderKey) {
       this.orderKey = key;
       this.orderNote.innerHTML = '';
       this.orderNote.appendChild(h('div', 'wb-note-title', t('hud.order')));
       if (c && (c.phase === 'waiting' || c.phase === 'ordering')) {
         this.orderNote.appendChild(h('div', 'wb-note-body', `${c.name}: ${describeRequest(c.request)}`));
+        if (g && c.phase === 'waiting') {
+          const name = g.known ? tr(g.recipe.name) : t('book.unknown');
+          this.orderNote.appendChild(h('div', `wb-note-guide${g.ready ? ' ready' : ''}`, `🧪 ${name}: ${guideText}`));
+        }
         if (!c.infinitePatience) {
           const bar = h('div', 'wb-patience');
           const fill = h('span');

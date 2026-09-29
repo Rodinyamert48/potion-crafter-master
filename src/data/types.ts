@@ -221,6 +221,8 @@ export interface RecipeDef {
   water?: ShareCondition;
   /** Ingredients shown on the book page ("id" or "id:state/state"). */
   book?: string[];
+  /** Recommended stirring mode when the conditions don't say it. */
+  stir?: 'calm' | 'strong' | 'wild';
 }
 
 // ---------------------------------------------------------------------------

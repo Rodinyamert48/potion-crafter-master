@@ -379,7 +379,7 @@ export class BrewChemistry {
     this.agitation += (si - this.agitation) * (1 - Math.exp(-dt / 12));
     if (hasEssence) {
       if (si > 0.05 && si < 0.4) this.stability += 0.075 * dt * (1 - this.stability) * (1 + env.stabilityAssist);
-      else if (si >= 0.4 && si < 0.8) this.stability -= 0.01 * dt;
+      // Strong stirring is neutral; only wild stirring makes a brew unstable.
       else if (si >= 0.8) this.stability -= 0.06 * dt;
       if (this.temperature > 105 && si < 0.05) this.stability -= 0.012 * dt;
       if (env.stabilityAssist > 0) this.stability += env.stabilityAssist * 0.02 * dt * (1 - this.stability);

@@ -143,8 +143,8 @@ export class Tutorial implements GameSystem {
       {
         id: 'stir',
         text: {
-          en: 'Grab the ladle and circle around the cauldron GENTLY. Slow stirring stabilises a brew; too fast and chaos erupts.',
-          tr: 'Kepçeyi tut ve kazanın etrafında NAZİKÇE daire çiz. Yavaş karıştırma iksiri dengeler; fazla hızlısı kaos çıkarır.',
+          en: 'Grab the ladle: it stirs by itself in CALM mode, which stabilises the brew. G (or right click) switches mode: Calm · Strong · Wild · By hand.',
+          tr: 'Kepçeyi tut: DENGELİ modda kendisi karıştırır ve iksiri dengeler. G (ya da sağ tık) modu değiştirir: Dengeli · Güçlü · Kararsız · Elle.',
         },
         target: () => shop.ladle.object.position.clone().add(new THREE.Vector3(0, 1.0, 0)),
         done: () => this.stirTime > 3,

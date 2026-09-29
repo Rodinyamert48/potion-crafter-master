@@ -28,6 +28,15 @@ export function stirZone(speed: number): 'none' | 'gentle' | 'vigorous' | 'frant
 
 const ZONE_COLOR = { none: '#8b9bb4', gentle: '#63c74d', vigorous: '#feae34', frantic: '#e43b44' } as const;
 
+/** Stirring modes (G while holding or pointing at the ladle, or right click):
+ *  the ladle then stirs by itself at a fixed pace – calm (stabilizes), strong
+ *  (hard stir for a strong reaction), wild (unstable, chaos) – and keeps
+ *  going after you let go. 'manual' is the old free circling by hand. */
+export type StirMode = 'calm' | 'strong' | 'wild' | 'manual';
+export const STIR_MODES: StirMode[] = ['calm', 'strong', 'wild', 'manual'];
+const MODE_SPEED: Record<Exclude<StirMode, 'manual'>, number> = { calm: 1.6, strong: 4.8, wild: 7.6 };
+const MODE_COLOR: Record<StirMode, string> = { calm: '#63c74d', strong: '#feae34', wild: '#e43b44', manual: '#c0cbdc' };
+
 export class Ladle extends Entity {
   readonly kind = 'ladle';
   angle = -0.9;
@@ -43,6 +52,10 @@ export class Ladle extends Entity {
   private readonly tmpBowl = new THREE.Vector3();
   private lastPointerAngle = 0;
   private ringAlpha = 0;
+  /** Current stirring mode (see STIR_MODES). */
+  mode: StirMode = 'calm';
+  /** Keeps stirring on its own once the player has used it. */
+  private engaged = false;
 
   constructor(
     ctx: GameContext,
@@ -82,8 +95,34 @@ export class Ladle extends Entity {
     return 'grab';
   }
 
-  override hover(): HoverInfo {
-    return { title: t('obj.ladle'), hint: t('hint.stir') };
+  override hover(ctx: GameContext): HoverInfo {
+    const touch = ctx.input.pointer.type !== 'mouse';
+    return {
+      title: t('obj.ladle'),
+      lines: [{ text: t('stir.modeLine', { mode: t(`stir.mode.${this.mode}`) }), color: MODE_COLOR[this.mode] }, { text: t(`stir.desc.${this.mode}`), color: '#c0cbdc' }],
+      hint: t(touch ? 'hint.stirModeTouch' : 'hint.stirMode'),
+    };
+  }
+
+  /** Right click (long press on touch): next stirring mode. */
+  override altPress(ctx: GameContext): boolean {
+    this.cycleMode(ctx);
+    return true;
+  }
+
+  cycleMode(ctx: GameContext): void {
+    this.mode = STIR_MODES[(STIR_MODES.indexOf(this.mode) + 1) % STIR_MODES.length];
+    ctx.audio.play('uiClick', {});
+    ctx.audio.play('bubble', { x: this.cauldron.center.x, volume: 0.4, pitch: 1.3 });
+    const at = this.cauldron.center.clone().setY(this.cauldron.rimY + 0.55);
+    ctx.ui.floatText(at, `🥄 ${t(`stir.mode.${this.mode}`)}`, MODE_COLOR[this.mode]);
+  }
+
+  /** Stir by itself at the mode's pace (slowing to a stop without liquid). */
+  private autoStir(dt: number): void {
+    const want = this.mode === 'manual' || this.cauldron.chem.water <= 0.15 ? 0 : MODE_SPEED[this.mode];
+    this.angularSpeed = damp(this.angularSpeed, want, 4, dt);
+    this.angle += this.angularSpeed * dt;
   }
 
   private pointerAngle(ctx: GameContext): number | null {
@@ -95,6 +134,7 @@ export class Ladle extends Entity {
 
   override press(ctx: GameContext): Grab {
     this.grabbing = true;
+    this.engaged = true;
     const a0 = this.pointerAngle(ctx);
     this.lastPointerAngle = a0 ?? this.angle;
     const self = this;
@@ -102,10 +142,15 @@ export class Ladle extends Entity {
       entity: this,
       cursor: 'stir',
       hint: () => {
+        if (self.mode !== 'manual') return `${t('stir.modeLine', { mode: t(`stir.mode.${self.mode}`) })} – ${t(`stir.desc.${self.mode}`)} · ${t('hint.stirModeKey')}`;
         const z = stirZone(self.angularSpeed);
-        return z === 'none' ? t('hint.stir') : t(`stir.${z}`);
+        return `${z === 'none' ? t('hint.stir') : t(`stir.${z}`)} · ${t('hint.stirModeKey')}`;
       },
       update(c: GameContext, dt: number) {
+        if (self.mode !== 'manual') {
+          self.autoStir(dt);
+          return;
+        }
         const a = self.pointerAngle(c);
         if (a === null) return;
         const d = angleDelta(self.lastPointerAngle, a);
@@ -128,10 +173,15 @@ export class Ladle extends Entity {
   }
 
   override update(ctx: GameContext, dt: number): void {
+    // G switches the stirring mode while holding or pointing at the ladle.
+    if (ctx.input.wasPressed('KeyG') && (this.grabbing || ctx.interaction.hovered === this)) this.cycleMode(ctx);
     if (!this.grabbing) {
-      this.angularSpeed *= Math.exp(-2.2 * dt);
-      if (Math.abs(this.angularSpeed) < 0.02) this.angularSpeed = 0;
-      this.angle += this.angularSpeed * dt;
+      if (this.mode !== 'manual' && this.engaged) this.autoStir(dt);
+      else {
+        this.angularSpeed *= Math.exp(-2.2 * dt);
+        if (Math.abs(this.angularSpeed) < 0.02) this.angularSpeed = 0;
+        this.angle += this.angularSpeed * dt;
+      }
     }
     // Stirring without liquid does nothing to the brew.
     this.cauldron.stirSpeed = this.cauldron.chem.water > 0.15 ? this.angularSpeed : 0;
@@ -149,7 +199,7 @@ export class Ladle extends Entity {
     const active = this.grabbing || Math.abs(this.angularSpeed) > 0.5;
     this.ringAlpha = damp(this.ringAlpha, active && z !== 'none' ? 0.55 : 0, 6, dt);
     this.ringMat.opacity = this.ringAlpha;
-    this.ringMat.color.set(ZONE_COLOR[z]);
+    this.ringMat.color.set(this.mode === 'manual' ? ZONE_COLOR[z] : MODE_COLOR[this.mode]);
     this.ring.visible = this.ringAlpha > 0.02;
     const loop = ctx.audio.loop('stir', stirLoop);
     loop?.set(this.cauldron.chem.water > 0.15 ? Math.min(1, Math.abs(this.angularSpeed) / 7) : 0);

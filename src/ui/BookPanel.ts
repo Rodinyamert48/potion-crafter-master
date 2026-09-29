@@ -247,9 +247,10 @@ export class BookPanel implements Panel {
     for (const [id, c] of Object.entries(r.ingredientTemp ?? {})) lines.push(t('book.m.addAt', { i: name(id), r: range(c) }));
     if (r.water?.min !== undefined) lines.push(t('book.m.water', { l: r.water.min }));
     if (r.water?.max !== undefined) lines.push(t('book.m.waterMax', { l: r.water.max }));
-    if (r.agitation?.min !== undefined) lines.push(t('book.m.stirHard'));
+    if (r.agitation?.min !== undefined || r.stir === 'strong') lines.push(t('book.m.stirHard'));
     if (r.agitation?.max !== undefined) lines.push(t('book.m.stirSlow'));
     if (r.stability?.min !== undefined) lines.push(t(r.stability.min >= 0.7 ? 'book.m.veryCalm' : 'book.m.calm'));
+    if (r.agitation === undefined && r.stability === undefined && !r.stir) lines.push(t('book.m.stirDefault'));
     if (r.flags?.forbid?.includes('scorched')) lines.push(t('book.m.noScorch'));
     if (r.minConcentration) lines.push(t('book.m.strong'));
     for (const l of lines) box.appendChild(h('p', undefined, `• ${l}`));

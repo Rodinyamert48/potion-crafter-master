@@ -20,6 +20,8 @@ import type { AspectId } from '../../data/types';
 import { clamp, damp, mixHex, noise1, shadeHex, smoothstep } from '../../core/math';
 import { t, tr } from '../../core/i18n';
 import { rng } from '../../core/Random';
+import { brewGuide, type BrewGuide } from './BrewGuide';
+import type { Customer } from '../customers/Customer';
 import { boilLoop, rumbleLoop } from '../../audio/Sfx';
 
 const tmp = new THREE.Vector3();
@@ -59,6 +61,8 @@ export class Cauldron extends Entity {
   private toastCooldown = new Map<string, number>();
   private previewTimer = 0;
   preview: PotionResult | null = null;
+  /** What is still missing for the order at the counter (see BrewGuide). */
+  guide: BrewGuide | null = null;
   private variant: 'iron' | 'copper' | 'magic' = 'iron';
 
   constructor(
@@ -584,7 +588,12 @@ export class Cauldron extends Entity {
     this.previewTimer -= dt;
     if (this.previewTimer <= 0) {
       this.previewTimer = 0.5;
-      this.preview = chem.hasBrew() && water > 0.3 ? evaluate(chem.snapshot()) : null;
+      const brewing = chem.hasBrew() && water > 0.3;
+      const snap = brewing ? chem.snapshot() : null;
+      this.preview = snap ? evaluate(snap) : null;
+      const waiting = ctx.world.ofKind<Customer>('customer').find((c) => c.atCounter && c.phase === 'waiting');
+      const dissolving = [...this.inside].some((id) => ctx.world.entities.get(id)?.kind === 'ingredient');
+      this.guide = waiting ? brewGuide(ctx.state, waiting.request, snap, brewing, dissolving) : null;
     }
   }
 
@@ -615,11 +624,19 @@ export class Cauldron extends Entity {
       lines.push({ text: t('cauldron.stability'), color: chem.stability > 0.5 ? '#63c74d' : chem.stability > 0.25 ? '#feae34' : '#e43b44', bar: chem.stability });
       if (this.preview) {
         const r = RECIPE_MAP[this.preview.recipeId];
-        const known = !!ctx.state.discovered[r.id];
-        lines.push({ text: known ? t('cauldron.forming', { name: tr(r.name) }) : t('cauldron.unknownForming'), color: known ? '#fee761' : '#b55088' });
+        const known = r.kind === 'failure' || ctx.state.knowsRecipe(r.id);
+        const stars = '★'.repeat(this.preview.tier);
+        lines.push({ text: known ? `${t('cauldron.forming', { name: tr(r.name) })} ${stars}` : t('cauldron.unknownForming'), color: known ? '#fee761' : '#b55088' });
       }
     } else if (chem.water > 0.05) {
       lines.push({ text: t('cauldron.nothing'), color: '#8b9bb4' });
+    }
+    if (this.guide) {
+      const g = this.guide;
+      const name = g.known ? tr(g.recipe.name) : t('book.unknown');
+      lines.push({ text: t('guide.for', { name }), color: '#fee761' });
+      if (g.ready) lines.push({ text: t('guide.ready'), color: '#63c74d' });
+      for (const tip of g.tips) lines.push({ text: `→ ${tip}`, color: '#f4e6c8' });
     }
     const pieces = [...this.inside].filter((id) => ctx.world.entities.get(id)?.kind === 'ingredient').length;
     if (pieces > 0) lines.push({ text: t('cauldron.pieces', { n: pieces }), color: '#c0cbdc' });

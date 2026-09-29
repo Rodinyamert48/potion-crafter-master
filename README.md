@@ -39,7 +39,8 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 | `Space` / sağ tık (tutarken) | Kova/şişeyi eğip dök · bıçak/çekiçle vur |
 | Bıçağı hızla malzemenin üstünden geçir | Dilimle |
 | Çekici hızla aşağı savur | Ez / kır |
-| Havan tokmağını, kepçeyi daire çizerek çevir | Öğüt / karıştır |
+| Havan tokmağını daire çizerek çevir | Öğüt |
+| Kepçeyi tut · `G` / sağ tık | Karıştır (kendisi karıştırır) · karıştırma modunu değiştir |
 | Körüğü aşağı yukarı pompala | Ateşi harla |
 | Tutarken `Q`/`E` veya fare tekerleği | Nesneyi döndür |
 | Tutarken `R` · `F` | Nesneyi yukarı kaldır · aşağı indir (dokunmatikte ▲ ▼) |
@@ -70,7 +71,17 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   zincirle ateşten kaldırılır (yükseldikçe ısı azalır), su dökmek soğutur,
   musluk boşaltır. Kovayı fıçıya götürmen (ya da üstüne bırakman) yeter:
   anında ağzına kadar dolar.
-- **Karıştırma:** yavaş = kararlı, hızlı = güçlü, çok hızlı = kararsız.
+- **Karıştırma:** kepçeyi tut, kendisi karıştırır (bırakınca da devam eder).
+  `G` (ya da sağ tık / dokunmatikte basılı tut) modu değiştirir: **Dengeli**
+  (iksiri dengeler – çoğu iksir için doğru mod), **Güçlü** (sert karıştırma,
+  güçlü tepkime, dengeyi bozmaz), **Kararsız** (dengesiz, kaos ve girdap) ya da
+  **Elle** (kazanın etrafında kendin daire çizersin). Böylece aynı tarif her
+  seferinde aynı iksiri verir.
+- **Kolay mod yardımcıları:** kitaptaki her tarif açıkça yazılı (malzeme,
+  hazırlık, sıcaklık, karıştırma modu). Tezgâhta bekleyen bir sipariş varken
+  kazanın üstüne gelince ve sipariş notunda "🧪 Şifa İksiri: Ekle: Parlayan
+  Mantar", "Sıcaklık 70°C üstünde olmalı", "Karıştırma: Güçlü", "✓ Hazır!"
+  gibi bir sonraki adım yazar. Müşteriler biraz daha sabırlı.
 - **Tepkimeler veriye dayalıdır:** malzeme, miktar, sıra, sıcaklık, karıştırma,
   hazırlık yöntemi ve süre sonucu belirler. Örn. *Ejderha pulu + mantar + yüksek
   ısı = Ateş Şifası*, *mantar + ejderha pulu + düşük ısı = Zayıf Yenilenme*.
