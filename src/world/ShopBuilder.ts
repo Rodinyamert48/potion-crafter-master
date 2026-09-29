@@ -67,7 +67,10 @@ import { INGREDIENTS } from '../data/ingredients';
 import { t } from '../core/i18n';
 import { JarSlime, ShelfSpider } from '../gameplay/ShelfCritters';
 import { rng } from '../core/Random';
-import { mesh } from '../rendering/three/models/common';
+import { mesh, quad } from '../rendering/three/models/common';
+import { Cutaway } from './Cutaway';
+import { Painter } from '../rendering/three/textures/Painter';
+import { SaveCrystal } from '../gameplay/SaveCrystal';
 
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
@@ -139,6 +142,43 @@ class Ambient extends Entity {
   }
 }
 
+/** Purple guild banner: gold trim, a glowing crystal emblem, swallowtail hem. */
+function bannerTexture(): THREE.CanvasTexture {
+  const w = 16;
+  const h = 32;
+  const p = new Painter(w, h, 23);
+  p.rect(0, 0, w, h - 4, '#5a2a8a');
+  for (let x = 0; x < w; x++) {
+    const d = Math.abs(x - (w - 1) / 2);
+    p.rect(x, h - 4, 1, Math.round(d * 0.55), '#5a2a8a');
+  }
+  p.rect(0, 0, w, 2, '#feae34');
+  p.rect(1, 2, 1, h - 6, '#feae34');
+  p.rect(w - 2, 2, 1, h - 6, '#feae34');
+  // crystal emblem
+  p.poly(
+    [
+      [8, 7],
+      [11.5, 14],
+      [8, 21],
+      [4.5, 14],
+    ],
+    '#5ab0ff',
+  );
+  p.poly(
+    [
+      [8, 7],
+      [8, 21],
+      [4.5, 14],
+    ],
+    '#9fe8ff',
+  );
+  p.px(7, 11, '#ffffff');
+  p.ring(8, 14, 6, '#feae34', 0.9);
+  p.noise(0.05);
+  return p.texture({ mipmaps: false });
+}
+
 export function buildShop(ctx: GameContext): Shop {
   const scene = ctx.scene;
   const world = ctx.world;
@@ -197,28 +237,65 @@ export function buildShop(ctx: GameContext): Shop {
   }
   // Back wall collider (door is closed for items)
   staticBox(V(0, H / 2, wallZ), [10.6, H, wallT]);
-  // Left wall
-  const leftX = -5.15;
-  const lw1 = new THREE.Mesh(worldBox(wallT, 1.0, 6.6, leftX, 0.5, -0.6, 1.4), stoneMat);
-  const lw2 = new THREE.Mesh(worldBox(wallT, H - 1.0, 6.6, leftX, 1.0 + (H - 1.0) / 2, -0.6, 1.6), plasterMat);
-  for (const w of [lw1, lw2]) {
+  // The other three walls cut away when they stand between the camera and
+  // the room (see Cutaway): lower stone course stays as a stub.
+  const cutaway = new Cutaway();
+  const STUB = 0.28;
+  const wallMesh = (g: THREE.BufferGeometry, m: THREE.Material) => {
+    const w = new THREE.Mesh(g, m);
     w.receiveShadow = true;
     w.castShadow = true;
     scene.add(w);
-  }
+    return w;
+  };
+  const beam = (g: THREE.BufferGeometry) => {
+    const b = mesh(g, beamMat);
+    scene.add(b);
+    return b;
+  };
+  // Left wall
+  const leftX = -5.15;
+  const leftWall = cutaway.wall(leftX + wallT / 2, 0, 1, 0);
+  leftWall.part(wallMesh(worldBox(wallT, 1.0, 6.6, leftX, 0.5, -0.6, 1.4), stoneMat), STUB);
+  leftWall.part(wallMesh(worldBox(wallT, H - 1.0, 6.6, leftX, 1.0 + (H - 1.0) / 2, -0.6, 1.6), plasterMat));
   staticBox(V(leftX, H / 2, -0.6), [wallT, H, 6.8]);
+  // Right wall, with a second window
+  const rightX = 5.35;
+  const rwin = { z0: -2.55, z1: -1.35, y0: 1.35, y1: 2.55 };
+  const rightWall = cutaway.wall(rightX - wallT / 2, 0, -1, 0);
+  const z0 = -4.1;
+  const z1 = 3.1;
+  const rightSegs: Array<[number, number, number, number, THREE.Material, number]> = [
+    [z0, z1, 0, 1.0, stoneMat, STUB],
+    [z0, rwin.z0, 1.0, H, plasterMat, 0],
+    [rwin.z0, rwin.z1, 1.0, rwin.y0, plasterMat, 0],
+    [rwin.z0, rwin.z1, rwin.y1, H, plasterMat, 0],
+    [rwin.z1, z1, 1.0, H, plasterMat, 0],
+  ];
+  for (const [a, b, y0, y1, m, min] of rightSegs)
+    rightWall.part(wallMesh(worldBox(wallT, y1 - y0, b - a, rightX, (y0 + y1) / 2, (a + b) / 2, m === stoneMat ? 1.4 : 1.6), m), min);
+  // Front wall
+  const frontZ = 2.97;
+  const frontWall = cutaway.wall(0, frontZ - wallT / 2, 0, -1);
+  frontWall.part(wallMesh(worldBox(10.8, 1.0, wallT, 0.1, 0.5, frontZ, 1.4), stoneMat), STUB);
+  frontWall.part(wallMesh(worldBox(10.8, H - 1.0, wallT, 0.1, 1.0 + (H - 1.0) / 2, frontZ, 1.6), plasterMat));
   // Invisible bounds (front/right) so items stay in the diorama
   staticBox(V(5.2, 1.5, -0.6), [0.2, 3, 7]);
   staticBox(V(0, 1.5, 2.85), [10.6, 3, 0.2]);
   // Timber: wainscot rail, posts and top beam
   const rail = mesh(worldBox(10.4, 0.1, 0.12, 0, 1.0, wallZ + 0.19, 1), beamMat);
   scene.add(rail);
-  const railL = mesh(worldBox(0.12, 0.1, 6.4, leftX + 0.19, 1.0, -0.6, 1), beamMat);
-  scene.add(railL);
+  leftWall.part(beam(worldBox(0.12, 0.1, 6.4, leftX + 0.19, 1.0, -0.6, 1)));
+  rightWall.part(beam(worldBox(0.12, 0.1, 7.0, rightX - 0.19, 1.0, -0.5, 1)));
+  frontWall.part(beam(worldBox(10.4, 0.1, 0.12, 0, 1.0, frontZ - 0.19, 1)));
   for (const x of [-4.8, -2.3, 0.3, 2.9, 4.8]) scene.add(mesh(worldBox(0.18, H, 0.14, x, H / 2, wallZ + 0.2, 1), beamMat));
-  for (const z of [-3.6, -1.2, 1.2]) scene.add(mesh(worldBox(0.14, H, 0.18, leftX + 0.2, H / 2, z, 1), beamMat));
+  for (const z of [-3.6, -1.2, 1.2]) leftWall.part(beam(worldBox(0.14, H, 0.18, leftX + 0.2, H / 2, z, 1)), STUB / H);
+  for (const z of [-3.6, -0.95, 1.4]) rightWall.part(beam(worldBox(0.14, H, 0.18, rightX - 0.2, H / 2, z, 1)), STUB / H);
+  for (const x of [-4.8, -2.3, 0.3, 2.9, 4.8]) frontWall.part(beam(worldBox(0.18, H, 0.14, x, H / 2, frontZ - 0.2, 1)), STUB / H);
   scene.add(mesh(worldBox(10.4, 0.2, 0.2, 0, H - 0.1, wallZ + 0.2, 1), beamMat));
-  scene.add(mesh(worldBox(0.2, 0.2, 6.6, leftX + 0.2, H - 0.1, -0.6, 1), beamMat));
+  leftWall.part(beam(worldBox(0.2, 0.2, 6.6, leftX + 0.2, H - 0.1, -0.6, 1)));
+  rightWall.part(beam(worldBox(0.2, 0.2, 7.0, rightX - 0.2, H - 0.1, -0.5, 1)));
+  frontWall.part(beam(worldBox(10.4, 0.2, 0.2, 0, H - 0.1, frontZ - 0.2, 1)));
   // Ceiling beams reaching into the room (short, so they never block the camera)
   for (const x of [-3.8, -1.2, 1.5, 4.0]) {
     const b = mesh(worldBox(0.18, 0.18, 1.7, x, H - 0.12, -3.0, 1), beamMat);
@@ -236,6 +313,17 @@ export function buildShop(ctx: GameContext): Shop {
   const skyPlane = new THREE.Mesh(new THREE.PlaneGeometry(win.x1 - win.x0 + 0.4, win.y1 - win.y0 + 0.4), sky);
   skyPlane.position.set((win.x0 + win.x1) / 2, (win.y0 + win.y1) / 2, wallZ - 0.2);
   scene.add(skyPlane);
+  const rWinGroup = windowModel(rwin.z1 - rwin.z0, rwin.y1 - rwin.y0);
+  add(rWinGroup, rightX - 0.05, (rwin.y0 + rwin.y1) / 2, (rwin.z0 + rwin.z1) / 2, -Math.PI / 2);
+  const rSky = new THREE.Mesh(new THREE.PlaneGeometry(rwin.z1 - rwin.z0 + 0.4, rwin.y1 - rwin.y0 + 0.4), sky);
+  add(rSky, rightX + 0.2, (rwin.y0 + rwin.y1) / 2, (rwin.z0 + rwin.z1) / 2, -Math.PI / 2);
+  const rSill = mesh(worldBox(0.34, 0.06, rwin.z1 - rwin.z0 + 0.3, rightX - 0.2, rwin.y0 - 0.02, (rwin.z0 + rwin.z1) / 2, 1), toon({ map: woodPlank('light') }));
+  scene.add(rSill);
+  rightWall.attach(rWinGroup).attach(rSky).attach(rSill);
+  // A guild banner with a crystal emblem on the right wall
+  const banner = quad(0.62, 1.24, toon({ map: bannerTexture(), alphaTest: 0.5, side: THREE.DoubleSide }));
+  add(banner, rightX - wallT / 2 - 0.02, 2.1, 0.25, -Math.PI / 2);
+  rightWall.attach(banner);
   const sill = mesh(worldBox(win.x1 - win.x0 + 0.3, 0.06, 0.34, (win.x0 + win.x1) / 2, win.y0 - 0.02, wallZ + 0.2, 1), toon({ map: woodPlank('light') }));
   scene.add(sill);
   world.addSurface(sill, { tag: 'shelf' });
@@ -562,7 +650,7 @@ export function buildShop(ctx: GameContext): Shop {
   // The expedition map: click it to plan a gathering trip.
   const map = wallMap();
   map.rotation.y = Math.PI / 2;
-  world.add(
+  const mapFixture = world.add(
     new ClickFixture(
       'map',
       map,
@@ -575,6 +663,10 @@ export function buildShop(ctx: GameContext): Shop {
     ),
     ctx,
   );
+  leftWall.attach(mapFixture.object, mapFixture);
+  // A floating save crystal in the back-right corner.
+  world.add(new SaveCrystal(V(4.62, 0, -2.72)), ctx);
+  staticBox(V(4.62, 0.13, -2.72), [0.46, 0.26, 0.46]);
   const plant1 = pottedPlant('#3e8948');
   add(plant1, -1.95, win.y0, wallZ + 0.22);
   const plant2 = pottedPlant('#63c74d', '#733e39');
@@ -680,6 +772,7 @@ export function buildShop(ctx: GameContext): Shop {
     },
     upgradeProps,
     sky,
+    cutaway,
     lightShafts,
     flames: [tableCandle.flame, counterCandle.flame, lecternCandle.flame, lantern.flame, (skull.userData.flame as THREE.Mesh)],
   };

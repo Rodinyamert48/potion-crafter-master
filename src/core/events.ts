@@ -17,6 +17,8 @@ export interface GameEvents {
   'day:end': { day: number };
   'shop:open': Record<string, never>;
   'shop:closed': Record<string, never>;
+  /** The player touched the save crystal. */
+  'crystal:touched': Record<string, never>;
 
   'ingredient:taken': { id: string };
   'ingredient:processed': { id: string; from: PrepState; to: PrepState; action: ToolAction };

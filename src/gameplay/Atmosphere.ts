@@ -137,6 +137,12 @@ export class Atmosphere implements GameSystem {
     }
     ctx.audio.loop('ambience', ambienceLoop)?.set(1, lighting.nightness);
 
+    // Faint magic glimmers drifting up all over the shop
+    if (ctx.state && !ctx.paused)
+      ctx.vfx.rate('glimmer', 1.4, dt, () =>
+        ctx.vfx.mote({ x: rng.range(-4.6, 4.6), y: rng.range(0.2, 2.2), z: rng.range(-3.5, 2.2) }, rng.chance(0.55) ? '#9fe8ff' : '#fee761', 0.05),
+      );
+
     // Dust motes floating in the window light during the day
     const day = 1 - lighting.nightness;
     if (day > 0.2) {

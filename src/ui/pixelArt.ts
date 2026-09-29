@@ -83,6 +83,90 @@ export function frameURL(style: FrameStyle): string {
   });
 }
 
+/** Retro-mode window: blue gradient with a white bevelled, rounded border,
+ *  like the menus of 16-bit fantasy RPGs. The gradient lives in the middle
+ *  slice so it stretches over the whole window. */
+export function retroFrameURL(): string {
+  return cached('frame-retro', () => {
+    const p = new Painter(24, 24, 7);
+    const top = [0x58, 0x78, 0xf0];
+    const bottom = [0x10, 0x18, 0x70];
+    const hex = (c: number[]) => '#' + c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+    for (let y = 0; y < 24; y++) {
+      const t = y < 8 ? 0 : y >= 16 ? 1 : (y - 7.5) / 8.5;
+      const c = top.map((v, i) => v + (bottom[i] - v) * t);
+      p.rect(0, y, 24, 1, hex(c));
+    }
+    // border: dark outline, white rim with grey shading, dark inner line
+    const ring = (inset: number, col: string) => {
+      p.rect(inset + 1, inset, 22 - inset * 2, 1, col);
+      p.rect(inset + 1, 23 - inset, 22 - inset * 2, 1, col);
+      p.rect(inset, inset + 1, 1, 22 - inset * 2, col);
+      p.rect(23 - inset, inset + 1, 1, 22 - inset * 2, col);
+    };
+    ring(0, '#0a0a28');
+    ring(1, '#f0f0f8');
+    ring(2, '#b8b8d0');
+    ring(3, '#0a0a28');
+    // rounded corners
+    for (const [x, y] of [
+      [0, 0],
+      [23, 0],
+      [0, 23],
+      [23, 23],
+    ])
+      p.clearPx(x, y);
+    for (const [x, y] of [
+      [1, 1],
+      [22, 1],
+      [1, 22],
+      [22, 22],
+    ])
+      p.px(x, y, '#0a0a28');
+    for (const [x, y] of [
+      [2, 2],
+      [21, 2],
+      [2, 21],
+      [21, 21],
+    ])
+      p.px(x, y, '#f0f0f8');
+    return toURL(p);
+  });
+}
+
+// White pointing glove (menu cursor of the retro mode), pointing right.
+const GLOVE = [
+  '..kkkkkk........',
+  '.kWWWWWWkkkkkk..',
+  'kWWWWWWWWWWWWWk.',
+  'kWWWWWWkkkkkkkWk',
+  'kWWWWWWWWWWWWk..',
+  'kWWWWWWkkkkkk...',
+  'kWWWWWWWWWWk....',
+  'kSWWWWWkkkk.....',
+  'kSSWWWWWWk......',
+  '.kSSSSSSk.......',
+  '..kkkkkk........',
+];
+
+export function gloveURL(scale = 2): string {
+  return cached(`glove-${scale}`, () => {
+    const p = new Painter(16 * scale, 11 * scale, 1);
+    const pal: Record<string, string> = { k: '#0a0a28', W: '#ffffff', S: '#b8b8d0' };
+    GLOVE.forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) {
+        const c = pal[row[x]];
+        if (c) p.rect(x * scale, y * scale, scale, scale, c);
+      }
+    });
+    return toURL(p);
+  });
+}
+
+export function gloveCursorCSS(): string {
+  return `url(${gloveURL(2)}) 30 6, pointer`;
+}
+
 // ---------------------------------------------------------------------------
 // Icons (16x16)
 // ---------------------------------------------------------------------------

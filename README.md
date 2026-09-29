@@ -43,7 +43,7 @@ tıklamada açılır (tarayıcı otomatik oynatma kuralı).
 | Körüğü aşağı yukarı pompala | Ateşi harla |
 | Tutarken `Q`/`E` veya fare tekerleği | Nesneyi döndür |
 | `WASD` / oklar, sağ/orta tık sürükle | Kamerayı kaydır |
-| Tekerlek · `Q`/`E` | Yakınlaştır · kamerayı döndür |
+| Tekerlek · `Q`/`E` | Yakınlaştır · kamerayı döndür (önünde kalan duvar alçalır) |
 | `1`–`5` | Kamera: dükkân, kazan, masa, raflar, tezgâh |
 | Vincin krank kolunu daire çizerek çevir | Kazanı ateşten kaldır / indir |
 | `B` · `C` · `I` · `M` · `H` · `Esc` | İksir kitabı · katalog · envanter · keşif haritası · yardım · menü |
@@ -90,6 +90,20 @@ Dokunmatik ekranda tek parmak sürükler, iki parmak yakınlaştırır/kaydırı
 - **Ekonomi ve gelişim:** malzeme/şişe/odun siparişi, pirinç körük, gelişmiş ve
   büyülü kazan, fırın, öğütücü, depo, dekorlar… Otomasyon temel mekanikleri
   ortadan kaldırmaz.
+- **Dükkân kedisi Duman:** pencere pervazında uyuyan tombul, gri bir British
+  Shorthair. Üstüne tıklayınca özelleştirme paneli açılır: adını değiştir,
+  5 tüy rengi (mavi-gri, siyah, beyaz, krem, tarçın) ve 5 göz rengi (bakır,
+  altın, zümrüt, safir, ayrı renkli) arasından seç, sev. Seçimler kayda girer.
+- **Kesit duvarlar:** oda dört duvarlı bir oyuncak ev gibidir. Kamera hangi
+  yöne bakıyorsa o yöndeki duvarlar tam boy görünür; kamerayla oda arasında
+  kalan duvarlar alçak bir taş sıraya iner. `Q`/`E` ile döndükçe yan
+  duvarlar yer değiştirir.
+- **Kayıt Kristali:** dükkânın arka köşesinde, parlayan bir rün çemberinin
+  üstünde dönen kristal. Dokununca ilerleme kaydedilir.
+- **Retro mod:** Ayarlar → Retro palet açıkken sahne 16-bit fantastik RPG
+  paletine (indigo gölgeler, titreşimli/dither renk geçişleri) geçer; arayüz
+  mavi gradyanlı, beyaz çerçeveli pencerelere ve beyaz eldiven imlecine
+  bürünür. Tüm yazılar retro VT323 fontuyla (Türkçe karakter destekli).
 - **Kayıt:** para, gün, itibar, envanter, keşifler, görevler, geliştirmeler,
   kazandaki iksir, ocak durumu ve yerdeki eşyalar LocalStorage'a otomatik
   kaydedilir; ayarlar ayrı saklanır.
@@ -148,7 +162,7 @@ Sabit zaman adımı, havuzlanmış parçacıklar (2 çizim çağrısı), paylaş
 geometri/materyaller, kademeli gölge haritası güncellemesi ve düşük
 çözünürlüklü render. Varsayılan "Otomatik" kalite yüksek başlar ve kare hızı
 düşerse kendiliğinden orta/düşük seviyeye iner; ayarlardan kalite, piksel
-boyutu ve retro palet elle de seçilebilir.
+boyutu ve retro mod elle de seçilebilir.
 
 ## Genişletme fikirleri
 

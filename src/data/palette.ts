@@ -40,5 +40,14 @@ export type PaletteKey = keyof typeof PAL;
 
 export const PALETTE_LIST: string[] = Object.values(PAL);
 
+/** 32 colours for the retro mode, in the spirit of 16-bit fantasy RPGs:
+ *  deep indigo shadows, menu blues, warm woods and golds, jewel tones. */
+export const RETRO_PALETTE: string[] = [
+  '#0b0a1f', '#1b1640', '#2c2466', '#3b3b8f', '#2a4fa8', '#4a7bd8', '#8fb8f0', '#f0f4ff',
+  '#2b1a17', '#4d2c22', '#7a4630', '#a8683c', '#d49a5a', '#f0c888', '#ffd860', '#e0a020',
+  '#5a1a3a', '#8c2a4a', '#c83c3c', '#f06858', '#6a2a8a', '#a050c0', '#e088e0', '#1a3a2a',
+  '#2a6a3a', '#50a048', '#98d860', '#1e6a78', '#40b0c0', '#4a4a5e', '#8a8aa0', '#c8c8d8',
+];
+
 /** Outline colour for sprites and the post-process edge pass. */
 export const OUTLINE = '#181425';

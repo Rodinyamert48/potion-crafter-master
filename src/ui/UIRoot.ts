@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import type { GameContext, UIHooks } from '../core/GameContext';
 import type { CursorKind, HoverInfo } from '../world/Entity';
-import { cursorCSS } from './pixelArt';
+import { cursorCSS, gloveCursorCSS } from './pixelArt';
 
 type PanelName = 'book' | 'catalog' | 'inventory' | 'menu' | 'summary' | 'map' | 'cat';
 
@@ -142,7 +142,8 @@ export class UIRoot implements UIHooks {
   setCursor(kind: CursorKind): void {
     if (kind === this.cursor) return;
     this.cursor = kind;
-    this.viewport.style.cursor = cursorCSS(kind === 'no' ? 'default' : kind);
+    const retro = document.documentElement.classList.contains('retro');
+    this.viewport.style.cursor = retro && kind === 'point' ? gloveCursorCSS() : cursorCSS(kind === 'no' ? 'default' : kind);
   }
 
   tooltip(info: HoverInfo | null, x = 0, y = 0): void {

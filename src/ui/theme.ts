@@ -1,6 +1,6 @@
 // Installs the procedurally painted UI art as CSS custom properties.
 
-import { cursorCSS, frameURL, iconURL } from './pixelArt';
+import { cursorCSS, frameURL, gloveCursorCSS, gloveURL, iconURL, retroFrameURL } from './pixelArt';
 
 export function installTheme(): void {
   const root = document.documentElement.style;
@@ -9,4 +9,12 @@ export function installTheme(): void {
     root.setProperty(`--icon-${i}`, `url(${iconURL(i, 2)})`);
   root.setProperty('--cursor-default', cursorCSS('default'));
   root.setProperty('--cursor-point', cursorCSS('point'));
+  root.setProperty('--frame-retro', `url(${retroFrameURL()})`);
+  root.setProperty('--glove', `url(${gloveURL(2)})`);
+  root.setProperty('--cursor-glove', gloveCursorCSS());
+}
+
+/** Retro mode dresses the UI as 16-bit fantasy RPG menus (see styles.css). */
+export function setRetroTheme(on: boolean): void {
+  document.documentElement.classList.toggle('retro', on);
 }

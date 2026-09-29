@@ -97,7 +97,7 @@ export class CameraRig {
   }
 
   rotate(delta: number): void {
-    this.targetYaw = clamp(this.targetYaw + delta, -0.6, 0.6);
+    this.targetYaw = clamp(this.targetYaw + delta, -0.95, 0.95);
   }
 
   shake(amount: number): void {

@@ -5,7 +5,7 @@
 // crisp, consistent pixels without over-pixelating the 3D world.
 
 import * as THREE from 'three';
-import { PALETTE_LIST } from '../../data/palette';
+import { RETRO_PALETTE } from '../../data/palette';
 
 const FULLSCREEN_VERT = /* glsl */ `
   varying vec2 vUv;
@@ -117,10 +117,17 @@ const COMPOSITE_FRAG = /* glsl */ `
     s = clamp(floor(s * uLevels + 0.5 + b * 0.9) / uLevels, 0.0, 1.0);
 
     if (uRetro > 0.5) {
+      // 16-bit fantasy RPG look: shadows sink into indigo, colours get
+      // richer, then an ordered dither between the nearest palette colours.
+      float lum = dot(s, vec3(0.299, 0.587, 0.114));
+      vec3 g = mix(vec3(lum), s, 1.25);
+      g = mix(g * vec3(0.78, 0.8, 1.18) + vec3(0.015, 0.0, 0.05), g, smoothstep(0.08, 0.55, lum));
+      g = mix(g, g * vec3(1.06, 1.0, 0.9), smoothstep(0.6, 1.0, lum));
+      g = clamp(g + b * 0.075, 0.0, 1.0);
       float best = 1e9;
-      vec3 pick = s;
+      vec3 pick = g;
       for (int i = 0; i < 32; i++) {
-        vec3 d = s - uPalette[i];
+        vec3 d = g - uPalette[i];
         float dd = dot(d, d * vec3(0.9, 1.2, 0.7));
         if (dd < best) { best = dd; pick = uPalette[i]; }
       }
@@ -180,7 +187,7 @@ export class PixelPipeline {
       depthTest: false,
       depthWrite: false,
     });
-    const palette = PALETTE_LIST.map((h) => new THREE.Color(h));
+    const palette = RETRO_PALETTE.map((h) => new THREE.Color(h));
     this.compositeMat = new THREE.ShaderMaterial({
       vertexShader: FULLSCREEN_VERT,
       fragmentShader: COMPOSITE_FRAG,
@@ -210,7 +217,7 @@ export class PixelPipeline {
     });
     // Palette colours are defined in sRGB; the shader compares in sRGB space.
     const pal = this.compositeMat.uniforms.uPalette.value as THREE.Vector3[];
-    PALETTE_LIST.forEach((h, i) => {
+    RETRO_PALETTE.forEach((h, i) => {
       const c = new THREE.Color();
       c.setStyle(h, THREE.NoColorSpace);
       pal[i].set(c.r, c.g, c.b);

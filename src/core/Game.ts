@@ -29,6 +29,7 @@ import { clamp } from './math';
 import { Scheduler } from './Scheduler';
 import { t } from './i18n';
 import type { Quality } from '../rendering/three/ThreeRenderer';
+import { setRetroTheme } from '../ui/theme';
 
 export interface GameSystem {
   fixed?(dt: number): void;
@@ -149,6 +150,7 @@ export class Game {
     this.renderer.setPixelPreset(s.pixel);
     this.renderer.setQuality(q);
     this.renderer.pipeline.retro = s.retro ? 1 : 0;
+    setRetroTheme(s.retro);
     this.particles.density = q === 'low' ? 0.5 : q === 'medium' ? 0.8 : 1;
     this.babylonSim.density = this.particles.density;
     this.renderer.rig.shakeEnabled = s.shake;
@@ -270,6 +272,7 @@ export class Game {
     for (const s of this.systems) if (this.playing || s.always) s.update?.(dt);
 
     // Environment visuals
+    ctx.shop.cutaway.update(this.renderer.rig.camera.position, dt);
     const lighting = this.renderer.lighting;
     lighting.hour = ctx.state.hour;
     updateSky(ctx.shop.sky, ctx.state.hour, lighting.nightness, time);

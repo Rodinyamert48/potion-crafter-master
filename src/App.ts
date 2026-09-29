@@ -10,6 +10,7 @@ import { QuestSystem } from './gameplay/quests/QuestSystem';
 import { Tutorial } from './gameplay/tutorial/Tutorial';
 import { Atmosphere } from './gameplay/Atmosphere';
 import { CatPanel } from './ui/CatPanel';
+import { t } from './core/i18n';
 import { ShopSystem } from './gameplay/shop/ShopSystem';
 import { Discovery } from './gameplay/potion/Discovery';
 import { Expedition } from './gameplay/gathering/Expedition';
@@ -82,6 +83,9 @@ export class App {
     ui.registerPanel('inventory', new InventoryPanel(ctx));
     ui.registerPanel('map', new MapPanel(ctx, this.expedition));
     ui.registerPanel('cat', new CatPanel(ctx, this.atmosphere.cat));
+    ctx.bus.on('crystal:touched', () => {
+      if (this.game.playing && this.save.save()) ctx.bus.emit('toast', { text: t('crystal.saved'), kind: 'good' });
+    });
     this.menu = new MenuPanel(ctx, {
       save: () => this.save.save(),
       quit: () => this.quitToTitle(),

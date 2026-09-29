@@ -447,3 +447,57 @@ img, .wb-icon { image-rendering: pixelated; }
 .wb-swatch-eye { border-radius: 50%; background: linear-gradient(90deg, var(--sw) 50%, var(--sw2) 50%); position: relative; }
 .wb-swatch-eye::after { content: ''; position: absolute; left: 50%; top: 5px; width: 6px; height: 20px; margin-left: -3px; background: #181425; border-radius: 3px; }
 .wb-cat-choice { font-size: 16px; color: var(--gold); min-height: 16px; }
+
+/* ------------------------------------------------ retro mode (16-bit RPG)
+   Settings → Retro palette: blue gradient windows with white bevelled
+   borders, white shadowed text and a pointing-glove menu cursor. */
+:root.retro {
+  --text: #f8f8ff;
+  --muted: #c0c8f0;
+  --gold-hi: #fff080;
+  --cursor-point: var(--cursor-glove) !important;
+  --rpg-win: linear-gradient(180deg, #5878f0 0%, #2c44c0 38%, #101870 100%);
+  --rpg-edge: 0 0 0 2px #0a0a28, inset 0 0 0 2px #f0f0f8, inset 0 0 0 3px #b8b8d0, inset 0 0 0 4px #0a0a28;
+}
+.retro .wb-frame-wood, .retro .wb-frame-dark, .retro .wb-frame-gold { border-image-source: var(--frame-retro); color: var(--text); }
+.retro .wb-frame-wood, .retro .wb-frame-dark, .retro .wb-frame-gold,
+.retro .wb-bubble, .retro .wb-toast, .retro .wb-hint, .retro .wb-btn, .retro .wb-tab, .retro .wb-seg button, .retro .wb-station-btn { text-shadow: 2px 2px 0 #0a0a28; }
+.retro .wb-hint, .retro .wb-toast, .retro .wb-toast-bad, .retro .wb-toast-quest, .retro .wb-toast-discovery {
+  background: var(--rpg-win); box-shadow: var(--rpg-edge); border-radius: 6px; padding-left: 18px; padding-right: 18px;
+}
+.retro .wb-toast-discovery { box-shadow: var(--rpg-edge), 0 0 24px #4a7bd8aa; }
+.retro .wb-bubble { background: var(--rpg-win); color: var(--text); box-shadow: var(--rpg-edge), 4px 4px 0 2px #0a0a2855; border-radius: 6px; padding: 9px 13px 10px; }
+.retro .wb-bubble-name { color: var(--gold-hi); }
+.retro .wb-bubble-tail { background: #101870; box-shadow: 2px 2px 0 0 #f0f0f8, 4px 4px 0 0 #0a0a28; }
+.retro .wb-mood-angry, .retro .wb-mood-happy, .retro .wb-mood-worried, .retro .wb-mood-mentor { background: var(--rpg-win); }
+.retro .wb-mood-angry .wb-bubble-tail, .retro .wb-mood-happy .wb-bubble-tail, .retro .wb-mood-worried .wb-bubble-tail, .retro .wb-mood-mentor .wb-bubble-tail { background: #101870; }
+.retro .wb-mood-angry .wb-bubble-name { color: #ff9080; }
+.retro .wb-mood-happy .wb-bubble-name { color: #a0f080; }
+.retro .wb-mood-worried .wb-bubble-name { color: #ffd860; }
+.retro .wb-mood-mentor .wb-bubble-name { color: #e0b0ff; }
+.retro .wb-btn, .retro .wb-btn.primary, .retro .wb-btn-go {
+  position: relative; color: var(--text); background: #1c2c98; border-radius: 4px;
+  box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #8aa0f0, inset 0 -3px 0 #101870;
+}
+.retro .wb-btn.primary, .retro .wb-btn-go { background: #2f4fd0; }
+.retro .wb-btn:hover, .retro .wb-btn.primary:hover, .retro .wb-btn-go:hover { background: #3a5ce0; color: #ffffff; }
+.retro .wb-btn[disabled], .retro .wb-btn-go:disabled { background: #3a3f6a; color: #9098c0; }
+.retro .wb-btn:not([disabled]):hover::before, .retro .wb-seg button:hover::before, .retro .wb-tab:hover::before {
+  content: ''; position: absolute; left: -38px; top: 50%; width: 32px; height: 22px; margin-top: -11px;
+  background: var(--glove) no-repeat center / contain; image-rendering: pixelated; pointer-events: none;
+  animation: gloveNudge 0.5s steps(2) infinite; z-index: 6;
+}
+.retro .wb-close:hover::before { display: none; }
+@keyframes gloveNudge { 0% { transform: translateX(0); } 100% { transform: translateX(4px); } }
+.retro .wb-seg button { position: relative; background: #141f70; color: var(--muted); border-radius: 3px; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #5068c8; }
+.retro .wb-seg button.on { background: #3a5ce0; color: var(--gold-hi); }
+.retro .wb-tab { position: relative; background: #1c2c98; color: var(--text); border-radius: 4px 4px 0 0; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #8aa0f0; }
+.retro .wb-tab.active { background: #5878f0; color: #ffffff; }
+.retro .wb-station-btn, .retro .wb-btn-icon { background: #141f70cc; border-radius: 4px; box-shadow: 0 0 0 2px #0a0a28, inset 0 0 0 1px #5068c8; }
+.retro .wb-logo { color: #ffffff; text-shadow: 4px 4px 0 #2c44c0, 8px 8px 0 #101870, 0 0 44px #4a7bd8cc; }
+.retro .wb-logo small { color: #fff080; }
+.retro .wb-bar { background: #0a0a28; box-shadow: 0 0 0 1px #8aa0f0; }
+.retro .wb-btn.wb-close { position: absolute; }
+/* Coloured status lines stay readable on the blue windows. */
+.retro .wb-tip-label { filter: brightness(1.45) saturate(0.85); }
+.retro .wb-mentor-card .who { color: #ffb0f0; }

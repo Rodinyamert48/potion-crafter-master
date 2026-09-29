@@ -10,6 +10,7 @@ import type { CuttingBoard, DryingRack, Mortar, Knife, Hammer } from '../gamepla
 import type { Bucket, WaterBarrel } from '../gameplay/stations/Water';
 import type { Door, PotionShelf, SupplySource } from '../gameplay/stations/ShopFixtures';
 import type { CameraPreset } from '../rendering/three/CameraRig';
+import type { Cutaway } from './Cutaway';
 
 export interface ShopAnchors {
   doorOutside: THREE.Vector3;
@@ -47,6 +48,8 @@ export interface Shop {
   /** Objects shown only when an upgrade is owned. */
   upgradeProps: Map<string, THREE.Object3D>;
   sky: THREE.ShaderMaterial;
+  /** Side and front walls that drop away when they block the view. */
+  cutaway: Cutaway;
   lightShafts: THREE.Mesh[];
   flames: THREE.Mesh[];
 }
