@@ -1,4 +1,4 @@
-import{E as e}from"./index-Brj7FdhB.js";import{t}from"./logDepthDeclaration-aY9t2qYi.js";import{t as n}from"./helperFunctions-rv0fNkYL.js";var r=`objectIdFunctions`,i=`highp vec4 encodeObjectId(highp float objectId) {
+import{E as e}from"./index-BFYc7Mi2.js";import{t}from"./logDepthDeclaration-BrZfRS--.js";import{t as n}from"./helperFunctions-Cjts6156.js";var r=`objectIdFunctions`,i=`highp vec4 encodeObjectId(highp float objectId) {
 #ifdef PREPASS_OBJECT_ID_R8
 return vec4(objectId/255.0,0.0,0.0,1.0);
 #else
