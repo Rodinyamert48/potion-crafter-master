@@ -96,8 +96,16 @@ export class World {
     return out;
   }
 
+  /** Online play wraps each entity's update (to route its side effects). */
+  wrapUpdate: ((e: Entity, run: () => void) => void) | null = null;
+
   update(ctx: GameContext, dt: number): void {
-    for (const e of this.entities.values()) if (e.alive) e.update(ctx, dt);
+    const wrap = this.wrapUpdate;
+    for (const e of this.entities.values()) {
+      if (!e.alive) continue;
+      if (wrap) wrap(e, () => e.update(ctx, dt));
+      else e.update(ctx, dt);
+    }
     this.flush(ctx);
   }
 

@@ -367,6 +367,17 @@ export class TravelingMerchant implements GameSystem {
     this.removeStall();
   }
 
+  /** The stall stands in the shop (online guests copy it). */
+  get stallUp(): boolean {
+    return !!this.stall;
+  }
+
+  /** Online guests show the stall while the host's merchant is in. */
+  showStall(on: boolean): void {
+    if (on && !this.stall) this.buildStall();
+    else if (!on && this.stall) this.removeStall();
+  }
+
   private buildStall(): void {
     const ctx = this.ctx;
     this.removeStall();

@@ -49,6 +49,7 @@ import { RECIPE_MAP } from './data/potions';
 import { CUSTOMERS } from './data/customers';
 import type { PrepState } from './data/types';
 import type { Tier } from './gameplay/potion/PotionEvaluator';
+import { Online } from './net/Online';
 
 const AUTOSTART = 'witchs-brew:autostart';
 
@@ -75,6 +76,7 @@ export class App {
   private readonly mapPanel: MapPanel;
   readonly hud: HUD;
   readonly title: TitleScreen;
+  readonly online: Online;
   private readonly menu: MenuPanel;
   private readonly summary: SummaryPanel;
   private loadedSave = false;
@@ -163,8 +165,10 @@ export class App {
     ui.registerPanel(
       'door',
       new DoorPanel(ctx, {
-        leaveBlocker: () => this.expedition.leaveBlocker(),
-        gardenBlocker: () => (!ctx.state.tutorialDone ? t('trip.tutorial') : ctx.interaction.grab ? t('trip.holding') : null),
+        // Online everyone stays in the shop together.
+        leaveBlocker: () => (ctx.net.online ? t('net.noTrips') : this.expedition.leaveBlocker()),
+        gardenBlocker: () =>
+          ctx.net.online ? t('net.noTrips') : !ctx.state.tutorialDone ? t('trip.tutorial') : ctx.interaction.grab ? t('trip.holding') : null,
         openWorld: () => this.openWorld,
         goOutside: (pets) => {
           ui.openPanel(null);
@@ -222,7 +226,8 @@ export class App {
     });
     this.menu = new MenuPanel(ctx, {
       save: () => this.save.save(),
-      quit: () => this.quitToTitle(),
+      quit: () => (ctx.net.isGuest ? this.online.leave() : this.quitToTitle()),
+      online: () => ui.openPanel('online'),
       applySettings: (s: Settings) => game.applySettings(s),
       eraseSave: () => {
         this.save.enabled = false;
@@ -232,7 +237,8 @@ export class App {
     });
     ui.registerPanel('menu', this.menu);
     this.summary = new SummaryPanel(ctx);
-    this.summary.onContinue = () => this.nextDay();
+    // Online guests wait for the host to start the next day.
+    this.summary.onContinue = () => (ctx.net.isGuest ? ctx.bus.emit('toast', { text: t('net.waitHost'), kind: 'info' }) : this.nextDay());
     ui.registerPanel('summary', this.summary);
     this.hud = new HUD(ctx, ui, this.customers, this.day, this.quests, this.tutorial);
     this.hud.visible = false;
@@ -245,9 +251,11 @@ export class App {
         this.menu.fromTitle = true;
         ui.openPanel('menu');
       },
+      online: () => ui.openPanel('online'),
       hasSave: () => this.loadedSave,
     });
     ui.root.appendChild(this.title.el);
+    this.online = new Online(ctx, this);
 
     this.day.onDayEnd = () => {
       this.save.save();
@@ -319,6 +327,27 @@ export class App {
         for (const v of this.customers.pendingVisits) if (v.hour < ctx.state.hour) v.spawned = true;
       }
     }
+  }
+
+  /** Hosting from the title screen: go on with the saved game (or start one). */
+  startFromTitle(): void {
+    if (!this.game.playing) this.startPlaying(!this.loadedSave);
+  }
+
+  /** Joined a room: play in the host's shop (nothing here is saved). */
+  startGuest(): void {
+    const ctx = this.ctx;
+    ctx.audio.unlock();
+    ctx.ui.openPanel(null);
+    this.title.hide();
+    this.hud.visible = true;
+    this.menu.fromTitle = false;
+    ctx.renderer.rig.drift = false;
+    ctx.renderer.rig.setPreset(ctx.shop.presets.overview);
+    this.game.playing = true;
+    this.save.enabled = false;
+    this.save.active = false;
+    this.tutorial.enabled = false;
   }
 
   /** The open world is for PC (mouse + keyboard); phones and tablets get the region list. */

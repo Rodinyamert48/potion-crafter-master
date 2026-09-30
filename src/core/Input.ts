@@ -66,7 +66,9 @@ export class Input {
   /** When false, gameplay input is ignored (menus open). Keyboard still reported. */
   enabled = true;
 
-  constructor(private readonly el: HTMLElement) {
+  /** `el` null: a virtual input driven by `inject*` (another player's hand). */
+  constructor(private readonly el: HTMLElement | null) {
+    if (!el) return;
     el.addEventListener('pointerdown', this.handleDown);
     window.addEventListener('pointermove', this.handleMove, { passive: true });
     window.addEventListener('pointerup', this.handleUp);
@@ -176,10 +178,14 @@ export class Input {
   // -------------------------------------------------------------------------
 
   private updatePosition(clientX: number, clientY: number): void {
+    if (!this.el) return;
     const r = this.el.getBoundingClientRect();
-    const x = clientX - r.left;
-    const y = clientY - r.top;
-    const now = performance.now();
+    this.setPointer(clientX - r.left, clientY - r.top, r.width, r.height, performance.now());
+  }
+
+  /** Pointer at (x, y) CSS px inside a w×h viewport, sampled at `now` (ms). */
+  private setPointer(x: number, y: number, w: number, h: number, now: number): void {
+    const r = { width: w, height: h };
     const dtMs = Math.max(1, now - this.lastMoveTime);
     const mx = x - this.pointer.x;
     const my = y - this.pointer.y;
@@ -203,7 +209,47 @@ export class Input {
     if (this.history.length > 64) this.history.shift();
   }
 
+  // -------------------------------------------------------------------------
+  // Virtual input (remote players)
+  // -------------------------------------------------------------------------
+
+  injectMove(x: number, y: number, w: number, h: number, now = performance.now()): void {
+    this.pointer.type = 'mouse';
+    this.setPointer(x, y, w, h, now);
+    this.pointer.inside = true;
+  }
+
+  injectButton(button: number, down: boolean): void {
+    const b = button === 1 ? 1 : button === 2 ? 2 : 0;
+    if (this.pointer.down[b] === down) return;
+    this.pointer.down[b] = down;
+    const e = new PointerEvent(down ? 'pointerdown' : 'pointerup', { button: b });
+    for (const fn of down ? this.downFns : this.upFns) fn(b, e);
+  }
+
+  injectKey(code: string, down: boolean): void {
+    if (down) {
+      if (!this.keys.has(code)) {
+        this.pressed.add(code);
+        const e = new KeyboardEvent('keydown', { code });
+        for (const fn of this.keyFns) fn(code, e);
+      }
+      this.keys.add(code);
+    } else this.keys.delete(code);
+  }
+
+  injectWheel(dy: number): void {
+    this.wheelAccum += dy;
+    for (const fn of this.wheelFns) fn(dy);
+  }
+
+  /** Let go of everything (a remote player left). */
+  releaseAll(): void {
+    this.resetAll();
+  }
+
   private handleDown = (e: PointerEvent): void => {
+    if (!this.el) return;
     this.pointer.type = e.pointerType;
     if (e.pointerType === 'touch') {
       this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });

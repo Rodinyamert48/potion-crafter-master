@@ -302,4 +302,23 @@ export class FlaskItem extends Entity {
     const p = this.object.position;
     return { type: 'flask', p: [p.x, p.y, p.z], potion: this.potion, slot: this.slot };
   }
+
+  override netState(): unknown {
+    return { p: this.potion, s: this.slot, c: this.claimed ? 1 : 0, h: this.held ? 1 : 0, f: Math.round(this.fill * 100) / 100 };
+  }
+
+  override applyNetState(ctx: GameContext, s: unknown): void {
+    const n = s as { p: PotionResult | null; s: number; c: number; h: number; f: number };
+    const was = this.potion ? `${this.potion.recipeId}:${this.potion.tier}:${this.potion.color}` : '';
+    const now = n.p ? `${n.p.recipeId}:${n.p.tier}:${n.p.color}` : '';
+    if (was !== now) this.setPotion(ctx, n.p);
+    this.fill = n.f;
+    this.claimed = !!n.c;
+    this.held = !!n.h;
+    // Keep the guest's shelf in step (the merchant buys from it).
+    if (n.s !== this.slot) {
+      ctx.shop.shelf.release(this);
+      if (n.s >= 0) ctx.shop.shelf.assign(this, n.s);
+    }
+  }
 }

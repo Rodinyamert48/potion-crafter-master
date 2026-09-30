@@ -30,6 +30,7 @@ import { Scheduler } from './Scheduler';
 import { t } from './i18n';
 import type { Quality } from '../rendering/three/ThreeRenderer';
 import { setRetroTheme } from '../ui/theme';
+import { NetSession, type NetDriver } from '../net/NetSession';
 
 /** The open world / garden: runs instead of (outside) or next to (garden) the shop. */
 export interface ModeHandler {
@@ -55,6 +56,8 @@ export class Game {
   readonly scheduler = new Scheduler();
   /** False while the title screen is up. */
   playing = false;
+  /** Online play (host or guest), set while in a room. */
+  net: NetDriver | null = null;
   /** Level chosen by the automatic quality governor ('auto' setting). */
   private autoQuality: Quality = isMobileDevice() ? 'medium' : 'high';
   private readonly fpsSamples: number[] = [];
@@ -64,7 +67,7 @@ export class Game {
   private constructor(
     readonly core: BabylonCore,
     readonly renderer: ThreeRenderer,
-    viewport: HTMLElement,
+    readonly viewport: HTMLElement,
     uiRoot: HTMLElement,
   ) {
     const bus = new EventBus<GameEvents>();
@@ -105,6 +108,7 @@ export class Game {
       mode: 'shop',
       renderAlpha: 0,
       later: (seconds: number, fn: () => void) => this.scheduler.later(seconds, fn),
+      net: new NetSession(),
     } as unknown as GameContext;
     this.ctx = ctx;
     ctx.interaction = new Interaction(ctx);
@@ -115,8 +119,11 @@ export class Game {
       if (!c.started) return;
       const a = world.entityFromBody(c.a);
       const b = world.entityFromBody(c.b);
-      a?.onImpact(ctx, b, c.impulse, c.point);
-      b?.onImpact(ctx, a, c.impulse, c.point);
+      // An online guest's copies never break or clatter on their own – only
+      // its cosmetic coins bounce here (the host sends the real impacts).
+      const local = (e: typeof a) => !ctx.net.isGuest || e?.kind === 'coin';
+      if (local(a)) a?.onImpact(ctx, b, c.impulse, c.point);
+      if (local(b)) b?.onImpact(ctx, a, c.impulse, c.point);
     });
 
     bus.on('shake', ({ amount }) => renderer.rig.shake(amount * (settings.shake ? 1 : 0)));
@@ -138,6 +145,8 @@ export class Game {
         renderer.render(dt);
       },
     });
+    // In a room the shop keeps going while this tab is in the background.
+    this.loop.keepAlive = () => ctx.net.online;
   }
 
   static async create(viewport: HTMLElement, uiRoot: HTMLElement, onStatus: (s: string) => void): Promise<Game> {
@@ -208,7 +217,7 @@ export class Game {
     const rig = this.renderer.rig;
     ctx.input.onWheel((dy) => {
       if (!this.playing || ctx.ui.panelOpen || ctx.mode !== 'shop') return;
-      if (ctx.interaction.grab instanceof PhysicsGrab) return;
+      if (ctx.interaction.grab instanceof PhysicsGrab || ctx.net.remoteHolding) return;
       rig.zoom(dy * 0.0012);
     });
     ctx.input.onPinch((scale, px, py, rot) => {
@@ -235,7 +244,7 @@ export class Game {
     const input = ctx.input;
     const rig = this.renderer.rig;
     if (ctx.ui.panelOpen) return;
-    const holding = !!ctx.interaction.grab;
+    const holding = !!ctx.interaction.grab || ctx.net.remoteHolding;
     const speed = rig.distance * 0.55 * dt;
     let dx = 0;
     let dz = 0;
@@ -261,7 +270,29 @@ export class Game {
   }
 
   private fixed(dt: number): void {
+    const net = this.ctx.net;
+    net.sim++;
+    try {
+      this.fixedStep(dt);
+    } finally {
+      net.sim--;
+    }
+  }
+
+  private fixedStep(dt: number): void {
     const ctx = this.ctx;
+    if (this.playing && ctx.net.isGuest) {
+      // Online guest: the host simulates. Only cosmetic bodies (coins, glass
+      // shards) move here; everything else follows the host's snapshots.
+      ctx.net.allow++;
+      try {
+        ctx.physics.step(dt);
+        ctx.sync.afterStep();
+      } finally {
+        ctx.net.allow--;
+      }
+      return;
+    }
     if (this.playing && ctx.mode === 'outside') {
       // The shop waits (the master keeps an eye on it); only the open world runs.
       if (!ctx.ui.panelOpen) this.modeHandler?.fixed?.(dt);
@@ -277,6 +308,7 @@ export class Game {
     }
     ctx.gameTime += dt;
     ctx.interaction.fixedUpdate(dt);
+    this.net?.fixedHands?.(dt);
     ctx.world.fixedUpdate(ctx, dt);
     for (const s of this.systems) s.fixed?.(dt);
     ctx.physics.step(dt);
@@ -285,26 +317,50 @@ export class Game {
   }
 
   private update(dt: number, time: number): void {
+    const net = this.ctx.net;
+    net.sim++;
+    try {
+      this.frame(dt, time);
+    } finally {
+      net.sim--;
+    }
+  }
+
+  private frame(dt: number, time: number): void {
     const ctx = this.ctx;
     ctx.time = time;
     const outside = this.playing && ctx.mode === 'outside';
     const inShop = ctx.mode === 'shop';
-    ctx.paused = this.playing ? ctx.ui.panelOpen || outside : false;
+    const net = ctx.net;
+    // Online the shop keeps going behind menus (only the day's end stops it).
+    const menuPause = net.online ? ctx.ui.isPanelOpen('summary') : ctx.ui.panelOpen;
+    ctx.paused = this.playing ? menuPause || outside : false;
     ctx.interaction.enabled = this.playing && !ctx.ui.panelOpen && inShop;
     ctx.input.enabled = true;
     if (this.playing && inShop) this.cameraControls(dt);
     ctx.audio.listenerX = inShop ? this.renderer.rig.focus.x : 0;
     if (this.playing && !ctx.paused) {
       this.scheduler.update(dt);
-      if (inShop) ctx.interaction.update(dt);
+      if (inShop) {
+        ctx.interaction.update(dt);
+        this.net?.updateHands?.(dt);
+      }
       ctx.world.update(ctx, dt);
     } else if (!this.playing) {
       ctx.world.update(ctx, dt);
     } else if (inShop) {
       ctx.ui.tooltip(null);
     }
-    for (const s of this.systems) if ((this.playing && !outside) || s.always) s.update?.(dt);
+    for (const s of this.systems) {
+      if (!((this.playing && !outside) || s.always)) continue;
+      // Guests only run what they show themselves; the host keeps the side
+      // effects of those shared systems (ambience, HUD) to itself.
+      if (net.isGuest && this.playing && !s.always) continue;
+      if (s.always && net.online) net.local(() => s.update?.(dt));
+      else s.update?.(dt);
+    }
     if (this.playing && this.modeHandler) this.modeHandler.update(dt);
+    this.net?.update(dt);
 
     // Environment visuals
     ctx.shop.cutaway.update(this.renderer.rig.camera.position, dt);
@@ -326,7 +382,7 @@ export class Game {
     const g = this.renderer.pipeline.grade;
     g.flash = Math.max(0, g.flash - dt * 2.2);
 
-    this.governQuality(dt);
+    net.local(() => this.governQuality(dt));
     if (!outside) {
       this.babylonSim.update(dt);
       this.particles.setViewport(this.renderer.lowHeight, this.renderer.rig.camera.fov);

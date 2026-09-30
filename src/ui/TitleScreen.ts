@@ -9,6 +9,7 @@ export interface TitleActions {
   newGame(): void;
   continueGame(): void;
   settings(): void;
+  online(): void;
   hasSave(): boolean;
 }
 
@@ -46,6 +47,7 @@ export class TitleScreen {
     mk(t('title.new'), () => {
       if (!hasSave || confirm(t('title.confirmNew'))) this.actions.newGame();
     }, !hasSave);
+    mk(`🌐 ${t('title.online')}`, () => this.actions.online());
     mk(t('title.settings'), () => this.actions.settings());
     el.appendChild(buttons);
     const lang = h('div', 'wb-lang wb-seg');

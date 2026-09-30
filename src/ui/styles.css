@@ -732,3 +732,54 @@ html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap
 .wb-seed-row .locked { color: #a22633; font-size: 16px; }
 .wb-btn.small { font-size: 16px; padding: 3px 10px 4px; }
 .retro .wb-door-choice, .retro .wb-door-pet, .retro .wb-seed-row { filter: sepia(0.3) brightness(0.9); }
+
+/* ---------------------------------------------------------------- online */
+.wb-overlay-top { z-index: 80; }
+.wb-online { min-width: 340px; max-width: min(520px, 92vw); display: flex; flex-direction: column; gap: 8px; padding: 8px 14px; overflow-y: auto; }
+.wb-online h2 { margin: 0; text-align: center; color: var(--gold-hi); font-size: 30px; }
+.wb-online h3 { margin: 0; color: var(--gold); font-size: 22px; }
+.wb-online-row { display: flex; align-items: center; gap: 10px; font-size: 20px; }
+.wb-online-name { width: 190px; font-size: 20px; }
+.wb-online-sec { padding: 6px 10px 10px; background: #181425aa; box-shadow: 0 0 0 2px #3a4466; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.wb-online-lead { margin: 0; font-size: 18px; color: var(--text); line-height: 1.2; }
+.wb-online-label { font-size: 16px; color: var(--muted); }
+.wb-online-coderow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.wb-online-code { font-size: 42px; letter-spacing: 6px; color: var(--gold-hi); text-shadow: 3px 3px 0 #733e39; user-select: text; -webkit-user-select: text; }
+.wb-online-codein { width: 160px; font-size: 30px !important; letter-spacing: 5px; text-transform: uppercase; text-align: center; }
+.wb-online-players { display: flex; flex-wrap: wrap; gap: 6px; }
+.wb-online-player { font-size: 17px; padding: 0 6px; box-shadow: 0 0 0 2px var(--pc, #fee761); color: var(--pc, #fee761); }
+.wb-online-status { margin: 0; font-size: 18px; color: var(--gold-hi); }
+.wb-online-status.bad { color: var(--bad); }
+.wb-online-note { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.2; }
+
+.wb-net {
+  position: absolute; left: 10px; bottom: calc(70px * var(--ui-scale, 1)); z-index: 31;
+  display: flex; flex-direction: column-reverse; gap: 6px; align-items: flex-start;
+  transform: scale(var(--ui-scale, 1)); transform-origin: bottom left; max-width: 340px; pointer-events: none;
+}
+.wb-net[hidden] { display: none; }
+.wb-net-badge { padding: 0 6px; font-size: 16px; line-height: 1.15; min-width: 150px; pointer-events: auto; }
+.wb-net-top { display: flex; align-items: center; gap: 8px; }
+.wb-net-code { font-family: var(--font); font-size: 20px; color: var(--gold-hi); background: none; border: none; padding: 0; cursor: var(--cursor-point, pointer); letter-spacing: 2px; }
+.wb-net-code:hover { color: #fff; }
+.wb-net-ping { color: var(--muted); font-size: 14px; }
+.wb-net-chatbtn { margin-left: auto; background: none; border: none; font-size: 16px; cursor: var(--cursor-point, pointer); padding: 0 2px; }
+.wb-net-player { display: flex; align-items: center; gap: 6px; color: var(--text); white-space: nowrap; }
+.wb-net-player .dot { width: 9px; height: 9px; box-shadow: 0 0 0 2px #181425; }
+.wb-net-log { display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+.wb-net-line { font-size: 18px; color: var(--text); background: #181425cc; padding: 1px 6px; text-shadow: 1px 1px 0 #000; transition: opacity 1s; max-width: 340px; overflow-wrap: anywhere; }
+.wb-net-line.old { opacity: 0; }
+.wb-net-input { width: 300px; font-size: 18px; pointer-events: auto; }
+.wb-net-input[hidden] { display: none; }
+.wb-hand-markers { position: absolute; inset: 0; pointer-events: none; z-index: 29; overflow: hidden; }
+.wb-hand-marker { position: absolute; left: 0; top: 0; display: none; }
+.wb-hand-marker .ring {
+  position: absolute; left: -9px; top: -9px; width: 14px; height: 14px; border: 2px solid var(--pc, #fee761); border-radius: 50%;
+  box-shadow: 0 0 0 2px #18142599, 0 0 8px var(--pc, #fee761);
+}
+.wb-hand-marker.holding .ring { background: var(--pc, #fee761); opacity: 0.85; }
+.wb-hand-marker .name { position: absolute; left: 10px; top: -26px; font-size: 16px; color: var(--pc, #fee761); text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; white-space: nowrap; }
+.wb-net-ended { z-index: 90; }
+.wb-net-endcard { display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 10px 20px; text-align: center; max-width: 420px; }
+.wb-net-endcard h2 { margin: 0; color: var(--gold-hi); }
+.wb-net-endcard p { margin: 0; font-size: 20px; }

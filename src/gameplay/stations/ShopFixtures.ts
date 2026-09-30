@@ -174,6 +174,14 @@ export class SupplySource extends Entity {
     return true;
   }
 
+  override netState(): unknown {
+    return this.shakeT > 0.2 ? 1 : 0;
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    if (s && this.shakeT <= 0.2) this.shakeT = 0.4;
+  }
+
   override update(ctx: GameContext, dt: number): void {
     this.shakeT = Math.max(0, this.shakeT - dt);
     this.model.position.x = this.shakeT > 0 ? Math.sin(this.shakeT * 60) * 0.01 : 0;
@@ -237,6 +245,14 @@ export class LogItem extends Entity {
     const p = this.object.position;
     return { type: 'log', p: [p.x, p.y, p.z] };
   }
+
+  override netState(): unknown {
+    return this.held ? 1 : 0;
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    this.held = !!s;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -287,6 +303,13 @@ export class PotionShelf extends Entity {
     const i = this.stored.indexOf(flask);
     if (i >= 0) this.stored[i] = null;
     flask.slot = -1;
+  }
+
+  /** Online guest: the host put this flask in slot `i`. */
+  assign(flask: FlaskItem, i: number): void {
+    if (i < 0 || i >= this.stored.length) return;
+    this.stored[i] = flask;
+    flask.slot = i;
   }
 
   potions(): FlaskItem[] {
@@ -344,6 +367,14 @@ export class ClickFixture extends Entity {
     const s = 1 + Math.sin(this.bounce * Math.PI) * 0.08;
     this.object.scale.setScalar(s);
   }
+
+  override netState(): unknown {
+    return this.bounce > 0.5 ? 1 : 0;
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    if (s && this.bounce <= 0.5) this.bounce = 1;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -398,6 +429,19 @@ export class Door extends Entity {
     }
     this.angle = damp(this.angle, this.target * 1.35, 5, dt);
     this.leaf.rotation.y = this.angle;
+  }
+
+  override netState(): unknown {
+    return this.target;
+  }
+
+  override applyNetState(ctx: GameContext, s: unknown): void {
+    // Opening: the host's creak and bell come over the network.
+    if (s && !this.target) {
+      this.target = 1;
+      this.closeTimer = 30;
+    } else if (!s && this.target) this.closeTimer = 0;
+    void ctx;
   }
 }
 

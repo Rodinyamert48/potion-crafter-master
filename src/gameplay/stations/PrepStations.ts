@@ -147,7 +147,22 @@ abstract class Tool extends Entity {
 
   protected swingVisual(_s: number): void {}
 
+  override netState(): unknown {
+    const r = (v: number) => Math.round(v * 100) / 100;
+    return [this.held ? 1 : 0, this.returning ? 1 : 0, r(this.model.rotation.x), r(this.model.rotation.z)];
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    const [held, returning, rx, rz] = s as number[];
+    this.held = !!held;
+    this.returning = !!returning;
+    this.model.rotation.x = rx;
+    this.model.rotation.z = rz;
+  }
+
   override update(ctx: GameContext, dt: number): void {
+    // Online guest: the host flies dropped tools home.
+    if (ctx.net.isGuest) return;
     const p = this.object.position;
     const body = this.body;
     if (this.returning && body && !this.held) {
@@ -429,6 +444,18 @@ export class Mortar extends Entity {
     }
   }
 
+  override netState(): unknown {
+    const r = (v: number) => Math.round(v * 1000) / 1000;
+    return [r(this.pestleOffset.x), r(this.pestleOffset.y), this.grinding ? 1 : 0, r(this.speed)];
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    const [x, y, grinding, speed] = s as number[];
+    this.pestleOffset.set(x, y);
+    this.grinding = !!grinding;
+    this.speed = speed;
+  }
+
   override update(ctx: GameContext, dt: number): void {
     if (!this.grinding) {
       this.speed = damp(this.speed, 0, 8, dt);
@@ -542,6 +569,18 @@ export class DryingRack extends Entity {
         ctx.bus.emit('toast', { text: t('toast.charred', { name: tr(item.def.name) }), kind: 'bad' });
         ctx.vfx.smoke(item.object.position, '#262b44', 6, 0.8);
       }
+    }
+  }
+
+  override netState(): unknown {
+    return this.occupied.map((o) => (o && o.alive ? o.id : 0));
+  }
+
+  override applyNetState(ctx: GameContext, s: unknown): void {
+    const ids = s as number[];
+    for (let i = 0; i < this.occupied.length; i++) {
+      const e = ids[i] ? ctx.net.resolve(ids[i]) : null;
+      this.occupied[i] = e instanceof IngredientItem ? e : null;
     }
   }
 

@@ -50,6 +50,8 @@ export abstract class Entity {
   ghostWhenHeld = false;
   /** Time spent resting (used for cleanup & sleep checks). */
   lifetime = 0;
+  /** Online play: stable name for things host and guests both build themselves. */
+  netKey: string | null = null;
 
   constructor(object?: THREE.Object3D) {
     this.object = object ?? new THREE.Group();
@@ -94,6 +96,15 @@ export abstract class Entity {
   serialize(): SavedEntity | null {
     return null;
   }
+
+  /** Online play: the little state guests' copies need to look the same
+   *  (undefined: nothing to send). Must be plain JSON. */
+  netState(): unknown {
+    return undefined;
+  }
+
+  /** Online play (guest): take on the host's state from `netState`. */
+  applyNetState(_ctx: GameContext, _s: unknown): void {}
 
   /** Release GPU/physics resources. The World calls this via `remove`. */
   dispose(ctx: GameContext): void {

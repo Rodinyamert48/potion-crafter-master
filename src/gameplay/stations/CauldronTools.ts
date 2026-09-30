@@ -172,9 +172,24 @@ export class Ladle extends Entity {
     this.bowlBody.setKinematicTarget(this.bowlPos(this.tmpBowl), this.object.quaternion);
   }
 
+  override netState(): unknown {
+    const r = (v: number) => Math.round(v * 1000) / 1000;
+    return [r(this.angle), r(this.angularSpeed), this.mode, this.grabbing ? 1 : 0, this.engaged ? 1 : 0];
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    const [angle, speed, mode, grabbing, engaged] = s as [number, number, StirMode, number, number];
+    this.angle = angle;
+    this.angularSpeed = speed;
+    this.mode = mode;
+    this.grabbing = !!grabbing;
+    this.engaged = !!engaged;
+  }
+
   override update(ctx: GameContext, dt: number): void {
-    // G switches the stirring mode while holding or pointing at the ladle.
-    if (ctx.input.wasPressed('KeyG') && (this.grabbing || ctx.interaction.hovered === this)) this.cycleMode(ctx);
+    // G switches the stirring mode while holding or pointing at the ladle
+    // (an online guest's G goes to the host with their other keys).
+    if (!ctx.net.isGuest && ctx.input.wasPressed('KeyG') && (this.grabbing || ctx.interaction.hovered === this)) this.cycleMode(ctx);
     if (!this.grabbing) {
       if (this.mode !== 'manual' && this.engaged) this.autoStir(dt);
       else {
@@ -258,13 +273,24 @@ export class DrainTap extends Entity {
     };
   }
 
+  override netState(): unknown {
+    return [Math.round(this.open * 100) / 100, this.opening ? 1 : 0];
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    const [open, opening] = s as number[];
+    this.open = open;
+    this.opening = !!opening;
+  }
+
   override update(ctx: GameContext, dt: number): void {
     this.object.position.set(this.spout.x, this.spout.y + this.cauldron.lift, this.spout.z);
     if (!this.opening) this.open = Math.max(0, this.open - dt * 4);
     this.handle.rotation.z = -this.open * 1.2;
     const flowing = this.open > 0.05 && this.cauldron.chem.water > 0.02;
     if (flowing) {
-      const amount = this.cauldron.drain(ctx, 0.9 * this.open * dt);
+      // Online guests only show the stream; the host drains the brew.
+      const amount = ctx.net.isGuest ? 0.9 * this.open * dt : this.cauldron.drain(ctx, 0.9 * this.open * dt);
       if (amount > 0) {
         const sp = this.object.position;
         const p = new THREE.Vector3(sp.x + 0.1, sp.y - 0.05, sp.z);

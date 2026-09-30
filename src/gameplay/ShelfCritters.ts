@@ -147,6 +147,11 @@ export class ShelfSpider extends Entity {
     return { title: t('obj.spider'), hint: t('hint.spider') };
   }
 
+  override dispose(ctx: GameContext): void {
+    this.thread.removeFromParent();
+    super.dispose(ctx);
+  }
+
   override cursor() {
     return 'point' as const;
   }

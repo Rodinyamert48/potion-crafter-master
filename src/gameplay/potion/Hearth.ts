@@ -190,4 +190,13 @@ export class Hearth extends Entity {
   serializeState(): { fuel: number; damper: number } {
     return { fuel: this.fuel, damper: this.damper };
   }
+
+  override netState(): unknown {
+    const r = (v: number) => Math.round(v * 1000) / 1000;
+    return [r(this.fuel), r(this.damper), r(this.boost), r(this.intensity), r(this.heatScale)];
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    [this.fuel, this.damper, this.boost, this.intensity, this.heatScale] = s as number[];
+  }
 }

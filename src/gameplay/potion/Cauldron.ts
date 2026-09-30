@@ -647,4 +647,22 @@ export class Cauldron extends Entity {
   serializeState(): unknown {
     return this.chem.serialize();
   }
+
+  override netState(): unknown {
+    const r = (v: number) => Math.round(v * 1000) / 1000;
+    return { ch: this.chem.serialize(), l: r(this.lift), s: r(this.stirSpeed), v: r(this.vortex), so: r(this.soot) };
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    const n = s as { ch: import('./BrewChemistry').BrewSave; l: number; s: number; v: number; so: number };
+    this.chem.restore(n.ch);
+    this.lift = n.l;
+    this.stirSpeed = n.s;
+    this.vortex = n.v;
+    this.soot = n.so;
+    // (The host moves the pot with the hoist in its physics step.)
+    this.center.set(this.restCenter.x, this.restCenter.y + this.lift, this.restCenter.z);
+    this.object.position.y = this.center.y;
+    this.hearth.heatScale = this.heatFactor;
+  }
 }

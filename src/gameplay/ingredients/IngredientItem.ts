@@ -286,6 +286,25 @@ export class IngredientItem extends Entity {
     return { title: this.name, subtitle: tr(this.def.description).split('.')[0] + '.', hint: t('hint.drag'), lines };
   }
 
+  override netState(): unknown {
+    const r = (v: number) => Math.round(v * 1000) / 1000;
+    return [this.state, r(this.mass), r(this.initialMass), r(this.dryness), r(this.burn), r(this.grind), this.held ? 1 : 0];
+  }
+
+  override applyNetState(ctx: GameContext, s: unknown): void {
+    const [state, mass, initialMass, dryness, burn, grind, held] = s as [PrepState, number, number, number, number, number, number];
+    this.held = !!held;
+    this.mass = mass;
+    this.dryness = dryness;
+    this.burn = burn;
+    this.grind = grind;
+    if (state !== this.state || Math.abs(initialMass - this.initialMass) > 1e-3) {
+      this.state = state;
+      this.initialMass = initialMass;
+      this.rebuild(ctx);
+    } else this.applyTint();
+  }
+
   override serialize(): SavedEntity {
     const p = this.object.position;
     const q = this.object.quaternion;

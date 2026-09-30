@@ -85,6 +85,16 @@ export class Bellows extends Entity {
     return this.object.localToWorld(new THREE.Vector3(-0.17, 0.05, 0));
   }
 
+  override netState(): unknown {
+    return [Math.round(this.targetCompression * 100) / 100, this.pumping ? 1 : 0];
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    const [target, pumping] = s as number[];
+    this.targetCompression = target;
+    this.pumping = !!pumping;
+  }
+
   override update(_ctx: GameContext, dt: number): void {
     if (!this.pumping) this.targetCompression = 0;
     this.compression = damp(this.compression, this.targetCompression, this.pumping ? 18 : 6, dt);

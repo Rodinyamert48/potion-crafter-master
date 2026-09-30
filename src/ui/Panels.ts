@@ -123,6 +123,8 @@ export interface MenuActions {
   quit(): void;
   applySettings(s: Settings): void;
   eraseSave(): void;
+  /** Rooms: host one or see who is in. */
+  online(): void;
 }
 
 export class MenuPanel extends BasePanel {
@@ -161,14 +163,18 @@ export class MenuPanel extends BasePanel {
     };
     if (this.view === 'main') {
       el.appendChild(h('h2', undefined, t('menu.title')));
+      const guest = this.ctx.net.isGuest;
       btn(t('menu.resume'), () => this.ctx.ui.openPanel(null), true);
       btn(t('menu.settings'), () => this.showView('settings'));
       btn(t('menu.help'), () => this.showView('help'));
-      btn(t('menu.save'), () => {
-        this.actions.save();
-        this.ctx.bus.emit('toast', { text: t('toast.saved'), kind: 'good' });
-      });
-      btn(t('menu.quit'), () => this.actions.quit());
+      btn(`🌐 ${t('net.menu')}`, () => this.actions.online());
+      // A guest plays in the host's shop: nothing of theirs to save here.
+      if (!guest)
+        btn(t('menu.save'), () => {
+          this.actions.save();
+          this.ctx.bus.emit('toast', { text: t('toast.saved'), kind: 'good' });
+        });
+      btn(guest ? t('net.leave') : t('menu.quit'), () => this.actions.quit());
       return;
     }
     if (this.view === 'help') {

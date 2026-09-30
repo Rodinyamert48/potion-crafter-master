@@ -37,10 +37,12 @@ export class PixelSprite {
   hop = 0;
   squash = 0;
   opacity = 1;
+  /** Bumped whenever an animation (re)starts (online sync). */
+  serial = 0;
 
   constructor(
     readonly sheet: SpriteSheet,
-    scale = 1,
+    readonly scale = 1,
   ) {
     this.widthM = (sheet.frameW / PX_PER_M) * scale;
     this.heightM = (sheet.frameH / PX_PER_M) * scale;
@@ -72,12 +74,14 @@ export class PixelSprite {
     this.shadow.userData.noPick = true;
     this.shadow.raycast = () => {};
     this.root.add(this.shadow);
+    this.root.userData.pixelSprite = this;
     this.setFrame(0);
   }
 
   play(name: string, restart = false): void {
     if (!this.sheet.anims[name]) name = 'idle';
     if (name === this.anim && !restart) return;
+    this.serial++;
     this.anim = name;
     this.frameIdx = 0;
     this.timer = 0;

@@ -19,6 +19,7 @@ import type { Interaction } from '../world/Interaction';
 import type { CursorKind, HoverInfo } from '../world/Entity';
 import type { GameState } from '../gameplay/GameState';
 import type { Shop } from '../world/Shop';
+import type { NetSession } from '../net/NetSession';
 
 /** What gameplay needs from the UI layer. */
 export interface UIHooks {
@@ -51,7 +52,8 @@ export type PanelName =
   | 'outpause'
   | 'minigame'
   | 'seeds'
-  | 'king';
+  | 'king'
+  | 'online';
 
 /** Where the apprentice is: in the shop, roaming outside (PC) or in the garden. */
 export type GameMode = 'shop' | 'outside' | 'garden';
@@ -92,4 +94,6 @@ export interface GameContext {
   renderAlpha: number;
   /** Run a callback after `seconds` of (pausable) game time. */
   later(seconds: number, fn: () => void): void;
+  /** Online play (room, role, side-effect routing). */
+  net: NetSession;
 }

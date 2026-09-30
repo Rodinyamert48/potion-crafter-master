@@ -193,9 +193,21 @@ export class Bucket extends Entity {
     if (impulse > 1.5) ctx.audio.play('woodKnock', { x: point.x, volume: Math.min(1, impulse / 6), pitch: 1.2 });
   }
 
+  override netState(): unknown {
+    return [Math.round(this.water * 100) / 100, Math.round(this.pouring * 100) / 100, this.held ? 1 : 0];
+  }
+
+  override applyNetState(ctx: GameContext, s: unknown): void {
+    const [water, pouring, held] = s as number[];
+    this.water = water;
+    this.held = !!held;
+    if (pouring !== this.pouring) ctx.audio.loop('bucketPour', pourLoop)?.set(pouring);
+    this.pouring = pouring;
+  }
+
   override update(ctx: GameContext): void {
-    // Dropped into (or onto) the barrel: filled too.
-    if (!this.held && this.water < BUCKET_CAPACITY - 0.01 && this.atBarrel()) this.fill(ctx);
+    // Dropped into (or onto) the barrel: filled too (the host decides online).
+    if (!ctx.net.isGuest && !this.held && this.water < BUCKET_CAPACITY - 0.01 && this.atBarrel()) this.fill(ctx);
     const f = this.water / BUCKET_CAPACITY;
     this.parts.water.visible = f > 0.02;
     this.parts.water.position.y = -0.1 + f * 0.19;

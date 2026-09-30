@@ -12,8 +12,9 @@ import { h } from './UIRoot';
 import { iconURL } from './pixelArt';
 import { t, tr, onLangChange } from '../core/i18n';
 import { QUEST_MAP } from '../data/quests';
-import { TIER_NAMES } from '../data/potions';
+import { RECIPE_MAP, TIER_NAMES } from '../data/potions';
 import type { CustomerRequest } from '../data/types';
+import type { HudInfo } from '../net/Protocol';
 
 export function describeRequest(req: CustomerRequest): string {
   const tagNames = req.tags.map((tag) => t(`tag.${tag}`)).join(' + ');
@@ -36,6 +37,10 @@ export class HUD {
   private orderKey = '';
   private questKey = '';
   private readonly buttons: HTMLElement;
+  /** Online guest: the order note as the host sees it. */
+  remote: HudInfo | null = null;
+  /** Text of the mentor's tutorial card (online guests get the host's). */
+  tutorialText: string | null = null;
 
   constructor(
     private readonly ctx: GameContext,
@@ -135,7 +140,8 @@ export class HUD {
     tutorial.onChange = (text) => this.setTutorial(text);
   }
 
-  private setTutorial(text: string | null): void {
+  private setTutorial(text: string | null, skippable = true): void {
+    this.tutorialText = text;
     if (!text) {
       this.tutorialCard.style.display = 'none';
       return;
@@ -144,9 +150,15 @@ export class HUD {
     this.tutorialCard.innerHTML = '';
     this.tutorialCard.appendChild(h('div', 'who', t('mentor.name')));
     this.tutorialCard.appendChild(h('div', 'step', text));
+    if (!skippable) return;
     const skip = h('div', 'skip', t('misc.skip'));
     skip.addEventListener('click', () => this.tutorial.skip());
     this.tutorialCard.appendChild(skip);
+  }
+
+  /** Online guest: the host's tutorial card (only the host can skip it). */
+  showTutorial(text: string | null): void {
+    if (text !== this.tutorialText) this.setTutorial(text, false);
   }
 
   set visible(v: boolean) {
@@ -183,11 +195,24 @@ export class HUD {
     this.clockTime.textContent = `${t('hud.day', { n: s.day })} · ${this.day.timeString}`;
     this.clockPhase.textContent = `${t(`phase.${s.phase}`)} · ${s.shopOpen ? t('hud.open') : t('hud.closed')}`;
 
-    // Order note
-    const c = this.customers.current;
-    const g = this.ctx.shop.cauldron.guide;
-    const guideText = g ? (g.ready ? t('guide.ready') : g.tips[0] ?? '') : '';
-    const key = c ? `${c.uid}:${c.phase}:${Math.round((c.patience / c.patienceMax) * 20)}:${guideText}` : 'none';
+    // Order note (an online guest shows the host's)
+    let c: { uid: number; name: string; request: CustomerRequest; phase: string; ratio: number; infinite: boolean } | null = null;
+    let g: { name: string; ready: boolean; tip: string } | null = null;
+    let nextHour = -1;
+    const r = this.remote;
+    if (r) {
+      if (r.c) c = { uid: r.c.u, name: r.c.n, request: r.c.r, phase: r.c.ph, ratio: r.c.pt, infinite: !!r.c.inf };
+      if (r.g) g = { name: r.g.k ? tr(RECIPE_MAP[r.g.id]?.name) : t('book.unknown'), ready: !!r.g.rd, tip: r.g.tips[0] ?? '' };
+      nextHour = r.nv;
+    } else {
+      const cur = this.customers.current;
+      if (cur) c = { uid: cur.uid, name: cur.name, request: cur.request, phase: cur.phase, ratio: cur.patience / cur.patienceMax, infinite: cur.infinitePatience };
+      const guide = this.ctx.shop.cauldron.guide;
+      if (guide) g = { name: guide.known ? tr(guide.recipe.name) : t('book.unknown'), ready: guide.ready, tip: guide.tips[0] ?? '' };
+      nextHour = this.customers.pendingVisits[0]?.hour ?? -1;
+    }
+    const guideText = g ? (g.ready ? t('guide.ready') : g.tip) : '';
+    const key = c ? `${c.uid}:${c.phase}:${Math.round(c.ratio * 20)}:${guideText}` : `none:${Math.floor(nextHour * 6)}:${s.shopOpen}`;
     if (key !== this.orderKey) {
       this.orderKey = key;
       this.orderNote.innerHTML = '';
@@ -195,23 +220,21 @@ export class HUD {
       if (c && (c.phase === 'waiting' || c.phase === 'ordering')) {
         this.orderNote.appendChild(h('div', 'wb-note-body', `${c.name}: ${describeRequest(c.request)}`));
         if (g && c.phase === 'waiting') {
-          const name = g.known ? tr(g.recipe.name) : t('book.unknown');
-          this.orderNote.appendChild(h('div', `wb-note-guide${g.ready ? ' ready' : ''}`, `🧪 ${name}: ${guideText}`));
+          this.orderNote.appendChild(h('div', `wb-note-guide${g.ready ? ' ready' : ''}`, `🧪 ${g.name}: ${guideText}`));
         }
-        if (!c.infinitePatience) {
+        if (!c.infinite) {
           const bar = h('div', 'wb-patience');
           const fill = h('span');
-          fill.style.width = `${Math.max(0, (c.patience / c.patienceMax) * 100)}%`;
-          if (c.patience / c.patienceMax < 0.3) fill.style.background = '#e43b44';
+          fill.style.width = `${Math.max(0, c.ratio * 100)}%`;
+          if (c.ratio < 0.3) fill.style.background = '#e43b44';
           bar.appendChild(fill);
           this.orderNote.appendChild(bar);
         }
       } else {
-        const next = this.customers.pendingVisits[0];
         this.orderNote.appendChild(h('div', 'wb-note-body', t('hud.noOrder')));
-        if (next && s.shopOpen) {
-          const hh = Math.floor(next.hour);
-          const mm = Math.floor((next.hour - hh) * 6) * 10;
+        if (nextHour >= 0 && s.shopOpen) {
+          const hh = Math.floor(nextHour);
+          const mm = Math.floor((nextHour - hh) * 6) * 10;
           this.orderNote.appendChild(h('div', 'wb-note-sub', `⏳ ~${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`));
         }
       }

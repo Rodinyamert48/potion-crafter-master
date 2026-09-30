@@ -790,6 +790,11 @@ export function buildShop(ctx: GameContext): Shop {
 
   for (const [id, obj] of upgradeProps) obj.visible = ctx.state.has(id);
 
+  // Online play: host and guests build the very same shop – name its parts
+  // by build order so they can be matched up.
+  let n = 0;
+  for (const e of world.entities.values()) e.netKey = `shop${n++}`;
+
   return {
     cauldron,
     hearth,

@@ -4,7 +4,8 @@
 // push things and can be thrown).
 
 import * as THREE from 'three';
-import type { GameContext } from '../core/GameContext';
+import type { GameContext, UIHooks } from '../core/GameContext';
+import type { Input } from '../core/Input';
 import type { CursorKind, Entity } from './Entity';
 import type { SurfaceInfo } from './World';
 import { clamp, damp, smoothstep } from '../core/math';
@@ -347,6 +348,27 @@ export class PhysicsGrab implements Grab {
 // Interaction manager
 // ---------------------------------------------------------------------------
 
+/** Things somebody (any player's hand) is holding or working right now. */
+export const busyEntities = new Set<Entity>();
+
+/** Hints for carried things, shared by every hand (see registerHeldHint). */
+const heldHints = new Map<string, (e: Entity, ctx: GameContext) => string | null>();
+
+export interface InteractionOptions {
+  /** Pointer/keyboard of this hand (default: the local player's input). */
+  input?: Input;
+  /** Camera the pointer looks through (default: the shop camera). */
+  camera?: () => THREE.Camera;
+  /** Where cursor/tooltip/hint go (default: the local UI). */
+  ui?: Pick<UIHooks, 'setCursor' | 'tooltip' | 'setHint'>;
+  /** Another player's hand: no highlight outline, no drop-target glow. */
+  remote?: boolean;
+}
+
+/** An online guest does not act locally: presses go to the host instead
+ *  (button 0/2 pressed, or -1/-3 for released). */
+export type PressForward = (button: number, entity: Entity | null) => void;
+
 export class Interaction {
   readonly raycaster = new THREE.Raycaster();
   readonly ray = new THREE.Ray();
@@ -361,19 +383,33 @@ export class Interaction {
   /** Magnetic drop targets for carried items. */
   readonly assists: AssistTarget[] = defaultAssistTargets();
   private visuals: AssistVisuals | null = null;
-  private heldHints = new Map<string, (e: Entity, ctx: GameContext) => string | null>();
+  readonly input: Input;
+  private readonly camera: () => THREE.Camera;
+  private readonly ui: Pick<UIHooks, 'setCursor' | 'tooltip' | 'setHint'>;
+  readonly remote: boolean;
+  /** Online guest: presses are sent to the host (nothing is grabbed here). */
+  forward: PressForward | null = null;
+  /** Online guest: what the host says this player's hand is holding. */
+  remoteGrab: { cursor: CursorKind; hint: string | null } | null = null;
 
-  constructor(private readonly ctx: GameContext) {
-    ctx.input.onPointerDown((button) => this.pointerDown(button));
-    ctx.input.onPointerUp((button) => this.pointerUp(button));
+  constructor(
+    private readonly ctx: GameContext,
+    opts: InteractionOptions = {},
+  ) {
+    this.input = opts.input ?? ctx.input;
+    this.camera = opts.camera ?? (() => ctx.renderer.rig.camera);
+    this.ui = opts.ui ?? ctx.ui;
+    this.remote = !!opts.remote;
+    this.input.onPointerDown((button) => this.pointerDown(button));
+    this.input.onPointerUp((button) => this.pointerUp(button));
   }
 
   registerHeldHint(kind: string, fn: (e: Entity, ctx: GameContext) => string | null): void {
-    this.heldHints.set(kind, fn);
+    heldHints.set(kind, fn);
   }
 
   heldHint(e: Entity): string | null {
-    return this.heldHints.get(e.kind)?.(e, this.ctx) ?? null;
+    return heldHints.get(e.kind)?.(e, this.ctx) ?? null;
   }
 
   startPhysicsGrab(e: Entity): PhysicsGrab {
@@ -382,29 +418,46 @@ export class Interaction {
 
   /** Begin holding a freshly spawned entity (e.g. taken from a jar). */
   beginHold(grab: Grab): void {
-    this.grab?.release(this.ctx);
-    this.grab = grab;
+    if (this.grab) this.endGrab(this.grab);
+    this.setGrab(grab);
     this.highlighter.set(null);
   }
 
-  private updateRay(): void {
-    const p = this.ctx.input.pointer;
-    this.raycaster.setFromCamera(new THREE.Vector2(p.ndcX, p.ndcY), this.ctx.renderer.rig.camera);
+  private setGrab(grab: Grab): void {
+    this.grab = grab;
+    busyEntities.add(grab.entity);
+  }
+
+  private endGrab(g: Grab): void {
+    busyEntities.delete(g.entity);
+    g.release(this.ctx);
+  }
+
+  updateRay(): void {
+    const p = this.input.pointer;
+    const cam = this.camera();
+    this.raycaster.setFromCamera(new THREE.Vector2(p.ndcX, p.ndcY), cam);
     this.ray.copy(this.raycaster.ray);
-    const cam = this.ctx.renderer.rig.camera;
     cam.getWorldDirection(this.viewAxis);
     this.viewAxis.y = 0;
     if (this.viewAxis.lengthSq() < 1e-6) this.viewAxis.set(0, 0, -1);
     this.viewAxis.normalize();
   }
 
-  pick(): { entity: Entity; hit: THREE.Intersection } | null {
+  pick(prefer?: Entity | null): { entity: Entity; hit: THREE.Intersection } | null {
+    // A remote player's press names what they pointed at: try that first.
+    if (prefer && prefer.alive && prefer.interactive && !busyEntities.has(prefer)) {
+      const own = this.raycaster.intersectObject(prefer.object, true).find((h) => !h.object.userData.noPick);
+      if (own) return { entity: prefer, hit: own };
+    }
     const hits = this.raycaster.intersectObjects(this.ctx.world.pickables, true);
     for (const h of hits) {
       if (h.object.userData.noPick) continue;
       const e = this.ctx.world.entityFromObject(h.object);
       if (!e || !e.interactive || !e.alive) continue;
       if (this.grab && e === this.grab.entity) continue;
+      // Someone else is holding it (online guests learn that from the host).
+      if (busyEntities.has(e) || (this.forward && e.held)) continue;
       return { entity: e, hit: h };
     }
     return null;
@@ -420,28 +473,49 @@ export class Interaction {
     return null;
   }
 
+  /** Entity a remote player pointed at when pressing (see pick). */
+  preferNext: Entity | null = null;
+
   private pointerDown(button: number): void {
     if (!this.enabled) return;
     this.updateRay();
+    const prefer = this.preferNext;
+    this.preferNext = null;
     if (this.grab) return;
+    if (this.forward) {
+      // Online guest: the host does the pressing (a right press while
+      // carrying something tilts it, so that goes too).
+      if (button !== 0 && button !== 2) return;
+      const holding = !!this.remoteGrab;
+      const picked = holding ? null : this.pick();
+      if (button === 2) this.altConsumed = !!picked || holding;
+      if (button === 0) {
+        this.emptyPress = !picked && !holding;
+        this.longPress =
+          !holding && picked && this.input.pointer.type !== 'mouse' ? { entity: picked.entity, t: 0, x: this.input.pointer.x, y: this.input.pointer.y } : null;
+      }
+      this.forward(button, picked?.entity ?? null);
+      return;
+    }
     if (button === 2) {
       // Right click: secondary action (e.g. the cat's customization).
-      const picked = this.pick();
+      const picked = this.pick(prefer);
       if (picked?.entity.altPress(this.ctx)) this.altConsumed = true;
       return;
     }
     if (button !== 0) return;
-    const picked = this.pick();
+    const picked = this.pick(prefer);
     // Pressing on empty floor lets a drag pan the camera (touch & mouse).
     this.emptyPress = !picked;
     if (!picked) return;
-    const input = this.ctx.input;
-    // On touch screens a long press stands in for the right click.
+    const input = this.input;
+    // On touch screens a long press stands in for the right click (another
+    // player's long press arrives as a right press).
     this.longPress =
-      input.pointer.type !== 'mouse' ? { entity: picked.entity, t: 0, x: input.pointer.x, y: input.pointer.y } : null;
+      !this.remote && input.pointer.type !== 'mouse' ? { entity: picked.entity, t: 0, x: input.pointer.x, y: input.pointer.y } : null;
     const grab = picked.entity.press(this.ctx, picked.hit);
     if (grab) {
-      this.grab = grab;
+      this.setGrab(grab);
       this.highlighter.set(null);
       this.longPress = null;
     }
@@ -459,67 +533,84 @@ export class Interaction {
       this.longPress = null;
       this.emptyPress = false;
     }
+    if (this.forward && (button === 0 || button === 2)) this.forward(-1 - button, null);
     if (button !== 0 || !this.grab) return;
     const g = this.grab;
     this.grab = null;
-    g.release(this.ctx);
+    this.endGrab(g);
   }
 
   cancelGrab(): void {
     if (!this.grab) return;
     const g = this.grab;
     this.grab = null;
-    g.release(this.ctx);
+    this.endGrab(g);
   }
 
   update(dt: number): void {
     const ctx = this.ctx;
+    const ui = this.ui;
     this.updateRay();
     this.highlighter.setResolution(ctx.renderer.lowWidth, ctx.renderer.lowHeight);
     const lp = this.longPress;
     if (lp) {
-      const p = ctx.input.pointer;
+      const p = this.input.pointer;
       lp.t += dt;
-      if (!p.down[0] || this.grab || Math.hypot(p.x - lp.x, p.y - lp.y) > 14) this.longPress = null;
+      if (!p.down[0] || this.grab || this.remoteGrab || Math.hypot(p.x - lp.x, p.y - lp.y) > 14) this.longPress = null;
       else if (lp.t > 0.5) {
         this.longPress = null;
-        if (lp.entity.alive) lp.entity.altPress(ctx);
+        if (lp.entity.alive) {
+          if (this.forward) {
+            this.forward(2, lp.entity);
+            this.forward(-3, null);
+          } else lp.entity.altPress(ctx);
+        }
       }
     }
-    this.visuals ??= new AssistVisuals(ctx.scene);
-    const pg = this.grab instanceof PhysicsGrab && this.grab.entity.alive ? this.grab : null;
-    this.visuals.update(
-      dt,
-      pg && pg.hasSurface && pg.assistStrength < 0.3 && !pg.overrideTarget ? pg.surfacePoint : null,
-      pg && pg.assistStrength > 0.05 ? pg.assistPoint : null,
-      pg?.assistStrength ?? 0,
-    );
+    if (!this.remote) {
+      this.visuals ??= new AssistVisuals(ctx.scene);
+      const pg = this.grab instanceof PhysicsGrab && this.grab.entity.alive ? this.grab : null;
+      this.visuals.update(
+        dt,
+        pg && pg.hasSurface && pg.assistStrength < 0.3 && !pg.overrideTarget ? pg.surfacePoint : null,
+        pg && pg.assistStrength > 0.05 ? pg.assistPoint : null,
+        pg?.assistStrength ?? 0,
+      );
+    }
     if (this.grab) {
       if (!this.grab.entity.alive) {
         this.cancelGrab();
       } else {
         this.grab.update(ctx, dt);
-        ctx.ui.setCursor(this.grab.cursor ?? 'grabbing');
-        ctx.ui.tooltip(null);
-        ctx.ui.setHint(this.grab.hint?.(ctx) ?? null);
+        ui.setCursor(this.grab.cursor ?? 'grabbing');
+        ui.tooltip(null);
+        ui.setHint(this.grab.hint?.(ctx) ?? null);
         return;
       }
     }
-    ctx.ui.setHint(null);
-    if (!this.enabled || !ctx.input.pointer.valid || !ctx.input.pointer.inside) {
+    // Online guest holding something on the host.
+    if (this.remoteGrab) {
       this.setHover(null, null);
-      ctx.ui.tooltip(null);
-      ctx.ui.setCursor('default');
+      ui.setCursor(this.remoteGrab.cursor);
+      ui.tooltip(null);
+      ui.setHint(this.remoteGrab.hint);
+      return;
+    }
+    ui.setHint(null);
+    if (!this.enabled || !this.input.pointer.valid || !this.input.pointer.inside) {
+      this.setHover(null, null);
+      ui.tooltip(null);
+      ui.setCursor('default');
       return;
     }
     const picked = this.pick();
     this.setHover(picked?.entity ?? null, picked?.hit ?? null);
     if (this.hovered) {
-      ctx.ui.setCursor(this.hovered.cursor());
-      ctx.ui.tooltip(this.hovered.hover(ctx), ctx.input.pointer.x, ctx.input.pointer.y);
+      ui.setCursor(this.hovered.cursor());
+      ui.tooltip(this.hovered.hover(ctx), this.input.pointer.x, this.input.pointer.y);
     } else {
-      ctx.ui.setCursor('default');
-      ctx.ui.tooltip(null);
+      ui.setCursor('default');
+      ui.tooltip(null);
     }
   }
 
@@ -530,6 +621,6 @@ export class Interaction {
   private setHover(e: Entity | null, hit: THREE.Intersection | null): void {
     this.hovered = e;
     this.hoverHit = hit;
-    this.highlighter.set(e);
+    if (!this.remote) this.highlighter.set(e);
   }
 }

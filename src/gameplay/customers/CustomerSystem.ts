@@ -33,7 +33,7 @@ export interface Visit {
 }
 
 /** A coin that drops on the counter and then flies to the cash box. */
-class Coin extends Entity {
+export class Coin extends Entity {
   readonly kind = 'coin';
   private age = 0;
   private flying = false;

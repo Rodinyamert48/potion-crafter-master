@@ -451,6 +451,17 @@ export class FurniturePiece extends Entity {
     this.animate?.(this, this.time, dt, ctx);
   }
 
+  override netState(): unknown {
+    return this.wiggle > 0.5 ? 1 : 0;
+  }
+
+  override applyNetState(_ctx: GameContext, s: unknown): void {
+    if (s && this.wiggle <= 0.5) {
+      this.wiggle = 1;
+      if (this.def.id === 'globe') this.spin = 9;
+    }
+  }
+
   override dispose(ctx: GameContext): void {
     for (const l of this.lights) ctx.renderer.lighting.removeCandle(l);
     if (this.collider) ctx.physics.removeBody(this.collider);
@@ -500,6 +511,7 @@ export class FurnitureSystem {
       });
     }
     const piece = ctx.world.add(new FurniturePiece(ctx, def, slot, body), ctx);
+    piece.netKey = `furn:${slot.id}`;
     this.pieces.set(slot.id, piece);
     return piece;
   }

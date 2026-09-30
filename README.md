@@ -67,6 +67,33 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
 ⟲ ⟳ döndür, − + yakınlaştır,
 ⛶ tam ekran. Dikey tutulan telefonlarda arayüz üst üste dizilir.
 
+## Çevrimiçi oyun (oda kodu ile)
+
+Arkadaşlarınla aynı dükkânda, internet üzerinden birlikte oynayabilirsin –
+ayrı bir sunucu gerekmez, oyun GitHub Pages gibi statik bir sitede de çalışır:
+
+1. **Oda kur:** ana ekranda (ya da oyun menüsünde) **🌐 Çevrimiçi → Oda Kur**.
+   Kendi kayıtlı oyunun açılır ve 6 haneli bir **oda kodu** çıkar (örn.
+   `K7M2QX`). Odayı kuranın bilgisayarı sunucudur: oyunun tamamı onun
+   tarayıcısında çalışır, kayıt da onda tutulur.
+2. **Katıl:** arkadaşın ana ekranda **🌐 Çevrimiçi**'ye girer, kodu yazar ve
+   **Katıl**'a basar. En fazla 4 misafir katılabilir.
+3. Herkes kendi faresiyle aynı dükkânda çalışır: malzeme doğrar, kazanı
+   karıştırır, şişe doldurur, müşteriye iksir verir, pazardan alışveriş yapar.
+   Diğer oyuncuların elleri renkli halkalar ve isimleriyle görünür.
+   `Enter` ile sohbet edilir; sol alttaki rozetteki koda tıklayınca kod kopyalanır.
+
+Notlar: bağlantı WebRTC ile doğrudan oyuncular arasında kurulur, eşleştirme
+için ücretsiz PeerJS sinyal sunucusu kullanılır (oyun verisi oradan geçmez).
+Odayı kuranın sekmesi açık ve önde kalmalıdır (arka plandaki sekmeleri
+tarayıcılar durdurur). Çevrimiçiyken menüler oyunu durdurmaz; dışarı gezileri,
+bahçe, kedi/evcil hayvan giydirme ve admin menüsü yalnızca oda sahibine aittir
+(gezi ve bahçe çevrimiçiyken kapalıdır). Misafirin kendi kayıtlı oyunu hiç
+değişmez; odadan ayrılınca ana ekrana dönülür. Bazı mobil/okul ağları doğrudan
+bağlantıyı engelleyebilir; o durumda ücretsiz TURN aktarımı denenir ama yine
+de bağlanmayabilir. Test için yerel bir PeerJS sunucusu `?peer=localhost:9000/`
+adres parametresiyle seçilebilir.
+
 ## Oynanış
 
 - **Hazırlık istasyonları:** kesme tahtası + bıçak (dilimle), çekiç (ejderha
@@ -298,6 +325,14 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   katı cisimler, çarpışmalar, kinematik araçlar, yüzme/batma ve girdap kuvvet
   alanları, radyal patlama itmesi, sarkaç eklemleri; ayrıca ateş/kıvılcım/
   duman için CPU `ParticleSystem` simülasyonu (parçacıklar Three.js'e aktarılır).
+- **Çevrimiçi:** oda sahibinin oyunu tek gerçek oyundur. Misafirler işaretçi,
+  kamera ve tuşlarını gönderir; host bunları `RemoteHand` ile kendi elleri
+  gibi (ayrı `Interaction` + sanal `Input` + misafirin kamerası) işletir ve
+  saniyede 30 kez eşya konumlarını, istasyon durumlarını, karakter
+  sprite'larını, oyun durumu farklarını ve ses/parçacık/konuşma olaylarını
+  geri yollar. Misafir dükkânı kendisi kurar, eşyaları gerçek sınıflarla
+  (fiziği kapalı) kopyalar, karakterleri host'tan gelen sprite sayfalarıyla
+  oynatır.
 - `PhysicsWorld` arayüzü oyun kodunu Babylon'dan ayırır; `PhysicsSync` sabit
   adımlı (60 Hz) fiziği ara değerlemeyle (interpolation) görüntüye bağlar.
 - **Açık dünya ve bahçe** ayrı Three.js sahneleridir; `ThreeRenderer.setView`
@@ -326,6 +361,7 @@ src/
   vfx/ audio/    piksel parçacıklar, enkaz; Web Audio ile sentezlenmiş ses ve uyarlanır müzik
   data/          malzemeler, iksir tarifleri, özler, müşteriler, görevler, geliştirmeler, metinler
   save/ ui/      kayıt sistemi; hafif, diegetik piksel arayüz (ui/minigames: bölge mini oyunları)
+  net/           çevrimiçi oyun: PeerJS odaları, host'un uzak elleri, 30 Hz anlık görüntüler, misafir kopyası
 tests/           kimya/tarif, açık dünya yerleşimi ve bahçe birim testleri
 ```
 

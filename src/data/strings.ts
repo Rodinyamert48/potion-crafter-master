@@ -2,6 +2,7 @@
 // this table holds interface copy, hints and system messages.
 
 import { WORLD_STRINGS } from './worldStrings';
+import { NET_STRINGS } from './netStrings';
 
 const CORE_STRINGS = {
   // Boot / title
@@ -671,6 +672,6 @@ const CORE_STRINGS = {
   'misc.liters': { en: '{n} L', tr: '{n} L' },
 } as const;
 
-export const STRINGS = { ...CORE_STRINGS, ...WORLD_STRINGS } as const;
+export const STRINGS = { ...CORE_STRINGS, ...WORLD_STRINGS, ...NET_STRINGS } as const;
 
 export type StringKey = keyof typeof STRINGS;

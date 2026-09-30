@@ -26,6 +26,11 @@ export class Loop {
   private fpsLast = performance.now();
   /** Smoothed CPU milliseconds per frame spent in each phase. */
   readonly stats = { fixedMs: 0, updateMs: 0, renderMs: 0, steps: 0 };
+  /** Keep simulating while the tab is hidden (online: others play in this
+   *  game). Browsers stop animation frames in hidden tabs, so a worker's
+   *  timer drives the frames then (without drawing). */
+  keepAlive: (() => boolean) | null = null;
+  private worker: Worker | null = null;
 
   constructor(private readonly handlers: LoopHandlers, fixedDt = 1 / 60, maxSubSteps = 5) {
     this.fixedDt = fixedDt;
@@ -39,17 +44,48 @@ export class Loop {
     const tick = (now: number) => {
       if (!this.running) return;
       this.raf = requestAnimationFrame(tick);
-      this.frame(now);
+      if (!this.worker) this.frame(now);
     };
     this.raf = requestAnimationFrame(tick);
+    document.addEventListener('visibilitychange', () => this.visibility());
   }
 
   stop(): void {
     this.running = false;
     cancelAnimationFrame(this.raf);
+    this.stopBackground();
   }
 
-  private frame(now: number): void {
+  private visibility(): void {
+    if (document.visibilityState === 'hidden' && this.running && this.keepAlive?.()) this.startBackground();
+    else this.stopBackground();
+  }
+
+  private startBackground(): void {
+    if (this.worker) return;
+    try {
+      const src = 'const t = setInterval(() => postMessage(0), 33); onmessage = () => clearInterval(t);';
+      const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+      this.worker = new Worker(url);
+      URL.revokeObjectURL(url);
+      this.worker.onmessage = () => {
+        if (document.visibilityState !== 'hidden' || !this.keepAlive?.()) this.stopBackground();
+        else this.frame(performance.now(), false);
+      };
+    } catch {
+      this.worker = null;
+    }
+  }
+
+  private stopBackground(): void {
+    if (!this.worker) return;
+    this.worker.postMessage(0);
+    this.worker.terminate();
+    this.worker = null;
+    this.last = performance.now();
+  }
+
+  private frame(now: number, draw = true): void {
     let dt = (now - this.last) / 1000;
     this.last = now;
     // A backgrounded tab or a breakpoint must not produce a giant step.
@@ -77,7 +113,7 @@ export class Loop {
     const t1 = performance.now();
     this.handlers.update(dt, this.elapsed);
     const t2 = performance.now();
-    this.handlers.render(this.accumulator / this.fixedDt, dt);
+    if (draw) this.handlers.render(this.accumulator / this.fixedDt, dt);
     const t3 = performance.now();
     const st = this.stats;
     st.fixedMs += (t1 - t0 - st.fixedMs) * 0.05;
