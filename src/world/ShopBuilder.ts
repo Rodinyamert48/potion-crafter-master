@@ -62,7 +62,6 @@ import { Bellows, Damper } from '../gameplay/stations/FireControls';
 import { CuttingBoard, DryingRack, Hammer, Knife, Mortar } from '../gameplay/stations/PrepStations';
 import { Bucket, WaterBarrel } from '../gameplay/stations/Water';
 import { ClickFixture, Door, PotionShelf, SupplySource, sparkleAbove } from '../gameplay/stations/ShopFixtures';
-import { ravenModel } from './outdoor/OutdoorModels';
 import { INGREDIENTS } from '../data/ingredients';
 import { t } from '../core/i18n';
 import { JarSlime, ShelfSpider } from '../gameplay/ShelfCritters';
@@ -713,12 +712,6 @@ export function buildShop(ctx: GameContext): Shop {
   const df = new THREE.Group();
   scene.add(df);
   const dfLights: THREE.PointLight[] = [];
-  // A raven watching from the window sill
-  const raven = ravenModel();
-  raven.group.position.set(-0.8, win.y0 + 0.02, wallZ + 0.24);
-  raven.group.rotation.y = Math.PI + 0.3;
-  raven.group.scale.setScalar(1.3);
-  df.add(raven.group);
   // Iron chains hanging from the cross beam
   const ironM = toon({ color: '#3a3440' });
   for (const [cx, len] of [

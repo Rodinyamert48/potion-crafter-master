@@ -10,6 +10,7 @@ import type { SpriteSheet } from '../rendering/three/sprites/CharacterPainter';
 import { catSheetFor } from '../gameplay/Atmosphere';
 import { dogSheetFor, slimeSheetFor } from '../gameplay/Pets';
 import type { PetId } from './minigames';
+import { isWolfDay } from '../gameplay/WorldEvents';
 
 export interface DoorActions {
   /** Why the apprentice cannot leave right now (null: free to go). */
@@ -107,6 +108,7 @@ export class DoorPanel implements Panel {
     const el = this.inner;
     el.appendChild(h('h2', undefined, t('door.title')));
     el.appendChild(h('p', 'wb-door-lead', t('door.lead')));
+    if (isWolfDay(this.ctx.state.day)) el.appendChild(h('p', 'wb-door-warn', `🐺 ${t('door.wolfDay')}`));
     const open = this.actions.openWorld();
     el.appendChild(
       this.choice('🌲', t('door.outside'), t(open ? 'door.outsideSubPc' : 'door.outsideSubTouch'), this.actions.leaveBlocker(), () => {

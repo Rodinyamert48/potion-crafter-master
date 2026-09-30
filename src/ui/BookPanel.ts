@@ -12,6 +12,7 @@ import { ASPECTS, ASPECT_IDS } from '../data/aspects';
 import { QUESTS } from '../data/quests';
 import type { AspectId, IngredientDef, RecipeDef } from '../data/types';
 import { aspectIconURL, ingredientIconURL, potionArtURL } from './pixelArt';
+import { REGION_MAP } from '../data/regions';
 import { t, tr } from '../core/i18n';
 import { stars } from '../gameplay/potion/FlaskItem';
 
@@ -123,7 +124,7 @@ export class BookPanel implements Panel {
         row.appendChild(h('span', 'name', known ? tr(r.name) : t('book.unknown')));
         if (brewed) row.appendChild(h('span', 'meta', stars(s.discovered[r.id].bestTier)));
         else if (known) row.appendChild(h('span', 'meta', '✎'));
-        else if (r.secret) row.appendChild(h('span', 'meta', '🔒'));
+        else if (r.secret) row.appendChild(h('span', 'meta', r.scroll ? '📜' : '🔒'));
         else if (r.special) row.appendChild(h('span', 'meta', '★'));
         else if (s.hinted.includes(r.id)) row.appendChild(h('span', 'meta', t('book.asked')));
         row.addEventListener('click', () => {
@@ -164,7 +165,10 @@ export class BookPanel implements Panel {
     if (!d) {
       page.appendChild(h('h2', undefined, t('book.unknown')));
       page.appendChild(h('p', 'muted', t('book.undiscovered')));
-      if (r.secret) {
+      if (r.secret && r.scroll) {
+        page.appendChild(h('h3', undefined, `📜 ${t('book.secret')}`));
+        page.appendChild(h('p', undefined, t('book.scrollHow', { r: tr(REGION_MAP[r.scroll].name) })));
+      } else if (r.secret) {
         page.appendChild(h('h3', undefined, `🔒 ${t('book.secret')}`));
         page.appendChild(h('p', undefined, t('book.secretHow')));
         if (r.learnCost) page.appendChild(h('p', 'muted', r.learnCost.map((c) => `${c.count}× ${tr(RECIPE_MAP[c.recipe].name)}`).join(' + ')));

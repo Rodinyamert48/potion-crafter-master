@@ -20,6 +20,9 @@ import { MentorDog } from './gameplay/Pets';
 import { PetPanel } from './ui/PetPanel';
 import { AdminPanel } from './ui/AdminPanel';
 import { NobertSystem } from './gameplay/Nobert';
+import { KingSystem } from './gameplay/King';
+import { KingPanel } from './ui/KingPanel';
+import { giveDragonEgg, isWolfDay } from './gameplay/WorldEvents';
 import * as THREE from 'three';
 import { t } from './core/i18n';
 import { ShopSystem } from './gameplay/shop/ShopSystem';
@@ -60,6 +63,7 @@ export class App {
   readonly merchant: TravelingMerchant;
   readonly furniture: FurnitureSystem;
   readonly nobert: NobertSystem;
+  readonly king: KingSystem;
   readonly achievements: Achievements;
   readonly touch: TouchControls;
   readonly save: SaveSystem;
@@ -103,6 +107,7 @@ export class App {
     this.merchant = new TravelingMerchant(ctx, this.shopSystem);
     this.furniture = new FurnitureSystem(ctx);
     this.nobert = new NobertSystem(ctx);
+    this.king = new KingSystem(ctx);
     this.achievements = new Achievements(ctx);
     this.expedition = new Expedition(ctx, this.customers);
     new Discovery(ctx);
@@ -177,6 +182,7 @@ export class App {
     );
     ui.registerPanel('cat', new CatPanel(ctx, this.atmosphere.cat));
     ui.registerPanel('merchant', new MerchantPanel(ctx, this.merchant));
+    ui.registerPanel('king', new KingPanel(ctx, this.king));
     ui.registerPanel('achievements', new AchievementsPanel(ctx));
     ui.registerPanel(
       'admin',
@@ -192,6 +198,13 @@ export class App {
           if (ok) ui.openPanel(null);
           return ok;
         },
+        summonKing: () => {
+          if (ctx.mode !== 'shop') return false;
+          const ok = this.king.summon();
+          if (ok) ui.openPanel(null);
+          return ok;
+        },
+        giveEgg: () => giveDragonEgg(ctx),
         luck: () => {
           ui.openPanel(null);
           this.achievements.luck();
@@ -245,12 +258,17 @@ export class App {
     game.addSystem(this.customers);
     game.addSystem(this.merchant);
     game.addSystem(this.nobert);
+    game.addSystem(this.king);
     game.addSystem(this.achievements);
     game.addSystem(this.tutorial);
     game.addSystem(this.atmosphere);
     game.addSystem({ update: (dt) => this.frame(dt), always: true });
 
     ctx.input.onKeyDown((code, e) => this.key(code, e));
+    // Wolf days: the master warns you in the morning.
+    ctx.bus.on('day:start', ({ day }) => {
+      if (isWolfDay(day)) ctx.later(2.5, () => ctx.bus.emit('mentor:say', { text: t('mentor.wolfDay'), priority: 2, mood: 'worried' }));
+    });
 
     if (sessionStorage.getItem(AUTOSTART) === 'new') {
       sessionStorage.removeItem(AUTOSTART);
@@ -289,6 +307,7 @@ export class App {
     this.game.playing = true;
     this.save.active = true;
     this.tutorial.enabled = true;
+    this.king.planDay(ctx.state.day);
     if (fresh || !this.loadedSave) {
       this.customers.planDay(ctx.state.day, this.quests.visitsFor(ctx.state.day));
       this.quests.startTutorialQuest();
@@ -315,6 +334,7 @@ export class App {
     ctx.ui.openPanel(null);
     this.customers.clearAll();
     this.nobert.dismiss();
+    this.king.dismiss();
     this.day.startNextDay();
     this.customers.planDay(ctx.state.day, this.quests.visitsFor(ctx.state.day));
     ctx.renderer.rig.setPreset(ctx.shop.presets.overview);

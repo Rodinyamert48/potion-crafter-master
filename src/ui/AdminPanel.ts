@@ -21,6 +21,8 @@ export interface AdminActions {
   visit(customerId: string): void;
   summonMerchant(): void;
   summonNobert(): boolean;
+  summonKing(): boolean;
+  giveEgg(): void;
   luck(): void;
   save(): boolean;
   spawnPotion(recipeId: string, tier: 1 | 2 | 3 | 4): void;
@@ -242,6 +244,12 @@ export class AdminPanel implements Panel {
     row(vis, '', btn(t('admin.merchant'), () => a.summonMerchant()), btn(t('admin.nobert'), () => {
       if (!a.summonNobert()) this.toast(t('admin.nobertNo'));
     }), btn(t('admin.luck'), () => a.luck()));
+    row(vis, '', btn(t('admin.king'), () => {
+      if (!a.summonKing()) this.toast(t('admin.kingNo'));
+    }), btn(t('admin.egg'), () => {
+      a.giveEgg();
+      this.toast(t('admin.done'));
+    }));
 
     // Cauldron & fire
     const caul = section(t('admin.cauldron'));

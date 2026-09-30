@@ -647,6 +647,7 @@ html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap
 .wb-door-choice.blocked { opacity: 0.6; cursor: default; }
 .wb-door-choice.blocked small { color: #a22633; }
 .wb-door-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.wb-door-warn { margin: 0; font-size: 18px; color: #a22633; line-height: 1.25; }
 .wb-door-pets { display: flex; flex-direction: column; gap: 8px; }
 .wb-door-pet { display: flex; align-items: center; gap: 10px; padding: 6px 10px; text-align: left; background: #ead4aa; border: none; box-shadow: 0 0 0 2px #c28569; font-family: var(--font); color: #3e2731; cursor: var(--cursor-point, pointer); }
 .wb-door-pet.on { background: #f4e6c8; box-shadow: 0 0 0 2px #3e8948, inset 0 0 0 2px #63c74d; }
@@ -656,6 +657,23 @@ html, body { -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap
 .wb-door-pet small { font-size: 16px; color: #8a6a4a; }
 .wb-door-pet .tick { width: 26px; height: 26px; font-size: 20px; text-align: center; color: #fff; background: #3e8948; box-shadow: 0 0 0 2px #181425; }
 .wb-door-pet:not(.on) .tick { background: #c28569; }
+
+.wb-trip-secret { margin: 2px 0; font-size: 20px; color: #a22633; text-align: center; }
+
+/* ---------------------------------------------------------------- the King */
+.wb-king { width: min(500px, 94vw); padding: 16px 20px 18px; color: #3e2731; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+.wb-king-head { display: flex; align-items: center; gap: 14px; }
+.wb-king-head img { width: 112px; height: auto; image-rendering: pixelated; background: #3e2731; box-shadow: 0 0 0 3px #feae34, 0 0 0 5px #733e39; }
+.wb-king-who { display: flex; flex-direction: column; }
+.wb-king-who strong { font-size: 30px; font-weight: normal; color: #a22633; }
+.wb-king-who small { font-size: 18px; color: #8a6a4a; }
+.wb-king-line { margin: 4px 0; font-size: 27px; color: #68386c; line-height: 1.2; text-align: center; }
+.wb-king-answers { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.wb-king-answers .wb-btn { font-size: 23px; padding: 8px 18px 10px; min-width: 150px; }
+.wb-king-gift { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.wb-king-gift img { width: 48px; height: 48px; image-rendering: pixelated; }
+.wb-king-gift .arrow { font-size: 28px; color: #733e39; }
+.wb-king-reward { margin: 0; font-size: 24px; color: #265c42; text-align: center; }
 
 /* ---------------------------------------------------------------- open world HUD */
 .wb-out { position: absolute; inset: 0; pointer-events: none; z-index: 20; font-family: var(--font); color: var(--text); }

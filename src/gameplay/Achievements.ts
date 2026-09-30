@@ -39,7 +39,7 @@ export class Achievements implements GameSystem {
       if (d.served >= 3 && d.happy === d.served) s().count('perfectDays');
     });
     // Check soon after anything interesting happens.
-    for (const ev of ['potion:bottled', 'customer:served', 'celeb:served', 'quest:completed', 'purchase', 'money', 'day:start', 'cauldron:exploded', 'customer:frog', 'recipe:learned', 'pet:petted'] as const)
+    for (const ev of ['potion:bottled', 'customer:served', 'celeb:served', 'quest:completed', 'purchase', 'money', 'day:start', 'cauldron:exploded', 'customer:frog', 'recipe:learned', 'pet:petted', 'item:found', 'king:answered'] as const)
       bus.on(ev, () => (this.timer = Math.min(this.timer, 0.3)));
   }
 

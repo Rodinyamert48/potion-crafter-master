@@ -5,7 +5,10 @@
 // the day, every region has a gathering altar with its own mini game, and
 // the regions have their own dangers: wolves at night in the forest, falling
 // rocks in the cavern, shades at the shrine, leeches and will-o'-wisps in
-// the swamp, lava and a sleeping dragon in the valley.
+// the swamp, lava and a sleeping dragon in the valley. Every third day a
+// pack of wolves roams all the regions (and howls). Each region hides an
+// old recipe scroll in a secret place, and once in a long while a dragon
+// egg lies in one of the valley's nests.
 
 import * as THREE from 'three';
 import type { GameContext } from '../../core/GameContext';
@@ -18,11 +21,13 @@ import { ParticleRenderer, Shape } from '../../vfx/ParticleRenderer';
 import { FpsController } from './FpsController';
 import { OutdoorHUD, OutdoorPausePanel, type CompassMarker } from './OutdoorHUD';
 import { OutdoorPets } from './OutdoorPets';
-import { buildOutdoor, type WorldRefs } from './OutdoorBuilder';
-import { toadModel, toadstoolModel, wolfModel } from './OutdoorModels';
+import { buildOutdoor, type SecretRef, type WorldRefs } from './OutdoorBuilder';
+import { dragonEggModel, toadModel, toadstoolModel, wolfModel } from './OutdoorModels';
 import { CAVERN, DOOR, DRAGON, GARDEN_GATE, PLAZA, SPAWN, WATER_Y, ZONES, ZONE_MAP, groundHeight, lavaMask, poolMask, walkMask, zoneAt, type V2 } from './layout';
 import { REGION_MAP, type RegionId } from '../../data/regions';
 import { INGREDIENTS } from '../../data/ingredients';
+import { RECIPE_MAP, SCROLLS } from '../../data/potions';
+import { DRAGON_EGG, eggNestToday, giveDragonEgg, isWolfDay } from '../../gameplay/WorldEvents';
 import { buildIngredientVisual } from '../../rendering/three/models/ingredientModels';
 import type { Expedition } from '../../gameplay/gathering/Expedition';
 import type { MiniGamePanel } from '../../ui/MiniGamePanel';
@@ -53,6 +58,8 @@ interface GatherNode {
 interface Wolf {
   group: THREE.Group;
   legs: THREE.Mesh[];
+  /** The region it hunts in (it only chases you there). */
+  zone: RegionId;
   pos: THREE.Vector3;
   home: THREE.Vector3;
   heading: number;
@@ -140,6 +147,15 @@ export class OutdoorWorld implements ModeHandler {
   private wasNight = false;
   private faint = 0;
   private dragon = { meter: 0, awake: 0, breath: 0, burned: false, headY: 0 };
+  private egg: { group: THREE.Group; halo: THREE.Mesh; pos: THREE.Vector3; taken: boolean } | null = null;
+  /** Debug: put an egg in the first nest on the next outing. */
+  private forceEgg = false;
+  /** A golden column over whatever special thing the dog sniffed out. */
+  private sniffBeam!: THREE.Mesh;
+  private sniffBeamT = 0;
+  private sparkleT = 0;
+  private howlT = 0;
+  private answerT = 0;
   private target: Target | null = null;
   private readonly rng = new Random(Date.now() & 0xffff);
 
@@ -233,6 +249,9 @@ export class OutdoorWorld implements ModeHandler {
     };
     const ch = this.refs.chimney;
     this.amb.smoke.setCenter(ch.x, ch.y, ch.z);
+    this.sniffBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.16, 9, 6, 1, true), unlit('#fee761', { additive: true, opacity: 0.5 }));
+    this.sniffBeam.visible = false;
+    this.scene.add(this.sniffBeam);
     ctx.renderer.extraScenes.add(this.scene);
     this.applyQuality();
   }
@@ -280,7 +299,15 @@ export class OutdoorWorld implements ModeHandler {
     this.hud.setPets(this.pets ? this.pets.list.map((p) => p.name) : []);
     this.spawnNodes();
     this.spawnHazards();
+    this.syncSecrets();
+    this.spawnEgg();
+    this.sniffBeamT = 0;
+    this.sniffBeam.visible = false;
     this.wasNight = this.deps.expedition.isNight();
+    // Wolf days: the howling starts as soon as you step out.
+    const wolfDay = isWolfDay(ctx.state.day);
+    this.howlT = wolfDay ? 1.4 : this.rng.range(25, 45);
+    this.answerT = wolfDay ? 3.6 : 0;
     this.syncGates();
     this.deps.expedition.leave();
     this.deps.setMode('outside', this);
@@ -291,7 +318,11 @@ export class OutdoorWorld implements ModeHandler {
       setAspect: (a) => this.player.setAspect(a),
     });
     this.hud.visible = true;
-    this.hud.showTitle(t('out.welcome'), t('out.welcomeSub'));
+    this.hud.showTitle(t('out.welcome'), wolfDay ? t('out.wolfDaySub') : t('out.welcomeSub'));
+    if (wolfDay) {
+      ctx.bus.emit('toast', { text: t('out.wolfDay'), kind: 'warn' });
+      ctx.state.count('wolfOutings');
+    }
     this.deps.onEnter();
     this.requestLock();
   }
@@ -434,16 +465,44 @@ export class OutdoorWorld implements ModeHandler {
     this.spirits = [];
     const exp = this.deps.expedition;
     const hz = (id: RegionId) => exp.pools(REGION_MAP[id]).hazards.map((h) => h.id);
-    if (hz('forest').includes('wolf')) {
-      const f = ZONE_MAP.forest;
-      for (let i = 0; i < 3; i++) {
-        const w = wolfModel();
-        const home = new THREE.Vector3(f.center.x + Math.cos(i * 2.1) * 12, 0, f.center.z + Math.sin(i * 2.1) * 12);
-        home.y = groundHeight(home.x, home.z);
-        w.group.position.copy(home);
-        this.scene.add(w.group);
-        this.wolves.push({ group: w.group, legs: w.legs, pos: w.group.position, home, heading: i, state: 'prowl', t: 0, cd: 0 });
+    const addWolf = (zone: RegionId, home: THREE.Vector3, i: number) => {
+      const w = wolfModel();
+      home.y = groundHeight(home.x, home.z);
+      w.group.position.copy(home);
+      this.scene.add(w.group);
+      this.wolves.push({ group: w.group, legs: w.legs, zone, pos: w.group.position, home, heading: i, state: 'prowl', t: 0, cd: 0 });
+    };
+    if (isWolfDay(this.ctx.state.day)) {
+      // The pack is out: a few wolves prowl along every region's path.
+      const packs: Array<[RegionId, number]> = [
+        ['forest', 3],
+        ['cave', 2],
+        ['shrine', 2],
+        ['swamp', 2],
+        ['valley', 3],
+      ];
+      for (const [zone, n] of packs) {
+        const zn = ZONE_MAP[zone];
+        for (let i = 0; i < n; i++) {
+          // Near the end of the road into the region, off to one side, on firm ground.
+          const a = zn.road[Math.min(zn.road.length - 1, 5 + i)];
+          let home = new THREE.Vector3(a.x, 0, a.z);
+          for (let k = 0; k < 16; k++) {
+            const ang = i * 2.3 + k * 0.9;
+            const r = 5 + (k % 4) * 2;
+            const x = a.x + Math.cos(ang) * r;
+            const z = a.z + Math.sin(ang) * r;
+            if (walkMask(x, z) > 0.6 && lavaMask(x, z) < 0.05 && poolMask(x, z) < 0.3) {
+              home = new THREE.Vector3(x, 0, z);
+              break;
+            }
+          }
+          addWolf(zone, home, i);
+        }
       }
+    } else if (hz('forest').includes('wolf')) {
+      const f = ZONE_MAP.forest;
+      for (let i = 0; i < 3; i++) addWolf('forest', new THREE.Vector3(f.center.x + Math.cos(i * 2.1) * 12, 0, f.center.z + Math.sin(i * 2.1) * 12), i);
     }
     const spirit = (kind: 'shade' | 'wisp', c: V2, n: number) => {
       for (let i = 0; i < n; i++) {
@@ -561,7 +620,9 @@ export class OutdoorWorld implements ModeHandler {
     const feet = this.player.feet;
     this.updateZone(feet);
     this.updateHazards(dt, feet);
+    this.updateHowls(dt);
     this.updateNodes(dt);
+    this.updateSecrets(dt, feet);
     this.updateRavens(dt, feet);
     this.updatePets(dt, feet);
     this.updateTarget(feet);
@@ -716,6 +777,145 @@ export class OutdoorWorld implements ModeHandler {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Secret scrolls and the dragon egg
+  // -------------------------------------------------------------------------
+
+  /** Scrolls whose recipe is already known are gone. */
+  private syncSecrets(): void {
+    for (const sc of this.refs.secrets) sc.scroll.visible = !this.ctx.state.knowsRecipe(SCROLLS[sc.zone]);
+  }
+
+  private readScroll(sc: SecretRef): void {
+    const ctx = this.ctx;
+    const s = ctx.state;
+    const id = SCROLLS[sc.zone];
+    const r = RECIPE_MAP[id];
+    sc.scroll.visible = false;
+    if (this.sniffBeamT > 0 && this.sniffBeam.position.distanceTo(sc.pos) < 5) this.sniffBeamT = 0;
+    ctx.audio.play('discovery', { volume: 0.8 });
+    ctx.audio.play('pageFlip', { volume: 0.8, delay: 0.15 });
+    this.sim.burst(sc.pos.x, sc.pos.y + 0.2, sc.pos.z, { count: 40, radius: 0.3, life: [0.6, 1.3], size: [[0, 0.08], [1, 0.02]], colors: [[0, '#ffffff', 1], [0.3, '#fee761', 1], [1, '#feae34', 0]], dir1: [-0.8, 1, -0.8], dir2: [0.8, 2.6, 0.8], power: [1, 2], gravity: [0, -2, 0], shape: Shape.SPARKLE });
+    if (!r || s.knowsRecipe(id)) return;
+    s.learnRecipe(id);
+    s.count('scrolls');
+    ctx.bus.emit('recipe:learned', { id, source: 'scroll' });
+    this.hud.showTitle(t('out.scrollFound'), tr(r.name));
+    ctx.bus.emit('toast', { text: t('out.scrollLearned', { name: tr(r.name) }), kind: 'quest' });
+    ctx.bus.emit('save:request', {});
+  }
+
+  /** Once in a long while an egg lies in one of the valley's nests. */
+  private spawnEgg(): void {
+    if (this.egg) this.egg.group.removeFromParent();
+    this.egg = null;
+    const s = this.ctx.state;
+    const light = this.refs.eggLight;
+    light.intensity = 0;
+    const nests = this.refs.nests;
+    const idx = this.forceEgg ? 0 : eggNestToday(s.day, nests.length);
+    this.forceEgg = false;
+    if (idx === null || s.hasItem(DRAGON_EGG) || s.outdoorToday.picked.includes('egg')) return;
+    const m = dragonEggModel();
+    m.group.position.copy(nests[idx]);
+    this.scene.add(m.group);
+    light.position.copy(nests[idx]).add(new THREE.Vector3(0, 0.9, 0));
+    this.egg = { group: m.group, halo: m.halo, pos: m.group.position, taken: false };
+  }
+
+  private takeEgg(): void {
+    const ctx = this.ctx;
+    const egg = this.egg;
+    if (!egg || egg.taken) return;
+    egg.taken = true;
+    egg.group.visible = false;
+    this.refs.eggLight.intensity = 0;
+    if (this.sniffBeamT > 0 && this.sniffBeam.position.distanceTo(egg.pos) < 5) this.sniffBeamT = 0;
+    ctx.state.outdoorToday.picked.push('egg');
+    giveDragonEgg(ctx);
+    ctx.audio.play('discovery', {});
+    ctx.audio.play('rumble', { volume: 0.5, delay: 0.5 });
+    this.sim.burst(egg.pos.x, egg.pos.y + 0.4, egg.pos.z, { count: 44, radius: 0.35, life: [0.6, 1.3], size: [[0, 0.1], [1, 0.02]], colors: [[0, '#fff4b0', 1], [0.4, '#f77622', 1], [1, '#a22633', 0]], dir1: [-1, 1, -1], dir2: [1, 2.8, 1], power: [1, 2.2], gravity: [0, -3, 0], shape: Shape.SPARKLE });
+    this.hud.showTitle(t('out.eggFound'), t('out.eggSub'));
+    ctx.bus.emit('toast', { text: t('out.eggToast'), kind: 'quest' });
+    // Somewhere close by, a mother dragon stirs…
+    if (Math.hypot(egg.pos.x - DRAGON.x, egg.pos.z - DRAGON.z) < 30) {
+      this.dragon.meter += 0.6;
+      ctx.bus.emit('toast', { text: t('out.eggDragon'), kind: 'warn' });
+    }
+  }
+
+  private updateSecrets(dt: number, p: THREE.Vector3): void {
+    this.sparkleT -= dt;
+    const sparkle = this.sparkleT <= 0;
+    if (sparkle) this.sparkleT = 1.1;
+    for (const sc of this.refs.secrets) {
+      if (!sc.scroll.visible) continue;
+      const m = sc.glow.material as THREE.MeshBasicMaterial;
+      m.opacity = 0.08 + 0.05 * Math.sin(this.time * 2.2 + sc.pos.x);
+      // A few golden motes give it away to a sharp eye.
+      if (sparkle && Math.hypot(sc.pos.x - p.x, sc.pos.z - p.z) < 32) {
+        this.sim.burst(sc.pos.x, sc.pos.y + 0.15, sc.pos.z, { count: 5, radius: 0.2, life: [0.8, 1.4], size: [[0, 0.05], [1, 0.02]], colors: [[0, '#fff4b0', 1], [1, '#feae34', 0]], dir1: [-0.2, 0.4, -0.2], dir2: [0.2, 1, 0.2], power: [0.3, 0.7], shape: Shape.SPARKLE });
+      }
+    }
+    const egg = this.egg;
+    if (egg && !egg.taken) {
+      const k = 0.5 + 0.5 * Math.sin(this.time * 1.7);
+      (egg.halo.material as THREE.MeshBasicMaterial).opacity = 0.1 + 0.12 * k;
+      this.refs.eggLight.intensity = 1.6 + 1.4 * k;
+      egg.group.rotation.z = Math.sin(this.time * 7) * 0.04 * (Math.sin(this.time * 0.8) > 0.7 ? 1 : 0);
+    }
+    this.sniffBeamT = Math.max(0, this.sniffBeamT - dt);
+    const b = this.sniffBeam;
+    b.visible = this.sniffBeamT > 0;
+    if (b.visible) (b.material as THREE.MeshBasicMaterial).opacity = Math.min(1, this.sniffBeamT) * (0.35 + 0.15 * Math.sin(this.time * 5));
+  }
+
+  // -------------------------------------------------------------------------
+  // Howling
+  // -------------------------------------------------------------------------
+
+  private updateHowls(dt: number): void {
+    const wolfDay = isWolfDay(this.ctx.state.day);
+    if (!wolfDay && !this.wolves.length) return;
+    this.howlT -= dt;
+    if (this.howlT <= 0) {
+      this.howl();
+      this.howlT = wolfDay ? this.rng.range(16, 32) : this.rng.range(35, 60);
+      // …and another one answers from elsewhere.
+      if (this.rng.chance(wolfDay ? 0.55 : 0.3)) this.answerT = this.rng.range(1.4, 2.6);
+    }
+    if (this.answerT > 0) {
+      this.answerT -= dt;
+      if (this.answerT <= 0) this.howl();
+    }
+  }
+
+  /** A wolf howls somewhere around: from a wolf of the pack, or far off in the hills. */
+  private howl(): void {
+    const p = this.player.feet;
+    let x: number;
+    let z: number;
+    const w = this.wolves.length ? this.wolves[this.rng.int(0, this.wolves.length - 1)] : null;
+    if (w && this.rng.chance(0.7)) {
+      x = w.pos.x;
+      z = w.pos.z;
+    } else {
+      const a = this.rng.range(0, Math.PI * 2);
+      const r = this.rng.range(35, 70);
+      x = p.x + Math.cos(a) * r;
+      z = p.z + Math.sin(a) * r;
+    }
+    const dx = x - p.x;
+    const dz = z - p.z;
+    const d = Math.hypot(dx, dz) || 1;
+    // Left/right from where the apprentice is looking.
+    const yaw = this.player.yaw;
+    const side = (dx * Math.cos(yaw) - dz * Math.sin(yaw)) / d;
+    const volume = clamp(1.05 - d / 90, 0.3, 0.95);
+    this.ctx.audio.play('howl', { x: side * 5, volume, pitch: this.rng.range(0.85, 1.15), minGap: 0 });
+  }
+
   private updateNodes(dt: number): void {
     const p = this.player.feet;
     for (const n of this.nodes) {
@@ -761,6 +961,9 @@ export class OutdoorWorld implements ModeHandler {
       consider(a.pos, 3.2, used ? t('out.altarUsedShort') : t('out.altar'), () => this.useAltar(a.zone));
     }
     consider(this.refs.well, 3, t('out.well'), () => this.useWell());
+    for (const sc of this.refs.secrets) if (sc.scroll.visible) consider(sc.pos, 2.4, t('out.scroll'), () => this.readScroll(sc));
+    const egg = this.egg;
+    if (egg && !egg.taken) consider(egg.pos, 2.4, t('out.egg'), () => this.takeEgg());
     consider(new THREE.Vector3(DOOR.x, 0, DOOR.z), 3.2, t('out.enterShop'), () => this.exit(false));
     consider(new THREE.Vector3(GARDEN_GATE.x, 0, GARDEN_GATE.z), 3, t('out.enterGarden'), () => this.exit(true));
     for (const g of this.refs.gates) {
@@ -839,7 +1042,7 @@ export class OutdoorWorld implements ModeHandler {
       const dx = p.x - w.pos.x;
       const dz = p.z - w.pos.z;
       const d = Math.hypot(dx, dz);
-      const inForest = this.zone === 'forest';
+      const inTheirZone = this.zone === w.zone;
       w.cd = Math.max(0, w.cd - dt);
       if (w.state !== 'flee' && hasDog && d < 9) {
         w.state = 'flee';
@@ -849,7 +1052,7 @@ export class OutdoorWorld implements ModeHandler {
       if (w.state === 'flee') {
         w.t -= dt;
         if (w.t <= 0) w.state = 'prowl';
-      } else w.state = inForest && d < 16 ? 'chase' : 'prowl';
+      } else w.state = inTheirZone && d < 16 ? 'chase' : 'prowl';
       let tx: number;
       let tz: number;
       let speed: number;
@@ -876,8 +1079,8 @@ export class OutdoorWorld implements ModeHandler {
         w.pos.z += (ddz / dd) * speed * dt;
         w.group.rotation.y = Math.atan2(-ddx, -ddz);
       }
-      // Stay out of the hills
-      if (walkMask(w.pos.x, w.pos.z) < 0.3) {
+      // Stay out of the hills (and the lava)
+      if (walkMask(w.pos.x, w.pos.z) < 0.3 || lavaMask(w.pos.x, w.pos.z) > 0.2) {
         w.pos.x += (w.home.x - w.pos.x) * dt;
         w.pos.z += (w.home.z - w.pos.z) * dt;
       }
@@ -1109,7 +1312,24 @@ export class OutdoorWorld implements ModeHandler {
             best = n;
           }
         }
-        if (best) {
+        // Old scrolls and eggs smell far more interesting than mushrooms.
+        let special: THREE.Vector3 | null = null;
+        const smell = (pos: THREE.Vector3, bonus: number) => {
+          const d = Math.hypot(pos.x - p.x, pos.z - p.z);
+          if (d < 40 && d - bonus < bd) {
+            bd = d - bonus;
+            special = pos;
+          }
+        };
+        for (const sc of this.refs.secrets) if (sc.scroll.visible) smell(sc.pos, 20);
+        if (this.egg && !this.egg.taken) smell(this.egg.pos, 26);
+        if (special) {
+          const sp = special as THREE.Vector3;
+          this.sniffBeam.position.set(sp.x, sp.y + 4.5, sp.z);
+          this.sniffBeamT = 12;
+          pets.react('dog');
+          this.ctx.bus.emit('toast', { text: t('out.dogSniffSecret', { n: this.ctx.state.pets.dog.name }), kind: 'info' });
+        } else if (best) {
           best.sniffed = 10;
           pets.react('dog');
           this.ctx.bus.emit('toast', { text: t('out.dogSniff', { n: this.ctx.state.pets.dog.name }), kind: 'info' });
@@ -1259,5 +1479,15 @@ export class OutdoorWorld implements ModeHandler {
     look: (dx: number, dy: number) => this.player.look(dx, dy),
     faceTo: (x: number, z: number) => this.player.faceTowards(x, z),
     pools: () => poolMask(this.player.feet.x, this.player.feet.z),
+    secrets: () => this.refs.secrets.map((sc) => ({ zone: sc.zone, x: sc.pos.x, y: sc.pos.y, z: sc.pos.z, visible: sc.scroll.visible })),
+    nests: () => this.refs.nests.map((n) => ({ x: n.x, z: n.z })),
+    egg: () => (this.egg ? { x: this.egg.pos.x, z: this.egg.pos.z, taken: this.egg.taken } : null),
+    /** Put an egg in the first nest right now. */
+    spawnEgg: () => {
+      this.forceEgg = true;
+      this.spawnEgg();
+    },
+    wolves: () => this.wolves.map((w) => ({ zone: w.zone, x: w.pos.x, z: w.pos.z, state: w.state })),
+    howl: () => this.howl(),
   };
 }

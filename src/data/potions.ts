@@ -3,6 +3,7 @@
 // evaluator tests them from the highest priority down; failures are recipes
 // too, so a failed brew is still a named (and often funny) potion.
 
+import type { RegionId } from './regions';
 import type { RecipeDef } from './types';
 
 export const RECIPES: RecipeDef[] = [
@@ -886,50 +887,42 @@ export const RECIPES: RecipeDef[] = [
   },
 ];
 
-// Which recipes are known from the start, which are secrets the wandering
-// merchant teaches (for a few potions) and which are the famous guests'
-// specials (learned when they order them).
-const SECRETS: Record<string, Array<{ recipe: string; count: number }>> = {
-  greater_healing: [
-    { recipe: 'healing_potion', count: 2 },
-    { recipe: 'strength', count: 1 },
-  ],
-  fire_healing: [
-    { recipe: 'healing_potion', count: 2 },
+// Which recipes are not known from the start. Every ordinary potion is in the
+// book from day one; the exceptions are the famous guests' specials (learned
+// when they order them), the wandering merchant's secrets (he teaches them
+// for a few potions) and recipes written on old scrolls hidden in secret
+// places out in the regions (one in each).
+const MERCHANT_SECRETS: Record<string, Array<{ recipe: string; count: number }>> = {
+  phoenix_elixir: [
+    { recipe: 'greater_healing', count: 2 },
     { recipe: 'strength', count: 2 },
   ],
   giant_strength: [
     { recipe: 'strength', count: 3 },
     { recipe: 'healing_potion', count: 2 },
   ],
-  swiftness: [
-    { recipe: 'shadow_draught', count: 2 },
-    { recipe: 'strength', count: 1 },
-  ],
-  blood_tonic: [
-    { recipe: 'shadow_draught', count: 2 },
-    { recipe: 'healing_potion', count: 2 },
-  ],
-  dragons_breath: [{ recipe: 'strength', count: 3 }],
-  farsight_draught: [{ recipe: 'night_vision', count: 2 }],
-  moonlight_elixir: [
-    { recipe: 'night_vision', count: 2 },
-    { recipe: 'luminous_tonic', count: 1 },
-  ],
-  phoenix_elixir: [
-    { recipe: 'greater_healing', count: 2 },
-    { recipe: 'strength', count: 2 },
-  ],
-  frog_brew: [
-    { recipe: 'nightshade_poison', count: 1 },
-    { recipe: 'luminous_tonic', count: 1 },
-    { recipe: 'shadow_draught', count: 1 },
-  ],
 };
+
+/** The recipe scroll hidden in each region. */
+export const SCROLLS: Record<RegionId, string> = {
+  forest: 'swiftness',
+  cave: 'blood_tonic',
+  shrine: 'moonlight_elixir',
+  swamp: 'farsight_draught',
+  valley: 'dragons_breath',
+};
+
 for (const r of RECIPES) {
-  if (SECRETS[r.id]) {
+  if (MERCHANT_SECRETS[r.id]) {
     r.secret = true;
-    r.learnCost = SECRETS[r.id];
+    r.learnCost = MERCHANT_SECRETS[r.id];
+  }
+}
+for (const [region, id] of Object.entries(SCROLLS) as Array<[RegionId, string]>) {
+  const r = RECIPES.find((x) => x.id === id);
+  if (r) {
+    r.secret = true;
+    r.scroll = region;
   }
 }
 

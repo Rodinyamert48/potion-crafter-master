@@ -42,16 +42,23 @@ import {
 } from './layout';
 import {
   altarModel,
+  boatModel,
+  bonePileModel,
   cavernModel,
   dragonModel,
   fence,
   gateModel,
   groundDetail,
+  hollowTreeModel,
   lanternPost,
+  nestModel,
   pillar,
   ravenModel,
+  sarcophagusModel,
   sceneryGeometry,
+  scrollModel,
   shopExterior,
+  skeletonModel,
   signpost,
   twoSidedSign,
   standingStone,
@@ -107,6 +114,20 @@ export interface WorldRefs {
   spots: Record<RegionId | 'road', V2[]>;
   /** Stinging nettle patches in the forest (day hazard). */
   nettles: V2[];
+  /** One secret place per region, each hiding an old recipe scroll. */
+  secrets: SecretRef[];
+  /** Dragon nests in the valley (once in a long while an egg lies in one). */
+  nests: THREE.Vector3[];
+  /** Warm light for the egg (kept in the scene so the light count never changes). */
+  eggLight: THREE.PointLight;
+}
+
+export interface SecretRef {
+  zone: RegionId;
+  /** Where the scroll lies. */
+  pos: THREE.Vector3;
+  scroll: THREE.Group;
+  glow: THREE.Mesh;
 }
 
 const rng = new Random(20260929);
@@ -795,6 +816,8 @@ export function buildOutdoor(scene: THREE.Scene, physics: BabylonPhysicsWorld, r
   batch.absorb(nettleGroup);
   for (const s of [...spots.forest, ...spots.cave, ...spots.shrine, ...spots.swamp, ...spots.valley, ...spots.road, ...nettles]) keepClear.push(s);
 
+  const { secrets, nests } = buildSecrets(scene, physics, batch, keepClear, nettles);
+
   buildScenery(scene, physics, keepClear);
 
   // Lily pads on the swamp pools
@@ -825,6 +848,9 @@ export function buildOutdoor(scene: THREE.Scene, physics: BabylonPhysicsWorld, r
   }
   batch.absorb(mushrooms);
   batch.build(scene);
+  const eggLight = new THREE.PointLight('#f77622', 0, 7, 2);
+  eggLight.position.copy(nests[0]).add(V(0, 0.9, 0));
+  scene.add(eggLight);
 
   void unlit;
   return {
@@ -848,5 +874,197 @@ export function buildOutdoor(scene: THREE.Scene, physics: BabylonPhysicsWorld, r
     crystalsLight,
     spots,
     nettles,
+    secrets,
+    nests,
+    eggLight,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Secret places and dragon nests
+// ---------------------------------------------------------------------------
+
+/** The unit direction from the plaza to a region, and its right-hand perpendicular. */
+function zoneAxes(id: RegionId): { d: V2; perp: V2 } {
+  const zn = ZONE_MAP[id];
+  const dx = zn.center.x - PLAZA.x;
+  const dz = zn.center.z - PLAZA.z;
+  const len = Math.hypot(dx, dz);
+  const d = { x: dx / len, z: dz / len };
+  return { d, perp: { x: -d.z, z: d.x } };
+}
+
+/** Searches outwards from `prefer` (sunflower spiral) for the first point that passes `ok`. */
+function findSpot(prefer: V2, ok: (p: V2) => boolean): V2 {
+  for (let k = 0; k < 700; k++) {
+    const a = k * 2.39996;
+    const r = Math.sqrt(k) * 0.7;
+    const p = { x: prefer.x + Math.cos(a) * r, z: prefer.z + Math.sin(a) * r };
+    if (ok(p)) return p;
+  }
+  return prefer;
+}
+
+/** Which points of Dragon Valley can be reached on foot from its road without
+ *  stepping into lava or through the dragon (flood fill over a 1 m grid). */
+function valleyReach(): (p: V2) => boolean {
+  const vz = ZONE_MAP.valley;
+  const R = vz.radius + 12;
+  const n = Math.ceil(R * 2);
+  const x0 = vz.center.x - R;
+  const z0 = vz.center.z - R;
+  const ok = (x: number, z: number) => walkMask(x, z) > 0.5 && lavaMask(x, z) < 0.05 && Math.hypot(x - DRAGON.x, z - DRAGON.z) > 6;
+  // 0 unseen, 1 reachable, 2 blocked
+  const cell = new Uint8Array(n * n);
+  const stack: number[] = [];
+  for (const r of vz.road) {
+    const i = Math.floor(r.x - x0);
+    const j = Math.floor(r.z - z0);
+    if (i < 0 || j < 0 || i >= n || j >= n || cell[j * n + i]) continue;
+    cell[j * n + i] = 1;
+    stack.push(j * n + i);
+  }
+  while (stack.length) {
+    const c = stack.pop()!;
+    const i = c % n;
+    const j = (c - i) / n;
+    for (const [di, dj] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const a = i + di;
+      const b = j + dj;
+      if (a < 0 || b < 0 || a >= n || b >= n) continue;
+      const k = b * n + a;
+      if (cell[k]) continue;
+      if (!ok(x0 + a + 0.5, z0 + b + 0.5)) {
+        cell[k] = 2;
+        continue;
+      }
+      cell[k] = 1;
+      stack.push(k);
+    }
+  }
+  return (p) => {
+    const i = Math.floor(p.x - x0);
+    const j = Math.floor(p.z - z0);
+    return i >= 0 && j >= 0 && i < n && j < n && cell[j * n + i] === 1;
+  };
+}
+
+/** No lava anywhere within `r` metres. */
+function lavaFree(p: V2, r: number): boolean {
+  if (lavaMask(p.x, p.z) > 0.02) return false;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    if (lavaMask(p.x + Math.cos(a) * r, p.z + Math.sin(a) * r) > 0.02) return false;
+  }
+  return true;
+}
+
+function buildSecrets(scene: THREE.Scene, physics: BabylonPhysicsWorld, batch: StaticBatch, keepClear: V2[], nettles: V2[]): { secrets: SecretRef[]; nests: THREE.Vector3[] } {
+  const clearOf = (p: V2, min: number) => !keepClear.some((k) => Math.hypot(k.x - p.x, k.z - p.z) < min);
+  const dry = (p: V2) => walkMask(p.x, p.z) > 0.75 && poolMask(p.x, p.z) < 0.05 && lavaFree(p, 2.5) && Math.hypot(p.x - DRAGON.x, p.z - DRAGON.z) > 9;
+  const secrets: SecretRef[] = [];
+  const place = (zone: RegionId, model: { group: THREE.Group; slot: THREE.Vector3; twist: number }, p: V2, yaw: number, dy = 0) => {
+    const g = model.group;
+    g.position.set(p.x, groundHeight(p.x, p.z) + dy, p.z);
+    g.rotation.y = yaw;
+    scene.add(g);
+    g.updateMatrixWorld(true);
+    const at = g.localToWorld(model.slot.clone());
+    batch.absorb(g);
+    const sc = scrollModel();
+    sc.group.position.copy(at);
+    sc.group.rotation.y = yaw + model.twist;
+    scene.add(sc.group);
+    secrets.push({ zone, pos: at, scroll: sc.group, glow: sc.glow });
+    keepClear.push(p);
+  };
+
+  // Whispering Forest: a huge hollow oak deep among the trees, away from the path.
+  {
+    const zn = ZONE_MAP.forest;
+    const { d, perp } = zoneAxes('forest');
+    const p = findSpot({ x: zn.center.x - perp.x * 14 + d.x * 5, z: zn.center.z - perp.z * 14 + d.z * 5 }, (q) => dry(q) && roadDist(q.x, q.z) > ROAD_HALF + 6 && clearOf(q, 4.5) && nettles.every((n) => Math.hypot(n.x - q.x, n.z - q.z) > 5));
+    // The hollow faces the road so it can be spotted from the path.
+    const toward = { x: zn.center.x - p.x, z: zn.center.z - p.z };
+    place('forest', hollowTreeModel(), p, yawFacing(toward.x, toward.z));
+    physics.createBody({ shape: { type: 'cylinder', radius: 1.15, height: 5 }, motion: 'static', position: { x: p.x, y: groundHeight(p.x, p.z) + 2.5, z: p.z }, group: CG.STATIC });
+  }
+
+  // Echo Cave: an adventurer's bones at the very back of the cavern.
+  {
+    const cx = PLAZA.x - CAVERN.x;
+    const cz = PLAZA.z - CAVERN.z;
+    const len = Math.hypot(cx, cz);
+    const back = { x: CAVERN.x - (cx / len) * (CAVERN.r - 1.5), z: CAVERN.z - (cz / len) * (CAVERN.r - 1.5) };
+    const p = findSpot(back, (q) => {
+      const dc = Math.hypot(q.x - CAVERN.x, q.z - CAVERN.z);
+      return dc < CAVERN.r - 1.3 && dc > CAVERN.r - 3 && clearOf(q, 2.4);
+    });
+    place('cave', skeletonModel(), p, yawFacing(CAVERN.x - p.x, CAVERN.z - p.z));
+  }
+
+  // Moon Shrine: an open coffin behind the stone circle.
+  {
+    const zn = ZONE_MAP.shrine;
+    const { d } = zoneAxes('shrine');
+    const p = findSpot({ x: zn.center.x + d.x * 13, z: zn.center.z + d.z * 13 }, (q) => dry(q) && clearOf(q, 4.2) && Math.hypot(q.x - zn.center.x, q.z - zn.center.z) > 10.5);
+    const yaw = yawFacing(zn.center.x - p.x, zn.center.z - p.z);
+    place('shrine', sarcophagusModel(), p, yaw);
+    physics.createBody({ shape: { type: 'box', size: [2.4, 1.1, 1.1] }, motion: 'static', position: { x: p.x, y: groundHeight(p.x, p.z) + 0.55, z: p.z }, rotation: quatY(yaw), group: CG.STATIC });
+  }
+
+  // Murky Swamp: a sunken rowboat at the edge of a pool.
+  {
+    const zn = ZONE_MAP.swamp;
+    const { d, perp } = zoneAxes('swamp');
+    const p = findSpot({ x: zn.center.x - perp.x * 12 + d.x * 4, z: zn.center.z - perp.z * 12 + d.z * 4 }, (q) => {
+      const pool = poolMask(q.x, q.z);
+      return pool > 0.3 && pool < 0.6 && roadDist(q.x, q.z) > ROAD_HALF + 5 && walkMask(q.x, q.z) > 0.7 && clearOf(q, 3.5) && Math.hypot(q.x - zn.center.x, q.z - zn.center.z) < zn.radius - 3;
+    });
+    // Bow into the water (up the pool gradient).
+    const gx = poolMask(p.x + 1, p.z) - poolMask(p.x - 1, p.z);
+    const gz = poolMask(p.x, p.z + 1) - poolMask(p.x, p.z - 1);
+    const boat = boatModel();
+    place('swamp', boat, p, yawFacing(gx || 1, gz), WATER_Y - 0.15 - groundHeight(p.x, p.z));
+  }
+
+  // Dragon Valley: a beast's bones behind the sleeping dragon.
+  const reach = valleyReach();
+  {
+    const ax = DRAGON.x - PLAZA.x;
+    const az = DRAGON.z - PLAZA.z;
+    const len = Math.hypot(ax, az);
+    const prefer = { x: DRAGON.x + (ax / len) * 10.5, z: DRAGON.z + (az / len) * 10.5 };
+    const p = findSpot(prefer, (q) => {
+      const dd = Math.hypot(q.x - DRAGON.x, q.z - DRAGON.z);
+      return walkMask(q.x, q.z) > 0.7 && lavaFree(q, 3) && dd > 9.5 && dd < 17 && clearOf(q, 3.5) && reach(q);
+    });
+    const yaw = yawFacing(DRAGON.x - p.x, DRAGON.z - p.z) + 0.6;
+    place('valley', bonePileModel(), p, yaw);
+    physics.createBody({ shape: { type: 'box', size: [0.9, 0.6, 1.1] }, motion: 'static', position: { x: p.x, y: groundHeight(p.x, p.z) + 0.3, z: p.z }, rotation: quatY(yaw), group: CG.STATIC });
+  }
+
+  // Dragon nests: one on the dragon's flank, two out among the lava fields.
+  const nests: THREE.Vector3[] = [];
+  {
+    const vz = ZONE_MAP.valley;
+    const { d, perp } = zoneAxes('valley');
+    const prefers: V2[] = [
+      { x: DRAGON.x + perp.x * 9.5, z: DRAGON.z + perp.z * 9.5 },
+      { x: vz.center.x + perp.x * 13 + d.x * 3, z: vz.center.z + perp.z * 13 + d.z * 3 },
+      { x: vz.center.x - perp.x * 12 - d.x * 6, z: vz.center.z - perp.z * 12 - d.z * 6 },
+    ];
+    for (const prefer of prefers) {
+      const p = findSpot(prefer, (q) => walkMask(q.x, q.z) > 0.7 && lavaFree(q, 2.5) && roadDist(q.x, q.z) > ROAD_HALF + 3 && clearOf(q, 3.5) && Math.hypot(q.x - DRAGON.x, q.z - DRAGON.z) > 8.5 && reach(q));
+      batch.absorb(put(scene, nestModel(), p.x, p.z, rng.range(0, Math.PI * 2)));
+      nests.push(V(p.x, groundHeight(p.x, p.z) + 0.08, p.z));
+      keepClear.push(p);
+    }
+  }
+  return { secrets, nests };
 }

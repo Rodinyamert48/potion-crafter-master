@@ -14,6 +14,9 @@ import type { Expedition } from '../gameplay/gathering/Expedition';
 import { MiniGameStage, haulList } from './MiniGameStage';
 import type { PetId } from './minigames';
 import { Painter } from '../rendering/three/textures/Painter';
+import { RECIPE_MAP, SCROLLS } from '../data/potions';
+import { DRAGON_EGG, EGG_TRIP_CHANCE, giveDragonEgg } from '../gameplay/WorldEvents';
+import { rng } from '../core/Random';
 
 type View = 'map' | 'trip' | 'result';
 
@@ -26,6 +29,8 @@ export class MapPanel implements Panel {
   private stage: MiniGameStage | null = null;
   private region: RegionDef | null = null;
   private haul: Record<string, number> = {};
+  /** Lines about secret finds on this trip (an old scroll, a dragon egg). */
+  private finds: string[] = [];
   private mapArt: string | null = null;
   /** Pets coming along (chosen at the door). */
   pets: PetId[] = [];
@@ -257,6 +262,7 @@ export class MapPanel implements Panel {
       onEnd: (haul) => {
         this.haul = haul;
         this.stage = null;
+        this.findSecrets(r, haul);
         this.view = 'result';
         if (!this.el.hidden) this.render();
         else this.goHome();
@@ -279,6 +285,7 @@ export class MapPanel implements Panel {
     const r = this.region!;
     el.appendChild(h('h2', undefined, t('trip.done')));
     el.appendChild(haulList(this.haul));
+    for (const line of this.finds) el.appendChild(h('p', 'wb-trip-secret', line));
     el.appendChild(h('p', 'meta', `⌛ ${t('trip.hours', { h: r.hours })}`));
     const home = h('button', 'wb-btn wb-btn-go', t('trip.home'));
     home.addEventListener('click', () => {
@@ -286,6 +293,27 @@ export class MapPanel implements Panel {
       this.ctx.ui.openPanel(null);
     });
     el.appendChild(home);
+  }
+
+  /** A good forage sometimes turns up the region's old recipe scroll; the valley, very rarely, a dragon egg. */
+  private findSecrets(r: RegionDef, haul: Record<string, number>): void {
+    const ctx = this.ctx;
+    const s = ctx.state;
+    this.finds = [];
+    const total = Object.values(haul).reduce((a, b) => a + b, 0);
+    const id = SCROLLS[r.id];
+    if (id && !s.knowsRecipe(id) && total >= 4 && rng.chance(0.35)) {
+      s.learnRecipe(id);
+      s.count('scrolls');
+      ctx.bus.emit('recipe:learned', { id, source: 'scroll' });
+      ctx.audio.play('discovery', {});
+      this.finds.push(`📜 ${t('trip.scroll', { name: tr(RECIPE_MAP[id].name) })}`);
+    }
+    if (r.id === 'valley' && !s.hasItem(DRAGON_EGG) && rng.chance(EGG_TRIP_CHANCE)) {
+      giveDragonEgg(ctx);
+      ctx.audio.play('chime', { delay: 0.3 });
+      this.finds.push(`🥚 ${t('trip.egg')}`);
+    }
   }
 
   private goHome(): void {

@@ -111,6 +111,8 @@ export class GameState {
   garden: GardenState = defaultGarden();
   /** Today's state of the world outside. */
   outdoor: OutdoorDayState = { day: 0, picked: [], altars: [], well: false };
+  /** Key items that are not ingredients (e.g. a dragon egg for the King). */
+  items: Record<string, number> = {};
 
   constructor(private readonly bus: EventBus<GameEvents>) {}
 
@@ -131,6 +133,15 @@ export class GameState {
   /** Bump one of the achievement counters. */
   count(key: string, n = 1): void {
     this.counters[key] = (this.counters[key] ?? 0) + n;
+  }
+
+  hasItem(id: string): boolean {
+    return (this.items[id] ?? 0) > 0;
+  }
+
+  addItem(id: string, n = 1): void {
+    this.items[id] = Math.max(0, (this.items[id] ?? 0) + n);
+    if (this.items[id] === 0) delete this.items[id];
   }
 
   /** Today's outdoor state (reset on a new day). */
@@ -309,6 +320,7 @@ export class GameState {
       pets: this.pets,
       garden: this.garden,
       outdoor: this.outdoor,
+      items: this.items,
     };
   }
 
@@ -355,6 +367,7 @@ export class GameState {
     }
     this.garden = garden;
     this.outdoor = g.outdoor ?? { day: 0, picked: [], altars: [], well: false };
+    this.items = { ...(g.items ?? {}) };
   }
 }
 

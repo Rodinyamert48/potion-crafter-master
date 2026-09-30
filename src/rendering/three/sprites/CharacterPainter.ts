@@ -414,6 +414,24 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
   }
 
   // ---- Cape (behind arms, drawn before arms) --------------------------------
+  if (extra.has('royalcape')) {
+    // A king's red mantle with an ermine collar and hem.
+    p.poly(
+      [
+        [tx0 - 3, torsoTop],
+        [tx0 + bw + 3, torsoTop],
+        [tx0 + bw + 6, footY - 2],
+        [tx0 - 6, footY - 2],
+      ],
+      '#a22633',
+    );
+    p.rect(tx0 - 6, footY - 4, bw + 12, 3, '#f4f4f4');
+    for (let x = tx0 - 5; x < tx0 + bw + 5; x += 3) p.px(x, footY - 3, '#181425');
+    p.rect(tx0 + 2, torsoTop, bw - 4, torsoBot - torsoTop, main);
+    p.rect(tx0 - 3, torsoTop - 1, bw + 6, 4, '#f4f4f4');
+    for (let x = tx0 - 2; x < tx0 + bw + 3; x += 3) p.px(x, torsoTop + 1, '#181425');
+    p.rect(cx - 1 + lean, torsoTop + 5, 2, 2, accent);
+  }
   if (extra.has('cape')) {
     p.poly(
       [
@@ -471,6 +489,11 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
       ],
       '#c0cbdc',
     );
+  }
+  if (extra.has('scepter')) {
+    p.thickLine(rh.x, rh.y - 12, rh.x, rh.y + 6, 2, '#feae34');
+    p.disc(rh.x, rh.y - 14, 2.5, '#e43b44');
+    p.px(rh.x - 1, rh.y - 15, '#fff4b0');
   }
   if (extra.has('bow')) {
     for (let a = -1.1; a <= 1.1; a += 0.1) p.px(tx0 - 3 + Math.cos(a) * 3, torsoTop + 10 + Math.sin(a) * 12, '#b86f50');
@@ -774,6 +797,27 @@ export function paintCharacter(p: Painter, ox: number, oy: number, arch: Archety
         hair,
       );
     }
+  }
+  if (extra.has('crown')) {
+    // A golden crown with five points and gems.
+    const cy0 = top + 1;
+    p.rect(hx - hr + 1, cy0 - 1, hr * 2 - 1, 3, '#feae34');
+    p.hline(hx - hr + 1, hx + hr - 1, cy0 + 1, '#b86f50');
+    for (let i = 0; i < 5; i++) {
+      const x = hx - hr + 2 + Math.round((i * (hr * 2 - 4)) / 4);
+      p.poly(
+        [
+          [x - 1, cy0 - 1],
+          [x + 2, cy0 - 1],
+          [x + 0.5, cy0 - (i % 2 ? 4 : 6)],
+        ],
+        '#feae34',
+      );
+    }
+    p.px(hx, cy0, '#e43b44');
+    p.px(hx - hr + 3, cy0, '#41a6f6');
+    p.px(hx + hr - 3, cy0, '#41a6f6');
+    p.px(hx - 1, cy0 - 5, '#fff4b0');
   }
   if (extra.has('collar')) {
     p.poly(

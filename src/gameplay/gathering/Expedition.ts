@@ -11,6 +11,7 @@ import { REGION_MAP, type RegionId } from '../../data/regions';
 import { INGREDIENTS } from '../../data/ingredients';
 import type { CustomerSystem } from '../customers/CustomerSystem';
 import { t, tr } from '../../core/i18n';
+import { ROAMING_WOLVES, isWolfDay } from '../WorldEvents';
 
 export class Expedition {
   /** Game hour the current trip started (null when at home). */
@@ -59,15 +60,24 @@ export class Expedition {
     return null;
   }
 
-  /** Finds and hazards available on this trip (time of day and quests). */
+  /** Finds and hazards available on this trip (time of day, quests and wolf days). */
   pools(region: RegionDef, hour = this.ctx.state.hour): { finds: RegionFind[]; hazards: RegionHazard[] } {
     const night = this.isNight(hour);
     const okWhen = (w?: 'night' | 'day') => !w || (w === 'night') === night;
     const quests = this.ctx.state.quests;
+    const wolves = isWolfDay(this.ctx.state.day);
+    const hazards = region.hazards.filter((h) => (wolves && h.id === 'wolf') || (okWhen(h.when) && (!h.untilQuest || quests[h.untilQuest]?.status !== 'completed')));
+    // Every third day the pack roams every region, day and night.
+    if (wolves && !hazards.some((h) => h.id === 'wolf')) hazards.push(ROAMING_WOLVES);
     return {
       finds: region.finds.filter((f) => okWhen(f.when) && INGREDIENTS[f.ingredientId]),
-      hazards: region.hazards.filter((h) => okWhen(h.when) && (!h.untilQuest || quests[h.untilQuest]?.status !== 'completed')),
+      hazards,
     };
+  }
+
+  /** Wolves roam every region today. */
+  get wolfDay(): boolean {
+    return isWolfDay(this.ctx.state.day);
   }
 
   depart(region: RegionDef): void {

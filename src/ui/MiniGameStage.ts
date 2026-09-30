@@ -55,7 +55,7 @@ export class MiniGameStage {
           if (full) this.flash(t('trip.full'));
         },
         onHurt: (hazardId, lost) => {
-          const hz = r.hazards.find((z) => z.id === hazardId);
+          const hz = o.hazards.find((z) => z.id === hazardId) ?? r.hazards.find((z) => z.id === hazardId);
           this.flash(`${t('trip.ouch')} ${hz ? tr(hz.name) : ''}${lost ? ` – ${tr(INGREDIENTS[lost].name)} ${t('trip.dropped')}` : ''}`);
           this.updateBasket();
         },

@@ -28,6 +28,7 @@ const ALL_POTIONS = RECIPES.filter((r) => r.kind === 'potion').length;
 const CELEBS = Object.values(CUSTOMERS).filter((d) => d.celebrity).map((d) => d.id);
 const TURKISH = ['celeb_recep', 'celeb_burak', 'celeb_nasreddin', 'celeb_temel', 'celeb_keloglan'];
 const SECRET_IDS = RECIPES.filter((r) => r.secret).map((r) => r.id);
+const SCROLL_IDS = RECIPES.filter((r) => r.scroll).map((r) => r.id);
 
 export const ACHIEVEMENTS: AchievementDef[] = [
   {
@@ -288,6 +289,42 @@ ACHIEVEMENTS.push(
     description: { en: 'Learn a secret recipe from the wandering merchant.', tr: 'Gezgin tüccardan bir gizli tarif öğren.' },
     icon: 'book',
     check: (s) => c(s, 'recipesLearned') >= 1,
+  },
+  {
+    id: 'old_scroll',
+    name: { en: 'Scroll Finder', tr: 'Parşömen Avcısı' },
+    description: { en: 'Find a recipe scroll hidden out in the world.', tr: 'Dışarıda gizlenmiş bir tarif parşömeni bul.' },
+    icon: 'scroll',
+    check: (s) => c(s, 'scrolls') >= 1,
+  },
+  {
+    id: 'scroll_hunter',
+    name: { en: 'Lost Knowledge', tr: 'Kayıp Bilgi' },
+    description: { en: 'Find all five hidden recipe scrolls.', tr: 'Gizli beş tarif parşömeninin hepsini bul.' },
+    icon: 'scroll',
+    check: (s) => SCROLL_IDS.every((id) => s.knowsRecipe(id)),
+    progress: (s) => [SCROLL_IDS.filter((id) => s.knowsRecipe(id)).length, SCROLL_IDS.length],
+  },
+  {
+    id: 'wolf_day',
+    name: { en: 'Dances with Wolves', tr: 'Kurtlarla Dans' },
+    description: { en: 'Go outside on a day the wolves roam.', tr: 'Kurtların dolaştığı bir günde dışarı çık.' },
+    icon: 'moon',
+    check: (s) => c(s, 'wolfOutings') >= 1,
+  },
+  {
+    id: 'dragon_egg',
+    name: { en: 'Dragon Egg', tr: 'Ejderha Yumurtası' },
+    description: { en: 'Find a dragon egg in Dragon Valley.', tr: 'Ejderha Vadisi’nde bir ejderha yumurtası bul.' },
+    icon: 'egg',
+    check: (s) => c(s, 'eggs') >= 1,
+  },
+  {
+    id: 'royal_gift',
+    name: { en: 'Fit for a King', tr: 'Krala Layık' },
+    description: { en: 'Give the King a dragon egg.', tr: 'Krala bir ejderha yumurtası ver.' },
+    icon: 'crown',
+    check: (s) => c(s, 'royalGifts') >= 1,
   },
   {
     id: 'all_secrets',

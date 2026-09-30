@@ -28,8 +28,12 @@ export interface GameEvents {
   'pet:open': { kind: 'slime' | 'dog' };
   'pet:customized': { kind: 'slime' | 'dog' };
   'nobert:arrived': Record<string, never>;
-  'recipe:learned': { id: string; source: 'merchant' | 'guest' | 'admin' };
+  'recipe:learned': { id: string; source: 'merchant' | 'guest' | 'admin' | 'scroll' };
   'trip:done': { region: string };
+  /** A key item was found (e.g. a dragon egg). */
+  'item:found': { id: string };
+  'king:arrived': Record<string, never>;
+  'king:answered': { gift: boolean; hadEgg: boolean };
   achievement: { id: string };
 
   'ingredient:taken': { id: string };

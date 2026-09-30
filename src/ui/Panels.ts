@@ -11,6 +11,7 @@ import { getLang, setLang, t, tr, type Lang } from '../core/i18n';
 import type { Settings } from '../core/Settings';
 import { stars } from '../gameplay/potion/FlaskItem';
 import type { FlaskItem } from '../gameplay/potion/FlaskItem';
+import { DRAGON_EGG } from '../gameplay/WorldEvents';
 
 abstract class BasePanel implements Panel {
   readonly el: HTMLElement;
@@ -88,6 +89,18 @@ export class InventoryPanel extends BasePanel {
       img.src = iconURL(icon);
       row.append(img, h('span', undefined, name), h('span', 'n', String(n)));
       el.appendChild(row);
+    }
+    // Key items (a dragon egg for the King…)
+    const items = Object.entries(s.items).filter(([, n]) => n > 0);
+    if (items.length) {
+      el.appendChild(h('h3', undefined, t('inv.keyItems')));
+      for (const [id, n] of items) {
+        const row = h('div', 'item');
+        const img = h('img') as HTMLImageElement;
+        img.src = iconURL(id === DRAGON_EGG ? 'egg' : 'bag');
+        row.append(img, h('span', undefined, t(`item.${id}`)), h('span', 'n', `×${n}`));
+        el.appendChild(row);
+      }
     }
     el.appendChild(h('h3', undefined, t('inv.potions')));
     const flasks = this.ctx.world.ofKind<FlaskItem>('flask').filter((f) => f.potion);

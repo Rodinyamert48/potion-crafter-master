@@ -451,6 +451,67 @@ export const SFX = {
       a.osc('sine', f * 2.4, t + i * 0.1, 0.2, out, 0.02 * v, 0.002);
     }
   },
+  /** A wolf howling somewhere out in the dark (rises, holds, falls). */
+  howl: (a, o) => {
+    const { t, out, v, p } = start(a, o, 0.85);
+    const ctx = a.ctx!;
+    const dur = 2.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.15 * v, t + 0.35);
+    g.gain.setValueAtTime(0.15 * v, t + 1.5);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 1500;
+    const vib = ctx.createOscillator();
+    vib.frequency.value = 5.2;
+    const vibG = ctx.createGain();
+    vibG.gain.value = 8 * p;
+    vib.connect(vibG);
+    for (const [type, mul, gain] of [
+      ['triangle', 1, 1],
+      ['sine', 2.01, 0.3],
+    ] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      const base = 320 * p * mul;
+      osc.frequency.setValueAtTime(base, t);
+      osc.frequency.exponentialRampToValueAtTime(base * 2.1, t + 0.55);
+      osc.frequency.setValueAtTime(base * 2.1, t + 1.3);
+      osc.frequency.exponentialRampToValueAtTime(base * 1.45, t + dur);
+      vibG.connect(osc.frequency);
+      const og = ctx.createGain();
+      og.gain.value = gain;
+      osc.connect(og);
+      og.connect(f);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    }
+    f.connect(g);
+    g.connect(out);
+    vib.start(t);
+    vib.stop(t + dur + 0.05);
+    a.noiseBurst('pink', t, dur * 0.8, out, 0.018 * v, { type: 'bandpass', freq: 1200, q: 1 }, 0.3);
+  },
+  /** Royal trumpets. */
+  fanfare: (a, o) => {
+    const { t, out, v } = start(a, o, 0.5);
+    const seq: Array<[number, number, number]> = [
+      [0, 0, 0.13],
+      [5, 0.14, 0.13],
+      [9, 0.28, 0.13],
+      [12, 0.42, 0.7],
+      [9, 1.15, 0.12],
+      [12, 1.28, 0.95],
+    ];
+    for (const [n, dt, d] of seq) {
+      const f = 392 * Math.pow(2, n / 12);
+      a.osc('sawtooth', f, t + dt, d, out, 0.035 * v, 0.012);
+      a.osc('triangle', f, t + dt, d, out, 0.06 * v, 0.012);
+      a.osc('square', f / 2, t + dt, d, out, 0.015 * v, 0.012);
+    }
+  },
   quest: (a, o) => {
     const { t, out, v } = start(a, o, 0.5);
     [0, 5, 9, 12].forEach((n, i) => a.osc('triangle', 440 * Math.pow(2, n / 12), t + i * 0.12, 0.5, out, 0.09 * v, 0.004));

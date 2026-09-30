@@ -2,6 +2,7 @@
 // Adding content (ingredients, potions, customers, quests, upgrades) should
 // only require editing the data files – systems read these definitions.
 
+import type { RegionId } from './regions';
 import type { LocalizedText, Text } from '../core/i18n';
 
 // ---------------------------------------------------------------------------
@@ -211,10 +212,13 @@ export interface RecipeDef {
   maxTier?: 1 | 2 | 3 | 4;
   hint: LocalizedText;
   drink: DrinkEffectId;
-  /** Not known at the start: learned by trading potions with the merchant. */
+  /** Not known at the start: taught by the wandering merchant (learnCost) or
+   *  written on an old scroll hidden in one of the regions (scroll). */
   secret?: boolean;
   /** Potions the wandering merchant wants in exchange for this recipe. */
   learnCost?: Array<{ recipe: string; count: number }>;
+  /** Region where the scroll with this recipe is hidden. */
+  scroll?: RegionId;
   /** A famous guest's special: learned when they order it. */
   special?: boolean;
   /** Required amount of liquid in litres. */

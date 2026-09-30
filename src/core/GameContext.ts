@@ -50,7 +50,8 @@ export type PanelName =
   | 'door'
   | 'outpause'
   | 'minigame'
-  | 'seeds';
+  | 'seeds'
+  | 'king';
 
 /** Where the apprentice is: in the shop, roaming outside (PC) or in the garden. */
 export type GameMode = 'shop' | 'outside' | 'garden';

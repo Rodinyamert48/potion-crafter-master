@@ -131,6 +131,25 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   bölge listesini açar (bir yer seç, mini oyununu oyna, saat bölgenin süresi
   kadar ilerler). Bölgeler gün ve itibarla açılır (kilitliyken yolda büyülü
   bir bariyer durur).
+- **Kurt günleri:** her üç günde bir (3., 6., 9. gün…) kurt sürüsü gece
+  gündüz bütün bölgelerde dolaşır (her bölgenin yolunda 2–3 kurt; yalnızca
+  kendi bölgelerinde kovalar, lava girmezler). Dışarı adım atar atmaz
+  etraftan kurt ulumaları gelir; ulumalar sağdan/soldan, uzaklığa göre kısık
+  ya da yüksek duyulur ve bazen bir kurt diğerine cevap verir. Usta sabah
+  uyarır, kapı menüsünde de uyarı çıkar; köpek kurtları kovar.
+- **Gizli parşömenler:** her bölgenin gizli bir köşesinde eski bir tarif
+  parşömeni saklıdır: ormanda yoldan uzak **kovuklu yaşlı bir meşe**,
+  mağaranın en dibinde **eski bir maceracının iskeleti**, tapınağın taş
+  çemberinin arkasında **kapağı kaymış bir lahit**, bataklıkta bir gölün
+  kıyısında **yarı batık bir sandal** ve Ejderha Vadisi'nde ejderhanın
+  arkasında **dev bir yaratığın kemikleri**. Parşömen hafifçe parlar ve altın
+  kıvılcımlar saçar; `E` ile alınca tarif kitaba yazılır. Köpek yakındaki
+  parşömeni koklayıp altın bir ışık sütunuyla gösterir. Telefonda/tablette
+  iyi geçen bir bölge gezisinde (en az 4 buluntu) parşömen bulma şansı %35.
+- **Ejderha yumurtası:** çok düşük olasılıkla (günde ~%8) Ejderha Vadisi'ndeki
+  üç ejderha yuvasından birinde parlayan bir yumurta belirir. Alınca
+  envantere "Özel eşyalar" altında girer; yakındaki ejderha huzursuzlanır.
+  Telefonda/tablette vadi gezisinde %5 şansla bulunur.
 - **Mini oyunlar (bölgeye özel):** *Orman* – yürüyen patikada kaybolmadan
   tıkla, ruh tilkisini yakala; *Mağara* – fareyi takip eden fener ışığında
   kristallere üç kez vur, yarasalara dokunma, toz dökülünce oradan kaç;
@@ -148,12 +167,16 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   müşteri gelince zil çalar.
 - **Gün döngüsü:** sabah/öğle/akşam/gece; Ay Çiçeği yalnızca geceleri açar.
   Gece tabelayla dükkânı kapat, gün özetini gör.
-- **Keşif ve tarifler:** temel iksirlerin tarifi (malzemeler, sıcaklık,
-  karıştırma) baştan kitapta yazılıdır. Gizli tarifler kitapta `???` ve 🔒
-  olarak durur; Gezgin Tüccar bunları birkaç iksir karşılığında öğretir
-  (ör. Dev Gücü İksiri için 3 Güç + 2 Şifa İksiri) – tüccarın "Gizli tarifler"
-  sekmesinden dükkândaki iksirlerle takas edilir. Ünlü konukların özel
-  iksirleri sipariş verdiklerinde kitaba yazılır. Deneyerek ilk kez
+- **Keşif ve tarifler:** bütün sıradan iksirlerin tarifi (malzemeler,
+  sıcaklık, karıştırma) baştan kitapta yazılıdır (Büyük Şifa, Ateşli Şifa,
+  Dönüşüm İksiri dahil). Yalnızca üç tür açık değildir: **ünlü konukların
+  özel iksirleri** (★, sipariş verdiklerinde kitaba yazılır), **gizli
+  parşömenlerdeki tarifler** (📜 – Orman: Hız İksiri, Mağara: Kan Toniği,
+  Tapınak: Ay Işığı İksiri, Bataklık: Uzak Görüş İksiri, Vadi: Ejderha
+  Nefesi; kitap hangi bölgede aranacağını söyler) ve **Gezgin Tüccar'ın
+  sırları** (🔒 – Anka İksiri için 2 Büyük Şifa + 2 Güç, Dev Gücü İksiri için
+  3 Güç + 2 Şifa İksiri; tüccarın "Gizli tarifler" sekmesinden dükkândaki
+  iksirlerle takas edilir). Deneyerek ilk kez
   şişelenen her iksirin sayfası senin notlarınla da dolar. Kitapta iksirler,
   malzemeler, özler, deney günlüğü ve görevler bulunur.
 - **Görevler:** kuzeydeki kurtlar (Gece Görüşü), şövalye turnuvası (Güç),
@@ -209,12 +232,20 @@ döndür; sağ tık yerine basılı tut. Parmakla oynarken sağ altta ekran dü�
   çuvalına atar – bütün boş şişeler, bütün odunlar, bir malzemenin bütün
   stoğu ya da raftaki bütün iksirler – ve kaçar. Kaçmadan üstüne tıklarsan
   her şeyi bırakıp kaçar.
-- **Başarımlar:** 38 başarım (bazıları gizli) ilerleme çubuklarıyla; açılınca
+- **Kral Aldric:** 4., 8., 12. gün… (ve bir ejderha yumurtası bulduğunun
+  ertesi günü – haber tez yayılır) boru sesleriyle dükkâna gelir, odanın
+  ortasına dikilir ve yalnızca tek bir şey sorar: *"Bana vereceğin ne var?"*
+  **"Bir şeyler var"** dersen ve yumurta sende ise yumurtayı ona verirsin:
+  +300 altın ve +12 itibar. **"Yok"** dersen hoşça kal deyip gider. Elinde bir
+  şey yokken "Bir şeyler var" dersen kral gücenir (−3 itibar). Soru penceresini
+  kapatırsan krala tıklayarak yeniden açabilirsin; fazla bekletirsen gider.
+- **Başarımlar:** 49 başarım (bazıları gizli) ilerleme çubuklarıyla; açılınca
   fanfar ve bildirim çıkar, kupa panelinden (K) izlenir. Bir tanesi tamamen
   şansa bağlı: dükkândan ara sıra bir dört yapraklı yonca süzülür.
 - **Admin menüsü:** Esc'nin altındaki tuş (`"` ya da `` ` ``), şifre `4884`.
   Para, itibar, gün/saat, zaman hızı, stoklar, tarifler, müşteri/ünlü/tüccar/
-  Nobert çağırma, kazan suyu/sıcaklığı/ateş, iksir ve malzeme oluşturma,
+  Nobert/Kral çağırma, ejderha yumurtası verme, kazan suyu/sıcaklığı/ateş,
+  iksir ve malzeme oluşturma,
   başarımlar, mobilya ve kayıt buradan ayarlanır.
 - **Kolay taşıma:** taşınan eşya diğer eşyalara ve insanlara takılmaz, altında
   bir iniş işareti görünür. Doğru yere yaklaşınca mıknatıs gibi yerine çekilir,

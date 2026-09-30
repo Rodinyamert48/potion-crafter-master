@@ -740,3 +740,319 @@ export function lanternPost(): { group: THREE.Group; lamp: THREE.Mesh } {
   g.add(lamp);
   return { group: g, lamp };
 }
+
+// ---------------------------------------------------------------------------
+// Secret places (recipe scrolls) and the dragon's nests
+// ---------------------------------------------------------------------------
+
+/** A rolled-up recipe scroll with a red ribbon, a wax seal and a faint glow. */
+export function scrollModel(): { group: THREE.Group; glow: THREE.Mesh } {
+  const g = new THREE.Group();
+  const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.42, 8), toon({ color: '#ead4aa', emissive: '#6a5a3a', emissiveIntensity: 0.45 }));
+  roll.rotation.z = Math.PI / 2;
+  roll.position.y = 0.06;
+  g.add(roll);
+  const woodEnd = toon({ color: '#733e39' });
+  for (const s of [-1, 1]) {
+    const end = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.035, 8), woodEnd);
+    end.rotation.z = Math.PI / 2;
+    end.position.set(s * 0.225, 0.06, 0);
+    g.add(end);
+  }
+  const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 8), toon({ color: '#a22633' }));
+  ribbon.rotation.z = Math.PI / 2;
+  ribbon.position.y = 0.06;
+  g.add(ribbon);
+  const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.016, 8), toon({ color: '#e43b44', emissive: '#5a0a10', emissiveIntensity: 0.6 }));
+  seal.rotation.x = Math.PI / 2;
+  seal.position.set(0, 0.06, -0.066);
+  g.add(seal);
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), unlit('#fee761', { additive: true, opacity: 0.1 }));
+  glow.position.y = 0.07;
+  g.add(glow);
+  return { group: g, glow };
+}
+
+/** A huge hollow oak (the forest's secret); the hollow faces local −z. */
+export function hollowTreeModel(): { group: THREE.Group; slot: THREE.Vector3; twist: number } {
+  const g = new THREE.Group();
+  const bark = toon({ color: '#3a2c26' });
+  const barkDark = toon({ color: '#2a201c' });
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.25, 4.6, 9), bark);
+  trunk.position.y = 2.3;
+  trunk.castShadow = true;
+  g.add(trunk);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    const root = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.32, 1.7, 5), i % 2 ? barkDark : bark);
+    root.position.set(Math.cos(a) * 1.3, 0.22, Math.sin(a) * 1.3);
+    root.rotation.set(Math.sin(a) * 1.25, 0, -Math.cos(a) * 1.25);
+    g.add(root);
+  }
+  // A broken crown with a few dead branches
+  for (let i = 0; i < 4; i++) {
+    const a = i * 1.7 + 0.4;
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.2, 2.3, 5), bark);
+    b.position.set(Math.cos(a) * 0.65, 4.8, Math.sin(a) * 0.65);
+    b.rotation.set(Math.sin(a) * 0.95, 0, -Math.cos(a) * 0.95);
+    b.castShadow = true;
+    g.add(b);
+  }
+  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 0), toon({ color: '#2a3a24' }));
+  crown.scale.set(1.4, 0.7, 1.2);
+  crown.position.set(0.4, 5.6, 0.3);
+  crown.castShadow = true;
+  g.add(crown);
+  // The hollow: a dark opening with a bark lip and a little ledge
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(0.5, 12), unlit('#07050a'));
+  hole.scale.set(0.9, 1.35, 1);
+  hole.rotation.y = Math.PI;
+  hole.position.set(0, 1.12, -1.18);
+  g.add(hole);
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.09, 5, 12), barkDark);
+  lip.scale.set(0.9, 1.35, 1);
+  lip.position.set(0, 1.12, -1.17);
+  g.add(lip);
+  const ledge = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.36), barkDark);
+  ledge.position.set(0, 0.52, -1.24);
+  g.add(ledge);
+  // Toadstools and moss at the foot
+  const moss = toon({ color: '#3e5a2a' });
+  for (let i = 0; i < 5; i++) {
+    const a = i * 1.2 + 0.2;
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.28, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2), moss);
+    m.position.set(Math.cos(a) * 1.35, 0.02, Math.sin(a) * 1.35);
+    g.add(m);
+  }
+  return { group: g, slot: new THREE.Vector3(0, 0.57, -1.28), twist: 0.3 };
+}
+
+/** An old adventurer's bones slumped against the cavern wall (the cave's secret); faces local −z. */
+export function skeletonModel(): { group: THREE.Group; slot: THREE.Vector3; twist: number } {
+  const g = new THREE.Group();
+  const bone = toon({ color: '#d8d0b8' });
+  const dark = unlit('#120e14');
+  const rust = toon({ color: '#6a5048' });
+  const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.rotation.set(rx, ry, rz);
+    m.castShadow = true;
+    g.add(m);
+    return m;
+  };
+  // Skull hanging forward, jaw open
+  add(new THREE.SphereGeometry(0.16, 8, 6), bone, 0, 0.98, 0.02, 0.4);
+  for (const s of [-1, 1]) add(new THREE.BoxGeometry(0.06, 0.05, 0.03), dark, s * 0.06, 0.97, -0.13);
+  add(new THREE.BoxGeometry(0.03, 0.04, 0.03), dark, 0, 0.92, -0.14);
+  add(new THREE.BoxGeometry(0.15, 0.05, 0.11), bone, 0, 0.84, -0.07, 0.35);
+  // Spine, ribs and pelvis, leaning back against the rock
+  add(new THREE.CylinderGeometry(0.028, 0.028, 0.62, 5), bone, 0, 0.55, 0.12, -0.28);
+  for (let i = 0; i < 4; i++) add(new THREE.TorusGeometry(0.14 - i * 0.012, 0.018, 4, 10, Math.PI * 1.3), bone, 0, 0.74 - i * 0.08, 0.06 + i * 0.02, Math.PI / 2 - 0.25, 0, Math.PI * 0.85);
+  add(new THREE.BoxGeometry(0.26, 0.1, 0.16), bone, 0, 0.18, 0.12);
+  // Legs stretched out
+  for (const s of [-1, 1]) {
+    add(new THREE.CylinderGeometry(0.03, 0.03, 0.46, 5), bone, s * 0.1, 0.12, -0.14, Math.PI / 2 - 0.15, 0, s * 0.08);
+    add(new THREE.CylinderGeometry(0.026, 0.026, 0.44, 5), bone, s * 0.13, 0.05, -0.56, Math.PI / 2, 0, s * 0.05);
+    add(new THREE.BoxGeometry(0.08, 0.05, 0.14), bone, s * 0.14, 0.03, -0.82);
+    // Arms hanging down to the ground
+    add(new THREE.CylinderGeometry(0.024, 0.024, 0.34, 5), bone, s * 0.2, 0.62, 0.06, 0, 0, s * 0.25);
+    add(new THREE.CylinderGeometry(0.022, 0.022, 0.32, 5), bone, s * 0.27, 0.34, -0.02, 0.4, 0, s * 0.15);
+  }
+  // A rusty sword, a cracked lantern and a mouldy pack
+  add(new THREE.BoxGeometry(0.06, 0.02, 0.85), rust, 0.5, 0.02, -0.35, 0, 0.3);
+  add(new THREE.BoxGeometry(0.22, 0.03, 0.04), rust, 0.37, 0.03, 0.05, 0, 0.3);
+  add(new THREE.BoxGeometry(0.16, 0.22, 0.16), toon({ color: '#3a3440' }), -0.48, 0.11, -0.2, 0, 0.4, 0.3);
+  add(new THREE.BoxGeometry(0.36, 0.42, 0.22), toon({ color: '#4a3a2e' }), 0.05, 0.3, 0.34, -0.2);
+  return { group: g, slot: new THREE.Vector3(0, 0.2, -0.3), twist: 0.4 };
+}
+
+/** An old stone coffin with its lid pushed aside (the shrine's secret). */
+export function sarcophagusModel(): { group: THREE.Group; slot: THREE.Vector3; twist: number } {
+  const g = new THREE.Group();
+  const stone = toon({ map: repeatTex(stoneWall(), 2, 1), color: '#b8bccc' });
+  const stoneDark = toon({ color: '#4a4e60' });
+  const box = (w: number, h: number, d: number, mat: THREE.Material, x: number, y: number, z: number, ry = 0, rz = 0) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.rotation.set(0, ry, rz);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    g.add(m);
+    return m;
+  };
+  box(2.8, 0.22, 1.5, stoneDark, 0, 0.11, 0);
+  box(2.3, 0.1, 1.0, stone, 0, 0.27, 0);
+  for (const s of [-1, 1]) {
+    box(2.3, 0.8, 0.12, stone, 0, 0.62, s * 0.44);
+    box(0.12, 0.8, 0.76, stone, s * 1.09, 0.62, 0);
+  }
+  box(2.06, 0.04, 0.76, unlit('#0a080e'), 0, 0.33, 0);
+  // The lid, shoved aside and cracked
+  box(1.35, 0.14, 1.1, stone, 0.62, 1.08, 0.18, 0.18, -0.1);
+  box(1.0, 0.12, 1.05, stone, -1.35, 0.3, 0.72, 0.5, 0.35);
+  // A moon carved on the front, faintly glowing
+  const moon = new THREE.Mesh(new THREE.RingGeometry(0.07, 0.12, 12, 1, 0.6, Math.PI * 1.25), unlit('#c0cbff', { transparent: true, opacity: 0.5 }));
+  moon.rotation.y = Math.PI;
+  moon.position.set(0, 0.62, -0.51);
+  g.add(moon);
+  // Candle stubs on the plinth
+  const wax = toon({ color: '#ead4aa' });
+  const flame = unlit('#fee761');
+  for (const [x, z] of [
+    [-1.25, -0.6],
+    [1.25, -0.6],
+  ]) {
+    box(0.08, 0.16, 0.08, wax, x, 0.3, z);
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.03, 5, 4), flame);
+    f.position.set(x, 0.42, z);
+    g.add(f);
+  }
+  // Left half-out over the rim of the open end.
+  return { group: g, slot: new THREE.Vector3(-0.62, 1.04, -0.4), twist: 0.12 };
+}
+
+/** A rotten rowboat half sunk at the edge of a pool (the swamp's secret); the bow is local −z. */
+export function boatModel(): { group: THREE.Group; slot: THREE.Vector3; twist: number } {
+  const g = new THREE.Group();
+  const hull = new THREE.Group();
+  hull.rotation.set(0.07, 0, 0.13);
+  g.add(hull);
+  const wood = toon({ map: woodPlank('dark'), color: '#8a7a6a' });
+  const box = (w: number, h: number, d: number, x: number, y: number, z: number, ry = 0, rz = 0) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wood);
+    m.position.set(x, y, z);
+    m.rotation.set(0, ry, rz);
+    m.castShadow = true;
+    hull.add(m);
+    return m;
+  };
+  box(0.9, 0.08, 2.3, 0, 0, 0.15);
+  for (const s of [-1, 1]) {
+    box(0.07, 0.42, 2.3, s * 0.48, 0.18, 0.15, 0, s * 0.22);
+    box(0.07, 0.42, 0.85, s * 0.27, 0.18, -1.25, s * 0.55, s * 0.18);
+  }
+  box(0.95, 0.38, 0.07, 0, 0.18, 1.3);
+  box(0.9, 0.06, 0.28, 0, 0.28, 0.45);
+  box(0.9, 0.06, 0.24, 0, 0.28, -0.5);
+  // An oar left across the gunwale
+  const oar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2, 5), wood);
+  oar.rotation.set(0, 0.35, Math.PI / 2 - 0.12);
+  oar.position.set(0.35, 0.45, 0.85);
+  hull.add(oar);
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.14), wood);
+  blade.position.set(1.28, 0.34, 0.5);
+  blade.rotation.y = 0.35;
+  hull.add(blade);
+  // Weed hanging off the side
+  const weed = toon({ color: '#3a5a2a' });
+  for (let i = 0; i < 5; i++) {
+    const w = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.35, 0.05), weed);
+    w.position.set(-0.52, 0.12, -0.6 + i * 0.4);
+    hull.add(w);
+  }
+  return { group: g, slot: new THREE.Vector3(0, 0.36, 0.45), twist: 0.15 };
+}
+
+/** The bones of some beast that came too close to the dragon (the valley's secret); the skull is local −z. */
+export function bonePileModel(): { group: THREE.Group; slot: THREE.Vector3; twist: number } {
+  const g = new THREE.Group();
+  const bone = toon({ color: '#d8ccb0' });
+  const dark = unlit('#120e14');
+  // A rib cage arching over the ground
+  for (let i = 0; i < 5; i++) {
+    const rib = new THREE.Mesh(new THREE.TorusGeometry(1.05 - Math.abs(i - 2) * 0.1, 0.07, 5, 10, Math.PI), bone);
+    rib.position.set(0, 0, -0.9 + i * 0.45);
+    rib.rotation.z = (i % 2 ? 1 : -1) * 0.12;
+    rib.scale.y = 1.15;
+    rib.castShadow = true;
+    g.add(rib);
+  }
+  const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.6, 6), bone);
+  spine.rotation.x = Math.PI / 2;
+  spine.position.set(0, 1.18, 0.1);
+  g.add(spine);
+  // A horned skull lying in front
+  const skull = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.55, 1.1), bone);
+  skull.position.set(0.2, 0.3, -1.95);
+  skull.rotation.set(0.1, 0.35, 0.15);
+  skull.castShadow = true;
+  g.add(skull);
+  for (const s of [-1, 1]) {
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.12, 1.1, 5), toon({ color: '#a89878' }));
+    horn.position.set(0.2 + s * 0.35, 0.75, -1.7);
+    horn.rotation.set(-0.5, 0, s * -0.5);
+    g.add(horn);
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.04), dark);
+    eye.position.set(0.2 + s * 0.2, 0.38, -2.5);
+    eye.rotation.y = 0.35;
+    g.add(eye);
+  }
+  // Loose bones scattered around
+  for (let i = 0; i < 5; i++) {
+    const a = i * 1.3 + 0.5;
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 5), bone);
+    b.rotation.set(Math.PI / 2, 0, a);
+    b.position.set(Math.cos(a) * 1.7, 0.05, Math.sin(a) * 1.7 + 0.3);
+    g.add(b);
+    for (const e of [-1, 1]) {
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.08, 5, 4), bone);
+      knob.position.set(b.position.x - Math.sin(a) * 0.45 * e, 0.06, b.position.z + Math.cos(a) * 0.45 * e);
+      g.add(knob);
+    }
+  }
+  return { group: g, slot: new THREE.Vector3(0, 0.03, 0.05), twist: 0.5 };
+}
+
+/** A ring of charred sticks and stones: a dragon's nest. */
+export function nestModel(): THREE.Group {
+  const g = new THREE.Group();
+  const stick = toon({ color: '#2a1e1c' });
+  const ash = toon({ color: '#3a3032' });
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.15, 0.16, 12), ash);
+  base.position.y = 0.06;
+  g.add(base);
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    const s = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.05, 4), stick);
+    const tangent = new THREE.Vector3(-Math.sin(a), (i % 3) * 0.12 - 0.1, Math.cos(a)).normalize();
+    s.quaternion.setFromUnitVectors(up, tangent);
+    s.position.set(Math.cos(a) * (0.82 + (i % 2) * 0.12), 0.2 + (i % 3) * 0.07, Math.sin(a) * (0.82 + (i % 2) * 0.12));
+    s.castShadow = true;
+    g.add(s);
+  }
+  const stone = toon({ color: '#4a3a3a' });
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + 0.2;
+    const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.2 + (i % 3) * 0.05, 0), stone);
+    r.position.set(Math.cos(a) * 1.18, 0.12, Math.sin(a) * 1.18);
+    g.add(r);
+  }
+  return g;
+}
+
+/** A dragon egg: speckled, warm and faintly glowing. */
+export function dragonEggModel(): { group: THREE.Group; halo: THREE.Mesh } {
+  const g = new THREE.Group();
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 9), toon({ color: '#c42430', emissive: '#6a1010', emissiveIntensity: 0.7 }));
+  shell.scale.set(1, 1.35, 1);
+  shell.position.y = 0.42;
+  shell.castShadow = true;
+  g.add(shell);
+  const speck = toon({ color: '#feae34', emissive: '#f77622', emissiveIntensity: 0.9 });
+  for (let i = 0; i < 16; i++) {
+    const y = -0.8 + ((i + 0.5) / 16) * 1.6;
+    const r = Math.sqrt(1 - y * y);
+    const a = i * 2.4;
+    const n = new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+    const dot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.02), speck);
+    dot.position.set(n.x * 0.3, 0.42 + n.y * 0.3 * 1.35, n.z * 0.3);
+    dot.lookAt(dot.position.clone().add(n));
+    g.add(dot);
+  }
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.62, 10, 8), unlit('#f77622', { additive: true, opacity: 0.16 }));
+  halo.position.y = 0.42;
+  g.add(halo);
+  return { group: g, halo };
+}
