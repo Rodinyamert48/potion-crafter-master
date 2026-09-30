@@ -1,4 +1,4 @@
-import{E as e}from"./index-BFYc7Mi2.js";import{a as t,c as n,d as r,i,l as a,n as o,o as s,r as c,s as l,t as u,u as d}from"./geometryRenderingFragment-BzGwywdb.js";import{t as f}from"./logDepthDeclaration-B83KivKZ.js";import{t as p}from"./helperFunctions-dchb2_ZQ.js";var m=`particlesPixelShader`,h=`varying vUV: vec2f;varying vColor: vec4f;uniform textureMask: vec4f;var diffuseSamplerSampler: sampler;var diffuseSampler: texture_2d<f32>;
+import{E as e}from"./index-BHs9XJxV.js";import{a as t,c as n,d as r,i,l as a,n as o,o as s,r as c,s as l,t as u,u as d}from"./geometryRenderingFragment-D-oZcaj5.js";import{t as f}from"./logDepthDeclaration-VH8qt7iT.js";import{t as p}from"./helperFunctions-DfE_X5g5.js";var m=`particlesPixelShader`,h=`varying vUV: vec2f;varying vColor: vec4f;uniform textureMask: vec4f;var diffuseSamplerSampler: sampler;var diffuseSampler: texture_2d<f32>;
 #ifdef PREPASS
 uniform geometryZeroAlphaDiscard: f32;
 #ifdef PREPASS_POSITION
